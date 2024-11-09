@@ -21,7 +21,7 @@ void window_init(void)
 
     window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "soultaker", NULL, NULL);
     glfwGetWindowSize(window.handle, &window.width, &window.height);
-    glfwSetWindowAspectRatio(window.handle, 16, 9);
+    //glfwSetWindowAspectRatio(window.handle, 16, 9);
     window.aspect_ratio = (f32)window.width / window.height;
     
     glfwMakeContextCurrent(window.handle);

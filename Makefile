@@ -2,7 +2,7 @@ export TEMP := ./build
 export TMP := ./build
 
 CC = gcc
-CFLAGS = 
+CFLAGS =
 LIB_DIR = lib
 SRC_DIR = src
 OBJ_DIR = build

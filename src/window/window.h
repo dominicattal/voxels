@@ -5,7 +5,7 @@
 #include <glfw.h>
 #include "../util.h"
 
-typedef struct Window {
+typedef struct {
     GLFWwindow* handle;
     i32 width, height;
     i32 resolution_x, resolution_y;
