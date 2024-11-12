@@ -10,7 +10,7 @@ BIN_DIR = bin
 TARGET = $(BIN_DIR)/gui
 
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -name "*link")
-LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) -lglfw3dll
+LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) -lglfw3dll -lm
 INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")

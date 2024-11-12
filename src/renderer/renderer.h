@@ -5,10 +5,12 @@
 #include "../util.h"
 #include "vao/vao.h"
 #include "shader/shader.h"
+#include "texture/texture.h"
 
 typedef struct {
     VAO vaos[NUM_VAOS];
     Shader shaders[NUM_SHADERS];
+    Texture texture;
 } Renderer;
 
 extern Renderer renderer;

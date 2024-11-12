@@ -1,5 +1,9 @@
 #include "state.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <stb_truetype.h>
 
 void state_init(void)
 {
@@ -7,10 +11,10 @@ void state_init(void)
     renderer_init();
 
     static float points[] = {
-        0.0, 0.0,
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 1.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, 0.0, 1.0, 0.0,
     };
 
     static int idxs[] = { 0, 1, 2, 0, 2, 3 };
