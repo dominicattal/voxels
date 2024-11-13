@@ -8,7 +8,6 @@
 
 typedef struct {
     u32 id;
-    u64 handle;
 } Texture;
 
 Texture texture_create(const char* image_path);
