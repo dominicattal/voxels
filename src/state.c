@@ -12,7 +12,6 @@ void state_init(void)
 
     long size;
     unsigned char* font_buffer;
-    unsigned char* font_buffer2;
 
     FILE* font_file = fopen("assets/cmunrm.ttf", "rb");
     fseek(font_file, 0, SEEK_END);
@@ -22,16 +21,7 @@ void state_init(void)
     fread(font_buffer, size, 1, font_file);
     fclose(font_file);
 
-    FILE* font_file2 = fopen("assets/cmunrm.ttf", "rb");
-    fseek(font_file2, 0, SEEK_END);
-    size = ftell(font_file2);
-    fseek(font_file2, 0, SEEK_SET);
-    font_buffer2 = malloc(size);
-    fread(font_buffer2, size, 1, font_file);
-    fclose(font_file2);
-
     unsigned char temp_bitmap[512*512];
-    stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
     GLuint ftex;
 
     stbtt_pack_context spc;
@@ -59,12 +49,13 @@ void state_init(void)
 
     //stbtt_BakeFontBitmap(font_buffer, 0, 64.0, temp_bitmap, 512, 512, 32, 96, cdata);
     free(font_buffer);
-    free(font_buffer2);
     glGenTextures(1, &ftex);
     glBindTexture(GL_TEXTURE_2D, ftex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512,512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-    // can free temp_bitmap at this point
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    for (char c = 32; c < 127; c++)
+        printf("%c ", c);
 
     float x, y;
     stbtt_aligned_quad q;
