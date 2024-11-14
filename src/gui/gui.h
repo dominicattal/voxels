@@ -3,6 +3,7 @@
 
 #include "../util.h"
 #include "component/component.h"
+#include "font/font.h"
 
 typedef struct {
     u32 vbo_length, vbo_max_length;

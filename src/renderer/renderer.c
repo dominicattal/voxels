@@ -10,6 +10,8 @@ void renderer_init(void)
 {
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(message_callback, 0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 

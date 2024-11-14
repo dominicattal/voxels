@@ -3,16 +3,19 @@
 
 #include "../../util.h"
 
-#define COMP_TYPE_ELEMENT 0
-#define COMP_TYPE_TEXT    1
 #define MAX_NUM_CHILDREN  1000
 
 typedef struct Component Component;
 
+typedef enum CompID {
+    COMP_DEFAULT = 0,
+    COMP_TEXTBOX = 1
+} CompID;
+
 typedef struct Component {
+    u8 id;
     u8 r, g, b, a;
     i16 x, y, w, h;
-    u8 type, id;
     u16 num_children;
     union {
         char* text;
@@ -20,11 +23,7 @@ typedef struct Component {
     };
 } Component;
 
-typedef enum CompEnum {
-    COMP_DEFAULT = 0
-} CompEnum;
-
-Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompEnum id);
+Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id);
 void comp_attach(Component* parent, Component* child);
 void comp_detach(Component* parent, Component* child);
 void comp_destroy(Component* comp);
