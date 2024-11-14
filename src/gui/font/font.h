@@ -5,6 +5,7 @@
 #include <stb_truetype.h>
 
 typedef struct {
+    stbtt_fontinfo info;
     stbtt_pack_context spc;
     stbtt_pack_range fontRange;
     stbtt_packedchar packedChars[96];

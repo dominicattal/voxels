@@ -22,6 +22,8 @@ void font_init(void)
 
     GLuint ftex;
     
+    stbtt_InitFont(&font.info, font_buffer, 0);
+
     stbtt_PackBegin(&font.spc, font.bitmap, 512, 512, 0, 1, NULL);
 
     font.fontRange.font_size = 32.0f;         
@@ -37,7 +39,7 @@ void font_init(void)
     glGenTextures(1, &ftex);
     glBindTexture(GL_TEXTURE_2D, ftex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512,512, 0, GL_RED, GL_UNSIGNED_BYTE, font.bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void font_destroy(void)

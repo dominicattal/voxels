@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 GUI gui;
 extern Window window;
@@ -26,9 +27,10 @@ void gui_init(void)
     gui.root->b = 0xF0;
     gui.root->a = 50;
 
-    Component* text_box = comp_create(100, 100, 300, 300, COMP_TEXTBOX);
-    text_box->text = malloc(20 * sizeof(char));
-    strncpy(text_box->text, "Hello World", 12);
+    Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
+    char* text = "Hello World";
+    text_box->text = malloc((strlen(text) + 1) * sizeof(char));
+    strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
     text_box->a = 30;
     comp_attach(gui.root, text_box);
@@ -85,25 +87,60 @@ static void update_data_text(Component* comp)
     if (comp->id != COMP_TEXTBOX)
         return;
 
-    f32 x1, y1, x2, y2;
-    u32 idx = gui.vbo_length / FLOAT_PER_VERTEX;
-
-    f32 x, y;
-    x = y = 0;
+    f32 x1, y1, x2, y2, scale;
     stbtt_aligned_quad q;
-    stbtt_GetPackedQuad(font.packedChars, 512, 512, 'e'-32, &x,&y,&q,1);
+    u32 idx;
+    i32 ascent, descent, line_gap, len;
+    char c;
 
-    resize_gui_buffers(1);
-    x1 = 2.0f * (f32)(comp->x - window.resolution.x / 2) / window.resolution.x;
-    y1 = 2.0f * (f32)(comp->y - window.resolution.y / 2) / window.resolution.y;
-    x2 = x1 + 2.0f * (f32)(50) / window.resolution.x;
-    y2 = y1 + 2.0f * (f32)(50) / window.resolution.y;
+    scale = stbtt_ScaleForPixelHeight(&font.info, 32);
+    stbtt_GetFontVMetrics(&font.info, &ascent, &descent, &line_gap);
 
-    A = x1, A = y1, A = q.s0, A = q.t1, A = 0, A = 1, A = 0, A = 1, A = 1;
-    A = x1, A = y2, A = q.s0, A = q.t0, A = 0, A = 1, A = 0, A = 1, A = 1;
-    A = x2, A = y2, A = q.s1, A = q.t0, A = 0, A = 1, A = 0, A = 1, A = 1;
-    A = x2, A = y1, A = q.s1, A = q.t1, A = 0, A = 1, A = 0, A = 1, A = 1;
-    B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+    ascent = roundf(ascent * scale);
+    descent = roundf(descent * scale);
+
+    len = strlen(comp->text);
+    char* word = comp->text;
+    resize_gui_buffers(len);
+
+    int b_w = 512;
+    int x = 0;
+    for (i32 i = 0; i < len; i++) {
+        int ax, lsb;
+        stbtt_GetCodepointHMetrics(&font.info, word[i], &ax, &lsb);
+
+        int c_x1, c_y1, c_x2, c_y2;
+        stbtt_GetCodepointBitmapBox(&font.info, word[i], scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
+        
+        int y = ascent + c_y1;
+
+        int kern;
+        kern = stbtt_GetCodepointKernAdvance(&font.info, word[i], word[i + 1]);
+
+        float xx = 0, yy = 0;
+        stbtt_GetPackedQuad(font.packedChars, 512, 512, word[i]-32, &xx,&yy,&q,1);
+        
+        f32 u1, v1, u2, v2;
+        const stbtt_packedchar b = font.packedChars[word[i]-32];
+        u1 = b.x0 / 512.0f;
+        v1 = b.y0 / 512.0f;
+        u2 = b.x1 / 512.0f;
+        v2 = b.y1 / 512.0f;
+
+        x1 = 2.0f * (f32)(comp->x + x - window.resolution.x / 2) / window.resolution.x;
+        y1 = 2.0f * (f32)(comp->y - window.resolution.y / 2) / window.resolution.y;
+        x2 = x1 + 2.0f * (f32)(c_x2 - c_x1) / window.resolution.x;
+        y2 = y1 + 2.0f * (f32)(c_y2 - c_y1) / window.resolution.y;
+
+        x += roundf((ax + kern) * scale);
+
+        idx = gui.vbo_length / FLOAT_PER_VERTEX;
+        A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+        A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+        A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+        A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+        B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+    }
 }
 
 static void update_data_helper(Component* comp)
@@ -118,10 +155,10 @@ static void update_data_helper(Component* comp)
     y2 = y1 + 2.0f * (f32)comp->h / window.resolution.y;
     r = comp->r / 255.0f, g = comp->g / 255.0f, b = comp->b / 255.0f, a = comp->a / 255.0f;
 
-    A = x1, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
-    A = x2, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
-    A = x2, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x1, A = y1, A = 0.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
     A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x2, A = y2, A = 1.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 
     update_data_text(comp);
