@@ -19,7 +19,7 @@ void window_init(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "soultaker", NULL, NULL);
+    window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "gui", NULL, NULL);
     glfwGetWindowSize(window.handle, &window.width, &window.height);
     //glfwSetWindowAspectRatio(window.handle, 16, 9);
     window.aspect_ratio = (f32)window.width / window.height;
