@@ -8,7 +8,9 @@
 typedef struct {
     GLFWwindow* handle;
     i32 width, height;
-    i32 resolution_x, resolution_y;
+    struct {
+        i32 x, y;
+    } resolution;
     f32 aspect_ratio;
 } Window;
 

@@ -7,7 +7,7 @@
 Window window;
 
 static void error_callback();
-static void framebuffer_size_callback() {}
+extern void framebuffer_size_callback();
 static void mouse_button_callback() {}
 static void key_callback() {}
 static void cursor_pos_callback() {}
@@ -20,6 +20,8 @@ void window_init(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "gui", NULL, NULL);
+    window.resolution.x = DEFAULT_WINDOW_WIDTH;
+    window.resolution.y = DEFAULT_WINDOW_HEIGHT;
     glfwGetWindowSize(window.handle, &window.width, &window.height);
     //glfwSetWindowAspectRatio(window.handle, 16, 9);
     window.aspect_ratio = (f32)window.width / window.height;

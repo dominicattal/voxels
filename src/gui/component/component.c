@@ -6,6 +6,7 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompEnum id)
 {
     Component* comp = malloc(sizeof(Component));
     comp->x = x, comp->y = y, comp->w = w, comp->h = h;
+    comp->r = comp->g = comp->b = comp->a = 0;
     comp->type = COMP_TYPE_ELEMENT;
     comp->id = id;
     comp->num_children = 0;
@@ -34,6 +35,8 @@ void comp_detach(Component* parent, Component* child)
 
 void comp_destroy(Component* comp)
 {
+    for (int i = 0; i < comp->num_children; i++)
+        comp_destroy(comp->children[i]);
     free(comp->children);
     free(comp);
 }

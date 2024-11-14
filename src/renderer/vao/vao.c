@@ -38,7 +38,6 @@ void vao_malloc(VAO vao, u32 vbo_length, u32 ebo_length)
 void vao_draw(VAO vao)
 {
     glBindVertexArray(vao.id);
-    //printf("%d, %d\n", vao.vbo.length, vao.ebo.length);
     glDrawElements(vao.mode, vao.ebo->length, GL_UNSIGNED_INT, 0);
 }
 
