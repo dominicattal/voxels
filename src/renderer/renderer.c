@@ -15,11 +15,12 @@ void renderer_init(void)
 
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 
-    renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 8);
+    renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 9);
 
     vao_attr(renderer.vaos[VAO_GUI], 0, 2, 0);
     vao_attr(renderer.vaos[VAO_GUI], 1, 2, 2);
     vao_attr(renderer.vaos[VAO_GUI], 2, 4, 4);
+    vao_attr(renderer.vaos[VAO_GUI], 3, 1, 8);
 }
 
 void renderer_malloc(VAOIndex vao_index, u32 vbo_length, u32 ebo_length)

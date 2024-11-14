@@ -53,7 +53,7 @@ void gui_destroy(void)
 #define A gui.vbo_buffer[gui.vbo_length++]
 #define B gui.ebo_buffer[gui.ebo_length++]
 
-#define FLOAT_PER_VERTEX 8
+#define FLOAT_PER_VERTEX 9
 #define NUM_VERTICES     4
 #define NUM_FLOATS       NUM_VERTICES * FLOAT_PER_VERTEX
 #define NUM_INDEXES      6
@@ -99,10 +99,10 @@ static void update_data_text(Component* comp)
     x2 = x1 + 2.0f * (f32)(50) / window.resolution.x;
     y2 = y1 + 2.0f * (f32)(50) / window.resolution.y;
 
-    A = x1, A = y1, A = q.s0, A = q.t1, A = 0, A = 1, A = 0, A = 1;
-    A = x1, A = y2, A = q.s0, A = q.t0, A = 0, A = 1, A = 0, A = 1;
-    A = x2, A = y2, A = q.s1, A = q.t0, A = 0, A = 1, A = 0, A = 1;
-    A = x2, A = y1, A = q.s1, A = q.t1, A = 0, A = 1, A = 0, A = 1;
+    A = x1, A = y1, A = q.s0, A = q.t1, A = 0, A = 1, A = 0, A = 1, A = 1;
+    A = x1, A = y2, A = q.s0, A = q.t0, A = 0, A = 1, A = 0, A = 1, A = 1;
+    A = x2, A = y2, A = q.s1, A = q.t0, A = 0, A = 1, A = 0, A = 1, A = 1;
+    A = x2, A = y1, A = q.s1, A = q.t1, A = 0, A = 1, A = 0, A = 1, A = 1;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 }
 
@@ -118,10 +118,10 @@ static void update_data_helper(Component* comp)
     y2 = y1 + 2.0f * (f32)comp->h / window.resolution.y;
     r = comp->r / 255.0f, g = comp->g / 255.0f, b = comp->b / 255.0f, a = comp->a / 255.0f;
 
-    A = x1, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
-    A = x2, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
-    A = x2, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
-    A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
+    A = x1, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x2, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x2, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 
     update_data_text(comp);
