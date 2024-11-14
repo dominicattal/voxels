@@ -10,7 +10,7 @@
 typedef struct Component Component;
 
 typedef struct Component {
-    i8 r, g, b, a;
+    u8 r, g, b, a;
     i16 x, y, w, h;
     u8 type, id;
     u16 num_children;

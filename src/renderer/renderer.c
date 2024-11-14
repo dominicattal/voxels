@@ -13,10 +13,11 @@ void renderer_init(void)
 
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 
-    renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 4);
+    renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 8);
 
     vao_attr(renderer.vaos[VAO_GUI], 0, 2, 0);
     vao_attr(renderer.vaos[VAO_GUI], 1, 2, 2);
+    vao_attr(renderer.vaos[VAO_GUI], 2, 4, 4);
 }
 
 void renderer_malloc(VAOIndex vao_index, u32 vbo_length, u32 ebo_length)
@@ -34,7 +35,6 @@ void renderer_render(void)
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    //texture_bind(renderer.texture);
     shader_use(renderer.shaders[SHADER_DEFAULT]);
     vao_draw(renderer.vaos[VAO_GUI]);
 }

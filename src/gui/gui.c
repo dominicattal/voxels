@@ -18,6 +18,8 @@ void gui_init(void)
     gui.ebo_buffer = malloc(0);
 
     gui.root = comp_create(0, 0, 100, 100, COMP_DEFAULT);
+    gui.root->r = 0xFF;
+    gui.root->b = 0xF0;
 
     comp_attach(gui.root, comp_create(100, 100, 100, 100, COMP_DEFAULT));
     comp_attach(gui.root, comp_create(200, 200, 100, 100, COMP_DEFAULT));
@@ -41,7 +43,7 @@ void gui_destroy(void)
 #define A gui.vbo_buffer[gui.vbo_length++]
 #define B gui.ebo_buffer[gui.ebo_length++]
 
-#define FLOAT_PER_VERTEX 4
+#define FLOAT_PER_VERTEX 8
 #define NUM_VERTICES     4
 #define NUM_FLOATS       NUM_VERTICES * FLOAT_PER_VERTEX
 #define NUM_INDEXES      6
@@ -65,17 +67,21 @@ void update_components(Component* comp)
 
 void update_data_helper(Component* comp)
 {
-    f32 x1, y1, x2, y2;
-    u32 idx = gui.vbo_length / 4;
+    f32 x1, y1, x2, y2, r, g, b, a;
+    u32 idx = gui.vbo_length / FLOAT_PER_VERTEX;
+
     resize_gui_buffers(1);
     x1 = (f32)(comp->x - window.resolution.x / 2) / window.resolution.x;
     y1 = (f32)(comp->y - window.resolution.y / 2) / window.resolution.y;
     x2 = x1 + (f32)comp->w / window.resolution.x;
     y2 = y1 + (f32)comp->h / window.resolution.y;
-    A = x1, A = y1, A = 0.0, A = 0.0;
-    A = x2, A = y1, A = 0.0, A = 0.0;
-    A = x2, A = y2, A = 0.0, A = 0.0;
-    A = x1, A = y2, A = 0.0, A = 0.0;
+    r = comp->r / 255.0f, g = comp->g / 255.0f, b = comp->b / 255.0f, a = comp->a / 255.0f;
+    printf("%f\n", r);
+
+    A = x1, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
+    A = x2, A = y1, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
+    A = x2, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
+    A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
     for (int i = 0; i < comp->num_children; i++)
         update_data_helper(comp->children[i]);
