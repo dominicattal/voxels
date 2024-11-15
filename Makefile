@@ -12,6 +12,7 @@ TARGET = $(BIN_DIR)/gui
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -name "*link")
 LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) -lglfw3dll -lm
 INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
+INCLUDE_FILES = $(shell find $(LIB_DIR) -name "*.h")
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
@@ -24,6 +25,6 @@ $(OBJ_DIR)/%.o: %.c
 	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) -c $^ -o $@
 
 clean:
-	rm -r $(OBJ_DIR) a.exe
+	rm -r $(OBJ_DIR) $(TARGET)
 
 .PHONY: clean

@@ -9,7 +9,8 @@ typedef struct {
     stbtt_pack_context spc;
     stbtt_pack_range fontRange;
     stbtt_packedchar packedChars[96];
-    unsigned char bitmap[512*512];
+    unsigned char* bitmap;
+    unsigned char* font_buffer;
 } Font;
 
 extern Font font;

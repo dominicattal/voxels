@@ -28,7 +28,7 @@ void gui_init(void)
     gui.root->a = 50;
 
     Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
-    char* text = "Hello World";
+    char* text = "The quick brown fox jumped over the lazy dog?";
     text_box->text = malloc((strlen(text) + 1) * sizeof(char));
     strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
@@ -88,7 +88,6 @@ static void update_data_text(Component* comp)
         return;
 
     f32 x1, y1, x2, y2, scale;
-    stbtt_aligned_quad q;
     u32 idx;
     i32 ascent, descent, line_gap, len;
     char c;
@@ -105,20 +104,18 @@ static void update_data_text(Component* comp)
 
     int b_w = 512;
     int x = 0;
+
     for (i32 i = 0; i < len; i++) {
-        int ax, lsb;
-        stbtt_GetCodepointHMetrics(&font.info, word[i], &ax, &lsb);
+        int adv, lsb;
+        stbtt_GetCodepointHMetrics(&font.info, word[i], &adv, &lsb);
 
         int c_x1, c_y1, c_x2, c_y2;
         stbtt_GetCodepointBitmapBox(&font.info, word[i], scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
-        
+
         int y = ascent + c_y1;
 
         int kern;
-        kern = stbtt_GetCodepointKernAdvance(&font.info, word[i], word[i + 1]);
-
-        float xx = 0, yy = 0;
-        stbtt_GetPackedQuad(font.packedChars, 512, 512, word[i]-32, &xx,&yy,&q,1);
+        kern = stbtt_GetCodepointKernAdvance(&font.info, word[i], word[i+1]);
         
         f32 u1, v1, u2, v2;
         const stbtt_packedchar b = font.packedChars[word[i]-32];
@@ -127,12 +124,12 @@ static void update_data_text(Component* comp)
         u2 = b.x1 / 512.0f;
         v2 = b.y1 / 512.0f;
 
-        x1 = 2.0f * (f32)(comp->x + x - window.resolution.x / 2) / window.resolution.x;
-        y1 = 2.0f * (f32)(comp->y - window.resolution.y / 2) / window.resolution.y;
+        x1 = 2.0f * (f32)(comp->x + x + c_x1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
+        y1 = 2.0f * (f32)(comp->y - c_y2 - window.resolution.y / 2) / window.resolution.y;
         x2 = x1 + 2.0f * (f32)(c_x2 - c_x1) / window.resolution.x;
         y2 = y1 + 2.0f * (f32)(c_y2 - c_y1) / window.resolution.y;
 
-        x += roundf((ax + kern) * scale);
+        x += roundf((adv + kern) * scale);
 
         idx = gui.vbo_length / FLOAT_PER_VERTEX;
         A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;

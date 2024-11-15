@@ -10,19 +10,20 @@ Font font;
 void font_init(void)
 {
     long size;
-    unsigned char* font_buffer;
+
+    font.bitmap = calloc(512 * 512, sizeof(unsigned char));
 
     FILE* font_file = fopen("assets/cmunrm.ttf", "rb");
     fseek(font_file, 0, SEEK_END);
     size = ftell(font_file);
     fseek(font_file, 0, SEEK_SET);
-    font_buffer = malloc(size);
-    fread(font_buffer, size, 1, font_file);
+    font.font_buffer = malloc(size);
+    fread(font.font_buffer, size, 1, font_file);
     fclose(font_file);
 
     GLuint ftex;
     
-    stbtt_InitFont(&font.info, font_buffer, 0);
+    stbtt_InitFont(&font.info, font.font_buffer, 0);
 
     stbtt_PackBegin(&font.spc, font.bitmap, 512, 512, 0, 1, NULL);
 
@@ -32,9 +33,9 @@ void font_init(void)
     font.fontRange.num_chars = 96;       
     font.fontRange.chardata_for_range = font.packedChars;
 
-    stbtt_PackFontRanges(&font.spc, font_buffer, 0, &font.fontRange, 1);
+    stbtt_PackFontRanges(&font.spc, font.font_buffer, 0, &font.fontRange, 1);
     stbtt_PackEnd(&font.spc);
-    free(font_buffer);
+    //free(font_buffer); DO NOT FREE THIS
 
     glGenTextures(1, &ftex);
     glBindTexture(GL_TEXTURE_2D, ftex);
@@ -44,5 +45,6 @@ void font_init(void)
 
 void font_destroy(void)
 {
-
+    free(font.bitmap);
+    free(font.font_buffer);
 }
