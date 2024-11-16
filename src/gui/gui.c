@@ -28,7 +28,7 @@ void gui_init(void)
     gui.root->a = 50;
 
     Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
-    char* text = "The quick brown fox jumped over the lazy dog?";
+    char* text = "the quick brown fox jumped over the lazy dog? THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG!";
     text_box->text = malloc((strlen(text) + 1) * sizeof(char));
     strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
@@ -87,56 +87,90 @@ static void update_data_text(Component* comp)
     if (comp->id != COMP_TEXTBOX)
         return;
 
-    f32 x1, y1, x2, y2, scale;
-    u32 idx;
-    i32 ascent, descent, line_gap, len;
-    char c;
-
+    f32 x1, y1, x2, y2;     // screen coordinates
+    f32 u1, v1, u2, v2;     // bitmap coordinates
+    i32 a1, b1, a2, b2;     // glyph bounding box
+    i32 ox, oy, test_ox;    // glyph origin
+    f32 scale;              // pixel scaling for font size
+    i32 ascent, descent;    // highest and lowest glyph offsets
+    i32 line_gap;           // gap between lines
+    i32 adv, lsb, kern;     // advance, left side bearing, kerning
+    i32 tot_adv;            // advance after kerning
+    i32 left, right;        // left and right potiners in word
+    i32 idx, length;
+    char* text;
+    stbtt_packedchar b;
+    
     scale = stbtt_ScaleForPixelHeight(&font.info, 32);
     stbtt_GetFontVMetrics(&font.info, &ascent, &descent, &line_gap);
-
     ascent = roundf(ascent * scale);
     descent = roundf(descent * scale);
+    text = comp->text;
+    length = strlen(text);
 
-    len = strlen(comp->text);
-    char* word = comp->text;
-    resize_gui_buffers(len);
+    left = right = ox = oy = 0;
+    resize_gui_buffers(length);
 
-    int b_w = 512;
-    int x = 0;
+    while (right < length) {
+        while (right < length && text[right] == ' ')
+            right++;
 
-    for (i32 i = 0; i < len; i++) {
-        int adv, lsb;
-        stbtt_GetCodepointHMetrics(&font.info, word[i], &adv, &lsb);
+        left = right;
+        test_ox = 0;
+        while (right < length && text[right] != '\n' && test_ox <= comp->w) {
+            stbtt_GetCodepointHMetrics(&font.info, text[right], &adv, &lsb);
+            kern = stbtt_GetCodepointKernAdvance(&font.info, text[right], text[right+1]);
+            test_ox += roundf((adv + kern) * scale);
+            right++;
+        }
 
-        int c_x1, c_y1, c_x2, c_y2;
-        stbtt_GetCodepointBitmapBox(&font.info, word[i], scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
+        if (test_ox > comp->w) {
+            while (right > left && text[right-1] != ' ') {
+                stbtt_GetCodepointHMetrics(&font.info, text[right-1], &adv, &lsb);
+                kern = stbtt_GetCodepointKernAdvance(&font.info, text[right-1], text[right]);
+                test_ox -= roundf((adv + kern) * scale);
+                right--;
+            }
+            while (right > left && text[right-1] == ' ') {
+                stbtt_GetCodepointHMetrics(&font.info, text[right-1], &adv, &lsb);
+                kern = stbtt_GetCodepointKernAdvance(&font.info, text[right-1], text[right]);
+                test_ox -= roundf((adv + kern) * scale);
+                right--;
+            }
+        }
 
-        int y = ascent + c_y1;
+        ox = 0;
+        while (left < right) {
+            stbtt_GetCodepointHMetrics(&font.info, text[left], &adv, &lsb);
+            kern = stbtt_GetCodepointKernAdvance(&font.info, text[left], text[left+1]);
+            tot_adv = roundf((adv + kern) * scale);
 
-        int kern;
-        kern = stbtt_GetCodepointKernAdvance(&font.info, word[i], word[i+1]);
-        
-        f32 u1, v1, u2, v2;
-        const stbtt_packedchar b = font.packedChars[word[i]-32];
-        u1 = b.x0 / 512.0f;
-        v1 = b.y0 / 512.0f;
-        u2 = b.x1 / 512.0f;
-        v2 = b.y1 / 512.0f;
+            stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
 
-        x1 = 2.0f * (f32)(comp->x + x + c_x1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
-        y1 = 2.0f * (f32)(comp->y - c_y2 - window.resolution.y / 2) / window.resolution.y;
-        x2 = x1 + 2.0f * (f32)(c_x2 - c_x1) / window.resolution.x;
-        y2 = y1 + 2.0f * (f32)(c_y2 - c_y1) / window.resolution.y;
+            x1 = 2.0f * (f32)(comp->x + ox + a1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
+            y1 = 2.0f * (f32)(comp->y + comp->h - oy - ascent - b2 - window.resolution.y / 2) / window.resolution.y;
+            x2 = x1 + 2.0f * (f32)(a2 - a1) / window.resolution.x;
+            y2 = y1 + 2.0f * (f32)(b2 - b1) / window.resolution.y;
 
-        x += roundf((adv + kern) * scale);
+            b = font.packedChars[text[left]-CHAR_OFFSET];
+            u1 = (f32)b.x0 / BITMAP_WIDTH;
+            v1 = (f32)b.y0 / BITMAP_HEIGHT;
+            u2 = (f32)b.x1 / BITMAP_WIDTH;
+            v2 = (f32)b.y1 / BITMAP_HEIGHT;
 
-        idx = gui.vbo_length / FLOAT_PER_VERTEX;
-        A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-        A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-        A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-        A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-        B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+            idx = gui.vbo_length / FLOAT_PER_VERTEX;
+
+            A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+            A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+            A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+            A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+            B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+
+            ox += tot_adv;
+            left++;
+        }
+
+        oy += ascent - descent + line_gap;
     }
 }
 
