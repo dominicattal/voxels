@@ -29,6 +29,7 @@ void gui_init(void)
 
     Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
     char* text = "the quick brown fox jumped over the lazy dog? THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG!";
+    text = "ASDFASDFASDFASDFASDFASDFASDFASDFASDFASDF";
     text_box->text = malloc((strlen(text) + 1) * sizeof(char));
     strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
@@ -96,7 +97,7 @@ static void update_data_text(Component* comp)
     i32 line_gap;           // gap between lines
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
     i32 tot_adv;            // advance after kerning
-    i32 left, right;        // left and right potiners in word
+    i32 left, right, mid;   // pointers for word
     i32 idx, length;
     char* text;
     stbtt_packedchar b;
@@ -112,6 +113,7 @@ static void update_data_text(Component* comp)
     resize_gui_buffers(length);
 
     while (right < length) {
+
         while (right < length && text[right] == ' ')
             right++;
 
@@ -124,28 +126,25 @@ static void update_data_text(Component* comp)
             right++;
         }
 
+        mid = right;
         if (test_ox > comp->w) {
-            while (right > left && text[right-1] != ' ') {
-                stbtt_GetCodepointHMetrics(&font.info, text[right-1], &adv, &lsb);
-                kern = stbtt_GetCodepointKernAdvance(&font.info, text[right-1], text[right]);
-                test_ox -= roundf((adv + kern) * scale);
-                right--;
-            }
-            while (right > left && text[right-1] == ' ') {
-                stbtt_GetCodepointHMetrics(&font.info, text[right-1], &adv, &lsb);
-                kern = stbtt_GetCodepointKernAdvance(&font.info, text[right-1], text[right]);
-                test_ox -= roundf((adv + kern) * scale);
-                right--;
-            }
+            while (mid > left && text[mid-1] != ' ')
+                mid--;
+            while (mid > left && text[mid-1] == ' ')
+                mid--;
         }
+
+        if (mid == left)
+            right -= 1;
+        else
+            right = mid;
 
         ox = 0;
         while (left < right) {
             stbtt_GetCodepointHMetrics(&font.info, text[left], &adv, &lsb);
+            stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
             kern = stbtt_GetCodepointKernAdvance(&font.info, text[left], text[left+1]);
             tot_adv = roundf((adv + kern) * scale);
-
-            stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
 
             x1 = 2.0f * (f32)(comp->x + ox + a1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
             y1 = 2.0f * (f32)(comp->y + comp->h - oy - ascent - b2 - window.resolution.y / 2) / window.resolution.y;
