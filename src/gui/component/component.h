@@ -14,11 +14,6 @@
 
 typedef struct Component Component;
 
-typedef enum CompID {
-    COMP_DEFAULT = 0,
-    COMP_TEXTBOX = 1
-} CompID;
-
 typedef struct Component {
     u8 id;
     u8 r, g, b, a;
@@ -32,10 +27,20 @@ typedef struct Component {
     };
 } Component;
 
+#define NUM_COMPONENTS 3
+
+typedef enum CompID {
+    COMP_DEFAULT = 0,
+    COMP_TEXTBOX = 1,
+} CompID;
+
+void comp_init(void);
 Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id);
 void comp_attach(Component* parent, Component* child);
 void comp_detach(Component* parent, Component* child);
 void comp_destroy(Component* comp);
 void comp_detach_and_destroy(Component* parent, Component* child);
+
+void comp_set_text(Component* comp, const char* text);
 
 #endif

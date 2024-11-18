@@ -38,3 +38,18 @@ void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
     glViewport(0, 0, window.width, window.height);
     gui_update();
 }
+
+void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
+{
+    gui_mouse_button_callback(button, action);
+}
+
+void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)
+{
+    gui_key_callback(key, scancode, action, mods);
+}
+
+void cursor_pos_callback(GLFWwindow* handle, double xpos, double ypos)
+{
+    gui_cursor_callback((i32)xpos, (i32)ypos);
+}

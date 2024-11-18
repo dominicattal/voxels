@@ -8,9 +8,9 @@ Window window;
 
 static void error_callback();
 extern void framebuffer_size_callback();
-static void mouse_button_callback() {}
-static void key_callback() {}
-static void cursor_pos_callback() {}
+extern void mouse_button_callback();
+extern void key_callback();
+extern void cursor_pos_callback();
 
 void window_init(void)
 {
@@ -49,7 +49,4 @@ void window_destroy(void) { glfwTerminate(); };
 bool window_mouse_button_pressed(GLenum button) { return glfwGetMouseButton(window.handle, button) == GLFW_PRESS; }
 bool window_key_pressed(GLenum key) { return glfwGetKey(window.handle, key) == GLFW_PRESS; }
 
-void error_callback(int x, const char *message)
-{
-    fprintf(stderr, "%d\n%s\n", x, message);
-}
+void error_callback(int x, const char *message) { fprintf(stderr, "%d\n%s\n", x, message); }

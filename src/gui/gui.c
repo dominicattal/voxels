@@ -15,6 +15,7 @@ static void update_data(void);
 
 void gui_init(void)
 {
+    comp_init();
     font_init();
 
     gui.vbo_max_length = gui.ebo_max_length = 0;
@@ -23,19 +24,20 @@ void gui_init(void)
     gui.ebo_buffer = malloc(0);
 
     gui.root = comp_create(0, 0, window.resolution.x, window.resolution.y, COMP_DEFAULT);
-    gui.root->r = 0xFF;
-    gui.root->b = 0xF0;
+    gui.root->r = 200;
+    gui.root->b = 150;
     gui.root->a = 50;
 
-    Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
-    char* text = "The quick brown fox jumped over the lazy dog. THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG";
-    text_box->text = malloc((strlen(text) + 1) * sizeof(char));
-    strncpy(text_box->text, text, strlen(text) + 1);
-    text_box->g = 255;
-    text_box->a = 30;
-    text_box->alignment = ALIGN_LEFT;
-    text_box->alignment_y = ALIGN_TOP;
-    comp_attach(gui.root, text_box);
+    Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
+    comp_set_text(click_me, "Click Me!");
+    click_me->g = 255;
+    click_me->a = 30;
+    click_me->alignment = ALIGN_CENTER;
+    click_me->alignment_y = ALIGN_CENTER;
+    comp_attach(gui.root, click_me);
+
+    Component* random_color = comp_create(150, 150, 250, 250, COMP_DEFAULT);
+    comp_attach(gui.root, random_color);
 }
 
 void gui_update(void)
@@ -50,6 +52,21 @@ void gui_destroy(void)
     comp_destroy(gui.root);
     free(gui.vbo_buffer);
     free(gui.ebo_buffer);
+}
+
+void gui_mouse_button_callback()
+{
+
+}
+
+void gui_key_callback() 
+{
+
+}
+
+void gui_cursor_callback() 
+{
+    
 }
 
 /* ------------------------------ */
@@ -119,7 +136,6 @@ static void update_data_text(Component* comp)
     oy = ascent;
     resize_gui_buffers(length);
     vbo_idx = gui.vbo_length;
-    printf("%d, %d, %d\n", ascent, descent, line_gap);
 
     while (right < length) {
 
@@ -236,6 +252,7 @@ static void update_data_helper(Component* comp)
     x2 = x1 + 2.0f * (f32)comp->w / window.resolution.x;
     y2 = y1 + 2.0f * (f32)comp->h / window.resolution.y;
     r = comp->r / 255.0f, g = comp->g / 255.0f, b = comp->b / 255.0f, a = comp->a / 255.0f;
+    //printf("%d, %d, %d, %d\n", x1, y1, x2, y2);
 
     A = x1, A = y1, A = 0.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
     A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
