@@ -25,8 +25,8 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
     comp_set_color(comp, 0, 0, 0, 255);
     comp_set_id(comp, id);
     if (id == COMP_TEXTBOX) {
-        //comp_set_halign(comp, ALIGN_LEFT);
-        //comp_set_valign(comp, ALIGN_TOP);
+        comp_set_halign(comp, ALIGN_LEFT);
+        comp_set_valign(comp, ALIGN_TOP);
         comp->text = NULL;
     } else {
         comp->children = malloc(0);
@@ -100,11 +100,12 @@ void comp_set_text(Component* comp, const char* text)
 }
 
 // --------------------------------- 
-// info1            | info2
-//  8 - id          | 24 - w, h
-// 32 - r, g, b, a  |  8 - num_children
-// 24 - x, y        |  2 - halign
-//                  |  2 - valign 
+// info1            | info2 (same)  | info2 (text)      | info2 (ele)
+//  8 - id          | 24 - w, h     | 2 - halign        | 8 - num_children
+// 32 - r, g, b, a  |               | 2 - valign        | 1 - update_children
+// 24 - x, y        |               | 8 - font_size     | 1 - hoverable
+//                  |               | 8 - font          | 1 - clickable
+//                  |               |                   | 1 - update
 // ---------------------------------
 
 #define ID_SHIFT    0
@@ -156,6 +157,12 @@ void comp_set_b(Component* comp, u8 b) {
 }
 void comp_set_a(Component* comp, u8 a) {
     comp->info1 = (comp->info1 & GMASK(A_BITS, A_SHIFT)) | ((u64)(a & SMASK(A_BITS)) << A_SHIFT);
+}
+void comp_set_bbox(Component* comp, i32 x, i32 y, i32 w, i32 h) {
+    comp_set_x(comp, x);
+    comp_set_y(comp, y);
+    comp_set_w(comp, w);
+    comp_set_h(comp, h);
 }
 void comp_set_position(Component* comp, i32 x, i32 y) {
     comp_set_x(comp, x);
@@ -211,6 +218,12 @@ void comp_get_b(Component* comp, u8* b) {
 }
 void comp_get_a(Component* comp, u8* a) {
     *a = (comp->info1 >> A_SHIFT) & SMASK(A_BITS);
+}
+void comp_get_bbox(Component* comp, i32* x, i32* y, i32* w, i32* h) {
+    comp_get_x(comp, x);
+    comp_get_y(comp, y);
+    comp_get_w(comp, w);
+    comp_get_h(comp, h);
 }
 void comp_get_position(Component* comp, i32* x, i32* y) {
     comp_get_x(comp, x);

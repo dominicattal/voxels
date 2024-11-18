@@ -13,7 +13,7 @@ void font_init(void)
 
     font.bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
 
-    FILE* font_file = fopen("assets/Minecraft.ttf", "rb");
+    FILE* font_file = fopen("assets/love.ttf", "rb");
     fseek(font_file, 0, SEEK_END);
     size = ftell(font_file);
     fseek(font_file, 0, SEEK_SET);

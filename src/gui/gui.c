@@ -12,6 +12,7 @@ extern Font font;
 
 static void update_components(void);
 static void update_data(void);
+static int cursor_in_bounds();
 
 void gui_init(void)
 {
@@ -66,19 +67,38 @@ void gui_destroy(void)
     free(gui.ebo_buffer);
 }
 
-void gui_mouse_button_callback()
+void gui_mouse_button_callback(i32 button, i32 action)
 {
 
 }
 
-void gui_key_callback() 
+void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods) 
 {
 
 }
 
-void gui_cursor_callback() 
+void gui_cursor_callback_helper(Component* comp, i32 xpos, i32 ypos)
 {
+    CompID id;
+    i32 num_children;
+    i32 x, y, w, h;
+    comp_get_id(comp, &id);
+    comp_get_bbox(comp, &x, &y, &w, &h);
     
+    if (cursor_in_bounds(xpos, ypos, x, y, w, h))
+        printf("A");
+
+    if (id == COMP_TEXTBOX)
+        return;
+
+    comp_get_num_children(comp, &num_children);
+    for (i32 i = 0; i < num_children; i++)
+        gui_cursor_callback_helper(comp->children[i], xpos, ypos);
+}
+
+void gui_cursor_callback(i32 xpos, i32 ypos) 
+{
+    gui_cursor_callback_helper(gui.root, xpos, ypos);
 }
 
 /* ------------------------------ */
@@ -312,4 +332,9 @@ static void update_data(void)
         gui.max_length_changed = FALSE;
     }
     renderer_update(VAO_GUI, 0, gui.vbo_length, gui.vbo_buffer, 0, gui.ebo_length, gui.ebo_buffer);
+}
+
+static int cursor_in_bounds(i32 xpos, i32 ypos, i32 x, i32 y, i32 w, i32 h)
+{
+    return xpos >= x && xpos <= x + w && ypos >= y && ypos <= y + h;
 }
