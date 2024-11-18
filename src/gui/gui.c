@@ -29,11 +29,11 @@ void gui_init(void)
 
     Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
     char* text = "the quick brown fox jumped over the lazy dog? THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG!";
-    text = "ASDFASDFASDFASDFASDFASDFASDFASDFASDFASDF";
     text_box->text = malloc((strlen(text) + 1) * sizeof(char));
     strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
     text_box->a = 30;
+    text_box->alignment = ALIGN_JUSTIFY;
     comp_attach(gui.root, text_box);
 }
 
@@ -96,8 +96,8 @@ static void update_data_text(Component* comp)
     i32 ascent, descent;    // highest and lowest glyph offsets
     i32 line_gap;           // gap between lines
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
-    i32 tot_adv;            // advance after kerning
     i32 left, right, mid;   // pointers for word
+    i32 num_spaces;         // count whitespace for justify
     i32 idx, length;
     char* text;
     stbtt_packedchar b;
@@ -119,32 +119,53 @@ static void update_data_text(Component* comp)
 
         left = right;
         test_ox = 0;
+        num_spaces = 0;
         while (right < length && text[right] != '\n' && test_ox <= comp->w) {
             stbtt_GetCodepointHMetrics(&font.info, text[right], &adv, &lsb);
             kern = stbtt_GetCodepointKernAdvance(&font.info, text[right], text[right+1]);
             test_ox += roundf((adv + kern) * scale);
+            num_spaces += text[right] == ' ';
             right++;
         }
 
         mid = right;
         if (test_ox > comp->w) {
-            while (mid > left && text[mid-1] != ' ')
+            while (mid > left && text[mid-1] != ' ') {
+                stbtt_GetCodepointHMetrics(&font.info, text[mid-1], &adv, &lsb);
+                kern = stbtt_GetCodepointKernAdvance(&font.info, text[mid-1], text[mid]);
+                test_ox -= roundf((adv + kern) * scale);
                 mid--;
-            while (mid > left && text[mid-1] == ' ')
+            }
+            while (mid > left && text[mid-1] == ' ') {
+                stbtt_GetCodepointHMetrics(&font.info, text[mid-1], &adv, &lsb);
+                kern = stbtt_GetCodepointKernAdvance(&font.info, text[mid-1], text[mid]);
+                test_ox -= roundf((adv + kern) * scale);
+                num_spaces -= text[mid-1] == ' ';
                 mid--;
+            }
         }
 
-        if (mid == left)
-            right -= 1;
-        else
+        if (mid == left) {
+            test_ox = comp->w;
+            right--;
+        }
+        else {
             right = mid;
+        }
 
+        if (left == right)
+            right++;
+        
         ox = 0;
+        if (comp->alignment == ALIGN_RIGHT)
+            ox = comp->w - test_ox;
+        else if (comp->alignment == ALIGN_CENTER)
+            ox = (comp->w - test_ox) / 2;
+        
         while (left < right) {
             stbtt_GetCodepointHMetrics(&font.info, text[left], &adv, &lsb);
             stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
             kern = stbtt_GetCodepointKernAdvance(&font.info, text[left], text[left+1]);
-            tot_adv = roundf((adv + kern) * scale);
 
             x1 = 2.0f * (f32)(comp->x + ox + a1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
             y1 = 2.0f * (f32)(comp->y + comp->h - oy - ascent - b2 - window.resolution.y / 2) / window.resolution.y;
@@ -159,13 +180,18 @@ static void update_data_text(Component* comp)
 
             idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
-            A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-            A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-            A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-            A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-            B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+            if (text[left] != ' ') {
+                A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+                A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+                A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
+                A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+                B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+            }   
 
-            ox += tot_adv;
+            ox += roundf((adv + kern) * scale);
+            if (comp->alignment == ALIGN_JUSTIFY && text[left] == ' ')
+                ox += (comp->w - test_ox) / num_spaces;
+
             left++;
         }
 

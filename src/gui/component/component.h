@@ -5,6 +5,11 @@
 
 #define MAX_NUM_CHILDREN  1000
 
+#define ALIGN_LEFT    0
+#define ALIGN_RIGHT   1
+#define ALIGN_CENTER  2
+#define ALIGN_JUSTIFY 3
+
 typedef struct Component Component;
 
 typedef enum CompID {
@@ -17,6 +22,7 @@ typedef struct Component {
     u8 r, g, b, a;
     i16 x, y, w, h;
     u16 num_children;
+    u8 alignment;
     union {
         char* text;
         Component** children;
