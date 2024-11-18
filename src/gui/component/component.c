@@ -12,6 +12,7 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
     comp->num_children = 0;
     comp->children = malloc(0);
     comp->alignment = ALIGN_LEFT;
+    comp->alignment_y = ALIGN_TOP;
     return comp;
 }
 

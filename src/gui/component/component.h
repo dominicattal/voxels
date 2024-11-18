@@ -7,6 +7,8 @@
 
 #define ALIGN_LEFT    0
 #define ALIGN_RIGHT   1
+#define ALIGN_TOP     0
+#define ALIGN_BOTTOM  1
 #define ALIGN_CENTER  2
 #define ALIGN_JUSTIFY 3
 
@@ -23,6 +25,7 @@ typedef struct Component {
     i16 x, y, w, h;
     u16 num_children;
     u8 alignment;
+    u8 alignment_y;
     union {
         char* text;
         Component** children;

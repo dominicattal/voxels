@@ -28,12 +28,13 @@ void gui_init(void)
     gui.root->a = 50;
 
     Component* text_box = comp_create(50, 50, 300, 300, COMP_TEXTBOX);
-    char* text = "the quick brown fox jumped over the lazy dog? THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG!";
+    char* text = "The quick brown fox jumped over the lazy dog. THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG";
     text_box->text = malloc((strlen(text) + 1) * sizeof(char));
     strncpy(text_box->text, text, strlen(text) + 1);
     text_box->g = 255;
     text_box->a = 30;
-    text_box->alignment = ALIGN_JUSTIFY;
+    text_box->alignment = ALIGN_LEFT;
+    text_box->alignment_y = ALIGN_TOP;
     comp_attach(gui.root, text_box);
 }
 
@@ -92,25 +93,33 @@ static void update_data_text(Component* comp)
     f32 u1, v1, u2, v2;     // bitmap coordinates
     i32 a1, b1, a2, b2;     // glyph bounding box
     i32 ox, oy, test_ox;    // glyph origin
+    i32 x, y, w, h;         // pixel coordinates
     f32 scale;              // pixel scaling for font size
     i32 ascent, descent;    // highest and lowest glyph offsets
     i32 line_gap;           // gap between lines
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
     i32 left, right, mid;   // pointers for word
-    i32 num_spaces;         // count whitespace for justify
-    i32 idx, length;
-    char* text;
-    stbtt_packedchar b;
+    i32 num_spaces;         // count whitespace for horizontal alignment
+    f32 dy;                 // change in y for vertical alignment
+    i32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
+    i32 length;             // index in text, length of text
+    char* text;             // text, equal to comp->text
+    stbtt_packedchar b;     // information for each char
     
     scale = stbtt_ScaleForPixelHeight(&font.info, 32);
     stbtt_GetFontVMetrics(&font.info, &ascent, &descent, &line_gap);
     ascent = roundf(ascent * scale);
     descent = roundf(descent * scale);
+    line_gap = roundf(line_gap * scale);
     text = comp->text;
     length = strlen(text);
 
-    left = right = ox = oy = 0;
+    left = right = 0;
+    ox = 0;
+    oy = ascent;
     resize_gui_buffers(length);
+    vbo_idx = gui.vbo_length;
+    printf("%d, %d, %d\n", ascent, descent, line_gap);
 
     while (right < length) {
 
@@ -167,10 +176,15 @@ static void update_data_text(Component* comp)
             stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
             kern = stbtt_GetCodepointKernAdvance(&font.info, text[left], text[left+1]);
 
-            x1 = 2.0f * (f32)(comp->x + ox + a1 + lsb * scale - window.resolution.x / 2) / window.resolution.x;
-            y1 = 2.0f * (f32)(comp->y + comp->h - oy - ascent - b2 - window.resolution.y / 2) / window.resolution.y;
-            x2 = x1 + 2.0f * (f32)(a2 - a1) / window.resolution.x;
-            y2 = y1 + 2.0f * (f32)(b2 - b1) / window.resolution.y;
+            x = ox + a1 + lsb * scale;
+            y = comp->h - oy - b2;
+            w = a2 - a1;
+            h = b2 - b1;
+
+            x1 = 2.0f * (comp->x + x - window.resolution.x / 2) / window.resolution.x;
+            y1 = 2.0f * (comp->y + y - window.resolution.y / 2) / window.resolution.y;
+            x2 = x1 + 2.0f * w / window.resolution.x;
+            y2 = y1 + 2.0f * h / window.resolution.y;
 
             b = font.packedChars[text[left]-CHAR_OFFSET];
             u1 = (f32)b.x0 / BITMAP_WIDTH;
@@ -178,14 +192,15 @@ static void update_data_text(Component* comp)
             u2 = (f32)b.x1 / BITMAP_WIDTH;
             v2 = (f32)b.y1 / BITMAP_HEIGHT;
 
-            idx = gui.vbo_length / FLOAT_PER_VERTEX;
+            ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
             if (text[left] != ' ') {
                 A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
                 A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
                 A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
                 A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-                B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+                B = ebo_idx, B = ebo_idx + 1, B = ebo_idx + 2, 
+                B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 3;
             }   
 
             ox += roundf((adv + kern) * scale);
@@ -196,6 +211,17 @@ static void update_data_text(Component* comp)
         }
 
         oy += ascent - descent + line_gap;
+    }
+
+    if (comp->alignment_y == ALIGN_TOP)
+        return;
+
+    oy -= ascent - descent + line_gap;
+    dy = ((comp->alignment_y == ALIGN_BOTTOM) + 1) * (f32)(comp->h - oy) / window.resolution.y;
+
+    while (vbo_idx < gui.vbo_length) {
+        gui.vbo_buffer[vbo_idx + 1] -= dy;
+        vbo_idx += FLOAT_PER_VERTEX;
     }
 }
 
