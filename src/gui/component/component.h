@@ -21,8 +21,8 @@ typedef struct Component {
     u64 info1;
     u64 info2;
     union {
-        char* text;
         Component** children;
+        char* text;
     };
 } Component;
 

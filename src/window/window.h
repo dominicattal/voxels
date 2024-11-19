@@ -7,12 +7,15 @@
 
 typedef struct {
     GLFWwindow* handle;
-    GLFWcursor* cursor;
     i32 width, height;
     f32 aspect_ratio;
     struct {
         i32 x, y;
     } resolution;
+    struct {
+        GLFWcursor* handle;
+        f64 x, y;
+    } cursor;
 } Window;
 
 extern Window window;

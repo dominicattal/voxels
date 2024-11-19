@@ -34,6 +34,7 @@ void gui_init(void)
     Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
     comp_set_color(click_me, 0, 255, 0, 150);
     comp_set_align(click_me, ALIGN_CENTER, ALIGN_CENTER);
+    comp_set_clickable(click_me, TRUE);
 
     comp_set_text(click_me, "Click Me!");
     comp_set_hoverable(click_me, TRUE);
@@ -60,9 +61,21 @@ void gui_destroy(void)
     free(gui.ebo_buffer);
 }
 
+void gui_mouse_button_callback_helper(Component* comp, i32 button, i32 action)
+{
+    i32 x, y, w, h;
+    comp_get_bbox(comp, &x, &y, &w, &h);
+
+    if (comp_is_clickable(comp) && cursor_in_bounds(x, y, w, h))
+        comp_click(comp, button, action);
+
+    for (i32 i = 0; i < comp_num_children(comp); i++)
+        gui_mouse_button_callback_helper(comp->children[i], button, action);
+}
+
 void gui_mouse_button_callback(i32 button, i32 action)
 {
-
+    gui_mouse_button_callback_helper(gui.root, button, action);
 }
 
 void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods) 
@@ -70,21 +83,21 @@ void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods)
 
 }
 
-void gui_cursor_callback_helper(Component* comp, i32 xpos, i32 ypos)
+void gui_cursor_callback_helper(Component* comp)
 {
     i32 x, y, w, h;
     comp_get_bbox(comp, &x, &y, &w, &h);
 
     if (comp_is_hoverable(comp))
-        comp_hover(comp, cursor_in_bounds(xpos, ypos, x, y, w, h));
+        comp_hover(comp, cursor_in_bounds(x, y, w, h));
 
     for (i32 i = 0; i < comp_num_children(comp); i++)
-        gui_cursor_callback_helper(comp->children[i], xpos, ypos);
+        gui_cursor_callback_helper(comp->children[i]);
 }
 
-void gui_cursor_callback(i32 xpos, i32 ypos) 
+void gui_cursor_callback(void) 
 {
-    gui_cursor_callback_helper(gui.root, xpos, window.height - ypos);
+    gui_cursor_callback_helper(gui.root);
 }
 
 /* ------------------------------ */
@@ -314,7 +327,10 @@ static void update_data(void)
     renderer_update(VAO_GUI, 0, gui.vbo_length, gui.vbo_buffer, 0, gui.ebo_length, gui.ebo_buffer);
 }
 
-static int cursor_in_bounds(i32 xpos, i32 ypos, i32 x, i32 y, i32 w, i32 h)
+static int cursor_in_bounds(i32 x, i32 y, i32 w, i32 h)
 {
-    return xpos >= x && xpos <= x + w && ypos >= y && ypos <= y + h;
+    return window.cursor.x >= x 
+        && window.cursor.x <= x + w 
+        && window.height - window.cursor.y >= y 
+        && window.height - window.cursor.y <= y + h;
 }

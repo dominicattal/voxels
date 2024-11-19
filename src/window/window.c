@@ -35,6 +35,7 @@ void window_init(void)
     glfwSetErrorCallback(error_callback);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glViewport(0, 0, window.width, window.height);
+    glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
 }
 
 void window_update(void)

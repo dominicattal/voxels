@@ -51,5 +51,6 @@ void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mod
 
 void cursor_pos_callback(GLFWwindow* handle, double xpos, double ypos)
 {
-    gui_cursor_callback((i32)xpos, (i32)ypos);
+    glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
+    gui_cursor_callback();
 }
