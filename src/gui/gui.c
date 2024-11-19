@@ -18,7 +18,6 @@ void gui_init(void)
 {
     comp_init();
     font_init();
-    printf("%lld\n", sizeof(Component));
 
     gui.vbo_max_length = gui.ebo_max_length = 0;
     gui.vbo_length = gui.ebo_length = 0;
@@ -27,29 +26,23 @@ void gui_init(void)
 
     gui.root = comp_create(0, 0, window.resolution.x, window.resolution.y, COMP_DEFAULT);
     comp_set_color(gui.root, 255, 255, 0, 30);
+    comp_set_hoverable(gui.root, FALSE);
 
     i32 num_children;
     comp_get_num_children(gui.root, &num_children);
 
-    i32 x, y, w, h;
-    u8 r, g, b, a;
-    u8 ha, va;
-    CompID id;
     Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
     comp_set_color(click_me, 0, 255, 0, 150);
     comp_set_align(click_me, ALIGN_CENTER, ALIGN_CENTER);
 
-    comp_get_id(click_me, &id);
-    comp_get_position(click_me, &x, &y);
-    comp_get_size(click_me, &w, &y);
-    comp_get_color(click_me, &r, &g, &b, &a);
-    comp_get_align(click_me, &ha, &va);
-
     comp_set_text(click_me, "Click Me!");
+    comp_set_hoverable(click_me, TRUE);
     comp_attach(gui.root, click_me);
     comp_get_num_children(gui.root, &num_children);
 
-    Component* random_color = comp_create(150, 150, 250, 250, COMP_DEFAULT);
+    Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
+    comp_set_color(random_color, 255, 0, 255, 255);
+    comp_set_text(random_color, "The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.");
     comp_attach(gui.root, random_color);
 }
 
@@ -79,26 +72,19 @@ void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods)
 
 void gui_cursor_callback_helper(Component* comp, i32 xpos, i32 ypos)
 {
-    CompID id;
-    i32 num_children;
     i32 x, y, w, h;
-    comp_get_id(comp, &id);
     comp_get_bbox(comp, &x, &y, &w, &h);
-    
-    if (cursor_in_bounds(xpos, ypos, x, y, w, h))
-        printf("A");
 
-    if (id == COMP_TEXTBOX)
-        return;
+    if (comp_is_hoverable(comp))
+        comp_hover(comp, cursor_in_bounds(xpos, ypos, x, y, w, h));
 
-    comp_get_num_children(comp, &num_children);
-    for (i32 i = 0; i < num_children; i++)
+    for (i32 i = 0; i < comp_num_children(comp); i++)
         gui_cursor_callback_helper(comp->children[i], xpos, ypos);
 }
 
 void gui_cursor_callback(i32 xpos, i32 ypos) 
 {
-    gui_cursor_callback_helper(gui.root, xpos, ypos);
+    gui_cursor_callback_helper(gui.root, xpos, window.height - ypos);
 }
 
 /* ------------------------------ */
@@ -238,7 +224,7 @@ static void update_data_text(Component* comp)
             stbtt_GetCodepointBitmapBox(&font.info, text[left], scale, scale, &a1, &b1, &a2, &b2);
             kern = stbtt_GetCodepointKernAdvance(&font.info, text[left], text[left+1]);
 
-            x = ox + a1 + lsb * scale;
+            x = ox + lsb * scale;
             y = ch - oy - b2;
             w = a2 - a1;
             h = b2 - b1;
@@ -289,13 +275,10 @@ static void update_data_text(Component* comp)
 
 static void update_data_helper(Component* comp)
 {
-    CompID id;
-    i32 num_children;
     i32 cx, cy, cw, ch;
     u8  cr, cg, cb, ca;
     f32 x1, y1, x2, y2, r, g, b, a;
     u32 idx = gui.vbo_length / FLOAT_PER_VERTEX;
-    comp_get_id(comp, &id);
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);
     comp_get_color(comp, &cr, &cg, &cb, &ca);
@@ -313,13 +296,10 @@ static void update_data_helper(Component* comp)
     A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 
-    if (id == COMP_TEXTBOX) {
+    if (comp_id(comp) == COMP_TEXTBOX)
         update_data_text(comp);
-        return;
-    }
 
-    comp_get_num_children(comp, &num_children);
-    for (i32 i = 0; i < num_children; i++)
+    for (i32 i = 0; i < comp_num_children(comp); i++)
         update_data_helper(comp->children[i]);
 }
 

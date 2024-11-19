@@ -6,10 +6,13 @@
 
 #define NUM_COMPONENT_FUNCS 1
 
+#define COMP_FUNC_INIT  0
+#define COMP_FUNC_HOVER 1
+#define COMP_FUNC_CLICK 2
+
 static void (*component_functions[NUM_COMPONENTS][NUM_COMPONENT_FUNCS])();
 
 static void initialize_functions(void);
-static void initialize_comp(Component* comp);
 
 void comp_init(void)
 {
@@ -20,18 +23,11 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
 {
     Component* comp = malloc(sizeof(Component));
     comp->info1 = comp->info2 = 0;
-    comp_set_position(comp, x, y);
-    comp_set_size(comp, w, h);
+    comp_set_bbox(comp, x, y, w, h);
     comp_set_color(comp, 0, 0, 0, 255);
     comp_set_id(comp, id);
-    if (id == COMP_TEXTBOX) {
-        comp_set_halign(comp, ALIGN_LEFT);
-        comp_set_valign(comp, ALIGN_TOP);
-        comp->text = NULL;
-    } else {
-        comp->children = malloc(0);
-    }
-    initialize_comp(comp);
+    comp->children = malloc(0);
+    component_functions[comp_id(comp)][COMP_FUNC_INIT](comp);
     return comp;
 }
 
@@ -61,17 +57,9 @@ void comp_detach(Component* parent, Component* child)
 
 void comp_destroy(Component* comp)
 {
-    CompID id;
-    comp_get_id(comp, &id);
-    if (id == COMP_TEXTBOX) {
-        free(comp->text);
-    } else {
-        i32 num_children;
-        comp_get_num_children(comp, &num_children);
-        for (int i = 0; i < num_children; i++)
-            comp_destroy(comp->children[i]);
-        free(comp->children);
-    }
+    for (int i = 0; i < comp_num_children(comp); i++)
+        comp_destroy(comp->children[i]);
+    free(comp->children);
     free(comp);
 }
 
@@ -99,17 +87,24 @@ void comp_set_text(Component* comp, const char* text)
     comp->text = copied_text;
 }
 
-// --------------------------------- 
+void comp_hover(Component* comp, bool status)
+{
+    component_functions[comp_id(comp)][COMP_FUNC_HOVER](comp, status);
+}
+
+// ---------------------------------------------------------------------------
 // info1            | info2 (same)  | info2 (text)      | info2 (ele)
-//  8 - id          | 24 - w, h     | 2 - halign        | 8 - num_children
-// 32 - r, g, b, a  |               | 2 - valign        | 1 - update_children
-// 24 - x, y        |               | 8 - font_size     | 1 - hoverable
-//                  |               | 8 - font          | 1 - clickable
-//                  |               |                   | 1 - update
-// ---------------------------------
+//  7 - id          | 24 - w, h     | 2 - halign        | 8 - num_children
+//  1 - is_text     |               | 2 - valign        | 1 - update_children
+// 32 - r, g, b, a  |               | 6 - font_size     | 1 - hoverable
+// 24 - x, y        |               | 4 - font          | 1 - hovered
+//                  |               |                   | 1 - 
+// ---------------------------------------------------------------------------
 
 #define ID_SHIFT    0
-#define ID_BITS     8
+#define ID_BITS     7
+#define IT_SHIFT    7
+#define IT_BITS     1
 #define R_SHIFT     8
 #define R_BITS      8
 #define G_SHIFT     16
@@ -133,12 +128,19 @@ void comp_set_text(Component* comp, const char* text)
 #define HA_BITS     2
 #define VA_SHIFT    26
 #define VA_BITS     2
+#define HV_SHIFT    40
+#define HV_BITS     1
+#define HD_SHIFT    41
+#define HD_BITS     1
 
-#define SMASK(BITS)         ((1<<(BITS+1))-1)
+#define SMASK(BITS)         ((1<<BITS)-1)
 #define GMASK(BITS, SHIFT)  ~((u64)SMASK(BITS)<<SHIFT)
 
 void comp_set_id(Component* comp, CompID id) {
     comp->info1 = (comp->info1 & GMASK(ID_BITS, ID_SHIFT)) | ((u64)(id & SMASK(ID_BITS)) << ID_SHIFT);
+}
+void comp_set_is_text(Component* comp, bool it) {
+    comp->info1 = (comp->info1 & GMASK(IT_BITS, IT_SHIFT)) | ((u64)(it & SMASK(IT_BITS)) << IT_SHIFT);
 }
 void comp_set_color(Component* comp, u8 r, u8 g, u8 b, u8 a) {
     comp_set_r(comp, r);
@@ -197,9 +199,18 @@ void comp_set_halign(Component* comp, u8 ha) {
 void comp_set_valign(Component* comp, u8 va) {
     comp->info2 = (comp->info2 & GMASK(VA_BITS, VA_SHIFT)) | ((u64)(va & SMASK(VA_BITS)) << VA_SHIFT);
 }
+void comp_set_hoverable(Component* comp, bool hv) {
+    comp->info2 = (comp->info2 & GMASK(HV_BITS, HV_SHIFT)) | ((u64)(hv & SMASK(HV_BITS)) << HV_SHIFT);
+}
+void comp_set_hovered(Component* comp, bool hd) {
+    comp->info2 = (comp->info2 & GMASK(HD_BITS, HD_SHIFT)) | ((u64)(hd & SMASK(HD_BITS)) << HD_SHIFT);
+}
 
 void comp_get_id(Component* comp, CompID* id) {
     *id = (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
+}
+void comp_get_is_text(Component* comp, bool* it) {
+    *it = (comp->info1 >> IT_SHIFT) & SMASK(IT_BITS);
 }
 void comp_get_color(Component* comp, u8* r, u8* g, u8* b, u8* a) {
     comp_get_r(comp, r);
@@ -258,32 +269,44 @@ void comp_get_halign(Component* comp, u8* ha) {
 void comp_get_valign(Component* comp, u8* va) {
     *va = (comp->info2 >> VA_SHIFT) & SMASK(VA_BITS);
 }
+void comp_get_hoverable(Component* comp, bool* hv) {
+    *hv = (comp->info2 >> HV_SHIFT) & SMASK(HV_BITS);
+}
+void comp_get_hovered(Component* comp, bool* hd) {
+    *hd = (comp->info2 >> HD_SHIFT) & SMASK(HD_BITS);
+}
 
-void print_bits(u64 x) {
-    for (i32 i = 0; i < 64; i++)
-        printf("%d", (x >> (63-i)) & 1);
-    puts("");
+CompID comp_id(Component* comp) {
+    return (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
+}
+i32 comp_num_children(Component* comp) {
+    if (comp_is_text(comp))
+        return 0;
+    return (comp->info2 >> NC_SHIFT) & SMASK(NC_BITS);
+}
+bool comp_is_text(Component* comp) {
+    return (comp->info1 >> IT_SHIFT) & SMASK(IT_BITS);
+}
+bool comp_is_hoverable(Component* comp) {
+    return (comp->info2 >> HV_SHIFT) & SMASK(HV_BITS);
+}
+bool comp_is_hovered(Component* comp) {
+    return (comp->info2 >> HD_SHIFT) & SMASK(HD_BITS);
 }
 
 /* --------------------------------- */
 
 #include "components/components.h"
 
-#define COMP_FUNC_INIT  0
-#define COMP_FUNC_HOVER 1
-#define COMP_FUNC_CLICK 2
+static void do_nothing() {}
 
 static void initialize_functions(void)
 {
     for (i32 i = 0; i < NUM_COMPONENTS; i++) 
         for (i32 j = 0; j < NUM_COMPONENT_FUNCS; j++)
-            component_functions[i][j] = NULL;
-}
-
-static void initialize_comp(Component* comp)
-{
-    CompID id;
-    comp_get_id(comp, &id);
-    if (component_functions[id][COMP_FUNC_INIT] != NULL)
-        component_functions[id][COMP_FUNC_INIT](comp);
+            component_functions[i][j] = do_nothing;
+    
+    component_functions[COMP_DEFAULT][COMP_FUNC_INIT] = comp_default_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT] = comp_textbox_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
 }

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include <glad.h>
+#include <stb_image_write.h>
 
 Font font;
 
@@ -13,7 +14,7 @@ void font_init(void)
 
     font.bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
 
-    FILE* font_file = fopen("assets/love.ttf", "rb");
+    FILE* font_file = fopen("assets/times.ttf", "rb");
     fseek(font_file, 0, SEEK_END);
     size = ftell(font_file);
     fseek(font_file, 0, SEEK_SET);
@@ -35,12 +36,14 @@ void font_init(void)
 
     stbtt_PackFontRanges(&font.spc, font.font_buffer, 0, &font.fontRange, 1);
     stbtt_PackEnd(&font.spc);
-    //free(font_buffer); DO NOT FREE THIS
 
     glGenTextures(1, &ftex);
     glBindTexture(GL_TEXTURE_2D, ftex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, font.bitmap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, font.bitmap, BITMAP_WIDTH);
+
 }
 
 void font_destroy(void)

@@ -4,10 +4,10 @@
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
-#define BITMAP_WIDTH 512
-#define BITMAP_HEIGHT 512
-#define CHAR_OFFSET 32
-#define NUM_CHARS   96
+#define BITMAP_WIDTH    512
+#define BITMAP_HEIGHT   512
+#define CHAR_OFFSET     32
+#define NUM_CHARS       96
 
 typedef struct {
     stbtt_fontinfo info;
