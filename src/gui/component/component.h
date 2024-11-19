@@ -41,6 +41,7 @@ void comp_destroy(Component* comp);
 void comp_detach_and_destroy(Component* parent, Component* child);
 void comp_set_text(Component* comp, const char* text);
 void comp_hover(Component* comp, bool status);
+void comp_click(Component* comp, i32 button, i32 action);
 
 /* Setters for packed info */
 void comp_set_id(Component* comp, CompID id);
@@ -58,6 +59,7 @@ void comp_set_halign(Component* comp, u8 ha);
 void comp_set_valign(Component* comp, u8 va);
 void comp_set_hoverable(Component* comp, bool hv);
 void comp_set_hovered(Component* comp, bool hd);
+void comp_set_clickable(Component* comp, bool cl);
 void comp_set_color(Component* comp, u8 r, u8 g, u8 b, u8 a);
 void comp_set_bbox(Component* comp, i32 x, i32 y, i32 w, i32 h);
 void comp_set_position(Component* comp, i32 x, i32 y);
@@ -80,6 +82,7 @@ void comp_get_halign(Component* comp, u8* ha);
 void comp_get_valign(Component* comp, u8* va);
 void comp_get_hoverable(Component* comp, bool* hv);
 void comp_get_hovered(Component* comp, bool* hd);
+void comp_get_clickable(Component* comp, bool* cl);
 void comp_get_color(Component* comp, u8* r, u8* g, u8* b, u8* a);
 void comp_get_bbox(Component* comp, i32* x, i32* y, i32* w, i32* h);
 void comp_get_position(Component* comp, i32* x, i32* y);
@@ -92,6 +95,7 @@ i32  comp_num_children(Component* comp);
 bool comp_is_text(Component* comp);
 bool comp_is_hoverable(Component* comp);
 bool comp_is_hovered(Component* comp);
+bool comp_is_clickable(Component* comp);
 
 void print_bits(u64 x);
 

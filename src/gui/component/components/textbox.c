@@ -1,4 +1,5 @@
 #include "components.h"
+#include <stdio.h>
 
 void comp_textbox_init(Component* comp)
 {
@@ -16,4 +17,9 @@ void comp_textbox_hover(Component* comp, bool status)
         comp_set_hovered(comp, TRUE);
         comp_set_color(comp, 0, 255, 255, 255);
     }
+}
+
+void comp_textbox_click(Component* comp, i32 buttion, i32 action)
+{
+    printf("A");
 }

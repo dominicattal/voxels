@@ -92,6 +92,11 @@ void comp_hover(Component* comp, bool status)
     component_functions[comp_id(comp)][COMP_FUNC_HOVER](comp, status);
 }
 
+void comp_click(Component* comp, i32 button, i32 action)
+{
+    component_functions[comp_id(comp)][COMP_FUNC_CLICK](comp, button, action);
+}
+
 // ---------------------------------------------------------------------------
 // info1            | info2 (same)  | info2 (text)      | info2 (ele)
 //  7 - id          | 24 - w, h     | 2 - halign        | 8 - num_children
@@ -132,6 +137,8 @@ void comp_hover(Component* comp, bool status)
 #define HV_BITS     1
 #define HD_SHIFT    41
 #define HD_BITS     1
+#define CL_SHIFT    42
+#define CL_BITS     1
 
 #define SMASK(BITS)         ((1<<BITS)-1)
 #define GMASK(BITS, SHIFT)  ~((u64)SMASK(BITS)<<SHIFT)
@@ -205,6 +212,9 @@ void comp_set_hoverable(Component* comp, bool hv) {
 void comp_set_hovered(Component* comp, bool hd) {
     comp->info2 = (comp->info2 & GMASK(HD_BITS, HD_SHIFT)) | ((u64)(hd & SMASK(HD_BITS)) << HD_SHIFT);
 }
+void comp_set_clickable(Component* comp, bool cl) {
+    comp->info2 = (comp->info2 & GMASK(CL_BITS, CL_SHIFT)) | ((u64)(cl & SMASK(CL_BITS)) << CL_SHIFT);
+}
 
 void comp_get_id(Component* comp, CompID* id) {
     *id = (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
@@ -275,6 +285,9 @@ void comp_get_hoverable(Component* comp, bool* hv) {
 void comp_get_hovered(Component* comp, bool* hd) {
     *hd = (comp->info2 >> HD_SHIFT) & SMASK(HD_BITS);
 }
+void comp_get_clickable(Component* comp, bool* cl) {
+    *cl = (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
+}
 
 CompID comp_id(Component* comp) {
     return (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
@@ -293,6 +306,9 @@ bool comp_is_hoverable(Component* comp) {
 bool comp_is_hovered(Component* comp) {
     return (comp->info2 >> HD_SHIFT) & SMASK(HD_BITS);
 }
+bool comp_is_clickable(Component* comp) {
+    return (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
+}
 
 /* --------------------------------- */
 
@@ -309,4 +325,5 @@ static void initialize_functions(void)
     component_functions[COMP_DEFAULT][COMP_FUNC_INIT] = comp_default_init;
     component_functions[COMP_TEXTBOX][COMP_FUNC_INIT] = comp_textbox_init;
     component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK] = comp_textbox_click;
 }
