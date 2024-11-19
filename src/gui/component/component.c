@@ -27,6 +27,7 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
     comp_set_color(comp, 0, 0, 0, 255);
     comp_set_id(comp, id);
     comp->children = malloc(0);
+    comp->data = NULL;
     component_functions[comp_id(comp)][COMP_FUNC_INIT](comp);
     return comp;
 }
@@ -60,6 +61,7 @@ void comp_destroy(Component* comp)
     for (int i = 0; i < comp_num_children(comp); i++)
         comp_destroy(comp->children[i]);
     free(comp->children);
+    free(comp->data);
     free(comp);
 }
 
@@ -311,8 +313,6 @@ bool comp_is_clickable(Component* comp) {
 }
 
 /* --------------------------------- */
-
-#include "components/components.h"
 
 static void do_nothing() {}
 

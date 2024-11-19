@@ -45,6 +45,8 @@ void gui_init(void)
     comp_set_color(random_color, 255, 0, 255, 255);
     comp_set_text(random_color, "The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.");
     comp_attach(gui.root, random_color);
+
+    comp_textbox_set_reference(click_me, random_color);
 }
 
 void gui_update(void)
