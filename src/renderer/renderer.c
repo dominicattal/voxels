@@ -15,11 +15,18 @@ void renderer_init(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    unsigned char pixels[4];
+    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 0;
+    renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
+    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
+    renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
+
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 
     renderer.ssbos[SSBO_TEXTURES] = ssbo_create(NUM_TEXTURES * sizeof(u64));
-    link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
     set_texture_ssbo();
+    
+    link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
 
     renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 9);
 
@@ -57,6 +64,8 @@ void renderer_destroy(void)
         ssbo_destroy(renderer.ssbos[i]);
     for (i = 0; i < NUM_VAOS; i++)
         vao_destroy(renderer.vaos[i]);
+    for (i = 0; i < NUM_TEXTURES; i++)
+        texture_destroy(renderer.textures[i]);
 }
 
 /* --------------------------------- */

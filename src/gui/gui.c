@@ -19,6 +19,8 @@ void gui_init(void)
     comp_init();
     font_init();
 
+    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, font.bitmap);
+
     gui.vbo_max_length = gui.ebo_max_length = 0;
     gui.vbo_length = gui.ebo_length = 0;
     gui.vbo_buffer = malloc(0);
@@ -258,10 +260,10 @@ static void update_data_text(Component* comp)
             ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
             if (text[left] != ' ') {
-                A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
-                A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-                A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = 1;
-                A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = 1;
+                A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
                 B = ebo_idx, B = ebo_idx + 1, B = ebo_idx + 2, 
                 B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 3;
             }   
@@ -305,10 +307,10 @@ static void update_data_helper(Component* comp)
     y2 = y1 + 2.0f * ch / window.resolution.y;
     r = cr / 255.0f, g = cg / 255.0f, b = cb / 255.0f, a = ca / 255.0f;
 
-    A = x1, A = y1, A = 0.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
-    A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
-    A = x2, A = y2, A = 1.0, A = 0.0, A = r, A = g, A = b, A = a, A = 0;
-    A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = 0;
+    A = x1, A = y1, A = 0.0, A = 1.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
+    A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
+    A = x2, A = y2, A = 1.0, A = 0.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
+    A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 
     if (comp_id(comp) == COMP_TEXTBOX)

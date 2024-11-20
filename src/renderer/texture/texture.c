@@ -11,6 +11,7 @@ Texture texture_create(const char* image_path)
         printf("Could not open %s\n", image_path);
         exit(1);
     }
+
     glCreateTextures(GL_TEXTURE_2D, 1, &texture.id);
     glTextureParameteri(texture.id, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(texture.id, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -25,12 +26,12 @@ Texture texture_create(const char* image_path)
     return texture;
 }
 
-Texture texture_create_pixels(i32 width, i32 height, const unsigned char* pixels)
+Texture texture_create_pixels(GLenum type, i32 width, i32 height, const unsigned char* pixels)
 {
     Texture texture;
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     texture.loaded = FALSE;
     texture_load(&texture);
