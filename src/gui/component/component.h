@@ -79,6 +79,7 @@ void comp_set_bbox(Component* comp, i32 x, i32 y, i32 w, i32 h);
 void comp_set_position(Component* comp, i32 x, i32 y);
 void comp_set_size(Component* comp, i32 w, i32 h);
 void comp_set_align(Component* comp, u8 ha, u8 va);
+void comp_set_tex(Component* comp, i32 tx);
 
 // Getters for packed info
 void comp_get_id(Component* comp, CompID* id);
@@ -102,6 +103,7 @@ void comp_get_bbox(Component* comp, i32* x, i32* y, i32* w, i32* h);
 void comp_get_position(Component* comp, i32* x, i32* y);
 void comp_get_size(Component* comp, i32* w, i32* h);
 void comp_get_align(Component* comp, u8* ha, u8* va);
+void comp_get_tex(Component* comp, i32* tx);
 
 // Second set of getters
 CompID comp_id(Component* comp);

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <glad.h>
 #include <stb_image_write.h>
+#include "../../renderer/renderer.h"
 
 Font font;
 
@@ -21,8 +22,6 @@ void font_init(void)
     font.font_buffer = malloc(size);
     fread(font.font_buffer, size, 1, font_file);
     fclose(font_file);
-
-    GLuint ftex;
     
     stbtt_InitFont(&font.info, font.font_buffer, 0);
 
@@ -37,10 +36,12 @@ void font_init(void)
     stbtt_PackFontRanges(&font.spc, font.font_buffer, 0, &font.fontRange, 1);
     stbtt_PackEnd(&font.spc);
 
+    /* GLuint ftex;
     glGenTextures(1, &ftex);
     glBindTexture(GL_TEXTURE_2D, ftex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, font.bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); */
+    renderer.textures[FONT_BITMAP] = texture_create_pixels(BITMAP_WIDTH, BITMAP_HEIGHT, font.bitmap);
 
     stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, font.bitmap, BITMAP_WIDTH);
 

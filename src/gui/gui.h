@@ -2,6 +2,7 @@
 #define GUI_H
 
 #include "../util.h"
+#include "../renderer/renderer.h"
 #include "component/component.h"
 #include "font/font.h"
 

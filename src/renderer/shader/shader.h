@@ -13,7 +13,7 @@ typedef struct {
 
 typedef enum {
     SHADER_DEFAULT = 0
-} ShaderIndex;
+} ShaderID;
 
 Shader shader_create(char* vs_path, char* fs_path);
 void shader_bind_uniform_block(Shader shader, u32 index, char* identifier);

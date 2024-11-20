@@ -127,18 +127,26 @@ void comp_click(Component* comp, i32 button, i32 action)
 #define W_BITS      12
 #define H_SHIFT     12
 #define H_BITS      12
-#define NC_SHIFT    24
+#define TX_SHIFT    24
+#define TX_BITS     16
+
+#define NC_SHIFT    40
 #define NC_BITS     8
-#define HA_SHIFT    24
-#define HA_BITS     2
-#define VA_SHIFT    26
-#define VA_BITS     2
-#define HV_SHIFT    40
+#define HV_SHIFT    48
 #define HV_BITS     1
-#define HD_SHIFT    41
+#define HD_SHIFT    49
 #define HD_BITS     1
-#define CL_SHIFT    42
+#define CL_SHIFT    50
 #define CL_BITS     1
+
+#define HA_SHIFT    40
+#define HA_BITS     2
+#define VA_SHIFT    42
+#define VA_BITS     2
+#define FS_SHIFT    44
+#define FS_BITS     6
+#define FT_SHIFT    50
+#define FT_BITS     4
 
 #define SMASK(BITS)         ((1<<BITS)-1)
 #define GMASK(BITS, SHIFT)  ~((u64)SMASK(BITS)<<SHIFT)
@@ -216,6 +224,9 @@ void comp_set_hovered(Component* comp, bool hd) {
 void comp_set_clickable(Component* comp, bool cl) {
     comp->info2 = (comp->info2 & GMASK(CL_BITS, CL_SHIFT)) | ((u64)(cl & SMASK(CL_BITS)) << CL_SHIFT);
 }
+void comp_set_tex(Component* comp, i32 tx) {
+    comp->info2 = (comp->info2 & GMASK(TX_BITS, TX_SHIFT)) | ((u64)(tx & SMASK(TX_BITS)) << TX_SHIFT);
+}
 
 // getters 1
 void comp_get_id(Component* comp, CompID* id) {
@@ -289,6 +300,9 @@ void comp_get_hovered(Component* comp, bool* hd) {
 }
 void comp_get_clickable(Component* comp, bool* cl) {
     *cl = (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
+}
+void comp_get_tex(Component* comp, i32* tx) {
+    *tx = (comp->info2 >> TX_SHIFT) & SMASK(TX_BITS);
 }
 
 // getters 2

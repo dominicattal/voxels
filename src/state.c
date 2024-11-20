@@ -8,8 +8,8 @@
 void state_init(void)
 {
     window_init();
-    renderer_init();
     gui_init();
+    renderer_init();
 }
 
 void state_loop(void)
