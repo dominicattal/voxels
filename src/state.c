@@ -34,7 +34,6 @@ void state_destroy(void)
 void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
 {
     glfwGetWindowSize(window.handle, &window.width, &window.height);
-    window.aspect_ratio = (f32)window.width / window.height;
     glViewport(0, 0, window.width, window.height);
     gui_update();
 }

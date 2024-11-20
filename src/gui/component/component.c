@@ -73,9 +73,7 @@ void comp_detach_and_destroy(Component* parent, Component* child)
 
 void comp_set_text(Component* comp, const char* text)
 {
-    CompID id;
-    comp_get_id(comp, &id);
-    assert(id == COMP_TEXTBOX);   
+    assert(comp_is_text(comp));   
     u32 length;
     char* copied_text;
     free(comp->text);
@@ -145,6 +143,7 @@ void comp_click(Component* comp, i32 button, i32 action)
 #define SMASK(BITS)         ((1<<BITS)-1)
 #define GMASK(BITS, SHIFT)  ~((u64)SMASK(BITS)<<SHIFT)
 
+// setters
 void comp_set_id(Component* comp, CompID id) {
     comp->info1 = (comp->info1 & GMASK(ID_BITS, ID_SHIFT)) | ((u64)(id & SMASK(ID_BITS)) << ID_SHIFT);
 }
@@ -218,6 +217,7 @@ void comp_set_clickable(Component* comp, bool cl) {
     comp->info2 = (comp->info2 & GMASK(CL_BITS, CL_SHIFT)) | ((u64)(cl & SMASK(CL_BITS)) << CL_SHIFT);
 }
 
+// getters 1
 void comp_get_id(Component* comp, CompID* id) {
     *id = (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
 }
@@ -291,6 +291,7 @@ void comp_get_clickable(Component* comp, bool* cl) {
     *cl = (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
 }
 
+// getters 2
 CompID comp_id(Component* comp) {
     return (comp->info1 >> ID_SHIFT) & SMASK(ID_BITS);
 }

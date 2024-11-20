@@ -15,13 +15,16 @@ INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
+DEPS = $(patsubst %.c, $(OBJ_DIR)/%.d, $(SRCS))
 
 all: $(OBJS)
 	@$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) $(LIBS) -o $(TARGET)
 
 $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(shell dirname $@)
-	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) -c $^ -o $@
+	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) $^ -c -o $@
+
+-include $(DEPS)
 
 clean:
 	rm -r $(OBJ_DIR) $(TARGET)

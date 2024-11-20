@@ -24,7 +24,6 @@ void window_init(void)
     window.resolution.y = DEFAULT_WINDOW_HEIGHT;
     glfwGetWindowSize(window.handle, &window.width, &window.height);
     //glfwSetWindowAspectRatio(window.handle, 16, 9);
-    window.aspect_ratio = (f32)window.width / window.height;
     
     glfwMakeContextCurrent(window.handle);
     glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);

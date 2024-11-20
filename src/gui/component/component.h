@@ -21,14 +21,14 @@ typedef enum CompID CompID;
 typedef struct Component {
     u64 info1;
     u64 info2;
+    void* data;
     union {
         Component** children;
         char* text;
     };
-    void* data;
 } Component;
 
-/* main api */
+// main api
 void comp_init(void);
 Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id);
 void comp_attach(Component* parent, Component* child);
@@ -46,15 +46,18 @@ typedef enum CompID {
     COMP_TEXTBOX = 1,
 } CompID;
 
-/* component event functions */
+// component protected functions
+// only called from implementation
 void comp_default_init(Component* comp);
-
 void comp_textbox_init(Component* comp);
 void comp_textbox_hover(Component* comp, bool status);
 void comp_textbox_click(Component* comp, i32 buttion, i32 action);
+
+// component functions
+// useful for specific functionality
 void comp_textbox_set_reference(Component* comp, Component* ref);
 
-/* Setters for packed info */
+// Setters for packed info
 void comp_set_id(Component* comp, CompID id);
 void comp_set_is_text(Component* comp, bool it);
 void comp_set_r(Component* comp, u8 r);
@@ -77,7 +80,7 @@ void comp_set_position(Component* comp, i32 x, i32 y);
 void comp_set_size(Component* comp, i32 w, i32 h);
 void comp_set_align(Component* comp, u8 ha, u8 va);
 
-/* Getters for packed info */
+// Getters for packed info
 void comp_get_id(Component* comp, CompID* id);
 void comp_get_is_text(Component* comp, bool* it);
 void comp_get_r(Component* comp, u8* r);
@@ -100,7 +103,7 @@ void comp_get_position(Component* comp, i32* x, i32* y);
 void comp_get_size(Component* comp, i32* w, i32* h);
 void comp_get_align(Component* comp, u8* ha, u8* va);
 
-/* Second set of getters */
+// Second set of getters
 CompID comp_id(Component* comp);
 i32  comp_num_children(Component* comp);
 bool comp_is_text(Component* comp);
@@ -108,6 +111,7 @@ bool comp_is_hoverable(Component* comp);
 bool comp_is_hovered(Component* comp);
 bool comp_is_clickable(Component* comp);
 
+// Used for debugging info
 void print_bits(u64 x);
 
 #endif
