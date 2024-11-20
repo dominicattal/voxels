@@ -260,10 +260,10 @@ static void update_data_text(Component* comp)
             ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
             if (text[left] != ' ') {
-                A = x1, A = y1, A = u1, A = v2, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x1, A = y2, A = u1, A = v1, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x2, A = y2, A = u2, A = v1, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x2, A = y1, A = u2, A = v2, A = 0, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x1, A = y1, A = u1, A = v2, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x1, A = y2, A = u1, A = v1, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y2, A = u2, A = v1, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y1, A = u2, A = v2, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
                 B = ebo_idx, B = ebo_idx + 1, B = ebo_idx + 2, 
                 B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 3;
             }   

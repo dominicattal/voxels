@@ -17,6 +17,6 @@ void main()
 {
     vec4 tex = texture(sampler2D(tex[TexId]), TexCoord);
     if (TexId == 2)
-        tex = vec4(0.0f, 0.0f, 0.0f, tex.r);
+        tex = vec4(1.0f, 1.0f, 1.0f, tex.r);
     FragColor = tex * Color;
 }
