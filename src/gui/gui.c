@@ -143,7 +143,7 @@ static void update_data_text(Component* comp)
     i32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
     char* text;             // text, equal to comp->text
-    i32 font_size = 7;
+    i32 font_size = 32;
     
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);
@@ -202,12 +202,8 @@ static void update_data_text(Component* comp)
         if (left == right)
             right++;
         
-        ox = 0;
-        if (ha == ALIGN_RIGHT)
-            ox = cw - test_ox;
-        else if (ha == ALIGN_CENTER)
-            ox = (cw - test_ox) / 2;
-        
+        ox = ha * (cw - test_ox) / 2;
+
         while (left < right) {
             font_char_hmetrics(FONT_DEFAULT, font_size, text[left], &adv, &lsb);
             font_char_bbox(FONT_DEFAULT, font_size, text[left], &a1, &b1, &a2, &b2);
@@ -249,7 +245,7 @@ static void update_data_text(Component* comp)
         return;
 
     oy -= ascent - descent + line_gap;
-    dy = ((va == ALIGN_BOTTOM) + 1) * (f32)(ch - oy) / window.resolution.y;
+    dy = va * (f32)(ch - oy) / window.resolution.y;
 
     while (vbo_idx < gui.vbo_length) {
         gui.vbo_buffer[vbo_idx + 1] -= dy;

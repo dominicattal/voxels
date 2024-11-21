@@ -15,7 +15,7 @@ INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")
 LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) $(LINKER)
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
-DEPS = $(patsubst %.c, $(OBJ_DIR)/%.d, $(SRCS))
+DEPS = $(patsubst %.c, %.d, $(SRCS))
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 
 all: $(OBJS)

@@ -6,11 +6,12 @@
 #define MAX_NUM_CHILDREN  1000
 
 #define ALIGN_LEFT      0
-#define ALIGN_RIGHT     1
-#define ALIGN_CENTER    2
+#define ALIGN_CENTER    1
+#define ALIGN_RIGHT     2
 #define ALIGN_JUSTIFY   3
+
 #define ALIGN_TOP       0
-#define ALIGN_BOTTOM    1
+#define ALIGN_BOTTOM    2
 
 #define HOVER_ON        0
 #define HOVER_OFF       1
