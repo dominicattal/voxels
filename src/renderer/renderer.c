@@ -22,7 +22,6 @@ void renderer_init(void)
     renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
     renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGB, 1, 1, pixels);
-    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, font.bitmap);
 
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 
@@ -68,6 +67,11 @@ void renderer_destroy(void)
         vao_destroy(renderer.vaos[i]);
     for (i = 0; i < NUM_TEXTURES; i++)
         texture_destroy(renderer.textures[i]);
+}
+
+void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels)
+{
+    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, width, height, pixels);
 }
 
 /* --------------------------------- */

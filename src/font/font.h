@@ -2,33 +2,12 @@
 #define FONT_H
 
 #include "../util.h"
-#include <stb_rect_pack.h>
-#include <stb_truetype.h>
-
-#define BITMAP_WIDTH    512
-#define BITMAP_HEIGHT   512
-#define CHAR_OFFSET     32
-#define NUM_CHARS       96
-
-#define MIN_FONT_SIZE 7
-#define MAX_FONT_SIZE (MIN_FONT_SIZE + (1 << 6))
 
 #define NUM_FONTS 1
-
-typedef struct {
-    stbtt_fontinfo info;
-    stbtt_pack_context spc;
-    stbtt_pack_range fontRange;
-    stbtt_packedchar packedChars[NUM_CHARS];
-    unsigned char* bitmap;
-    unsigned char* font_buffer;
-} Font;
 
 typedef enum {
     FONT_DEFAULT = 0,
 } FontID;
-
-extern Font font;
 
 void font_init(void);
 void font_info(FontID id, i32 font_size, i32* ascent, i32* descent, i32* line_gap);

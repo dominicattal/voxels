@@ -24,4 +24,6 @@ void renderer_update(VAOID vao_index, u32 vbo_offset, u32 vbo_length, f32* vbo_b
 void renderer_render(void);
 void renderer_destroy(void);
 
+void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels);
+
 #endif
