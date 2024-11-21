@@ -3,6 +3,7 @@
 
 #include <glad.h>
 #include "../util.h"
+#include "../font/font.h"
 #include "vao/vao.h"
 #include "shader/shader.h"
 #include "texture/texture.h"

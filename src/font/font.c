@@ -5,7 +5,6 @@
 #include <string.h>
 #include <glad.h>
 #include <stb_image_write.h>
-#include "../../renderer/renderer.h"
 
 Font font;
 

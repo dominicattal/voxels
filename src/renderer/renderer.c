@@ -10,6 +10,8 @@ static void set_texture_ssbo();
 
 void renderer_init(void)
 {
+    font_init();
+
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(message_callback, 0);
     glEnable(GL_BLEND);
@@ -19,13 +21,13 @@ void renderer_init(void)
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 0;
     renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
-    renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
+    renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGB, 1, 1, pixels);
+    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, font.bitmap);
 
     renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
 
     renderer.ssbos[SSBO_TEXTURES] = ssbo_create(NUM_TEXTURES * sizeof(u64));
     set_texture_ssbo();
-    
     link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
 
     renderer.vaos[VAO_GUI] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 9);

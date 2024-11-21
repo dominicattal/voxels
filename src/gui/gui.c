@@ -1,6 +1,4 @@
 #include "gui.h"
-#include "../renderer/renderer.h"
-#include "../window/window.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,9 +15,6 @@ static int cursor_in_bounds();
 void gui_init(void)
 {
     comp_init();
-    font_init();
-
-    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, BITMAP_WIDTH, BITMAP_HEIGHT, font.bitmap);
 
     gui.vbo_max_length = gui.ebo_max_length = 0;
     gui.vbo_length = gui.ebo_length = 0;
