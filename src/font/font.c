@@ -39,6 +39,45 @@ void font_init(void)
 
 }
 
+void font_info(FontID id, i32 font_size, i32* ascent, i32* descent, i32* line_gap)
+{
+    f32 scale = stbtt_ScaleForPixelHeight(&font.info, font_size);
+    stbtt_GetFontVMetrics(&font.info, ascent, descent, line_gap);
+    *ascent   = roundf(*ascent   * scale);
+    *descent  = roundf(*descent  * scale);
+    *line_gap = roundf(*line_gap * scale);
+}
+
+void font_char_hmetrics(FontID id, i32 font_size, char character, i32* advance, i32* left_side_bearing)
+{
+    f32 scale = stbtt_ScaleForPixelHeight(&font.info, font_size);
+    stbtt_GetCodepointHMetrics(&font.info, character, advance, left_side_bearing);
+    *advance = roundf(*advance * scale);
+    *left_side_bearing = roundf(*left_side_bearing * scale);
+}
+
+void font_char_bbox(FontID id, i32 font_size, char character, i32* bbox_x1, i32* bbox_y1, i32* bbox_x2, i32* bbox_y2)
+{
+    f32 scale = stbtt_ScaleForPixelHeight(&font.info, font_size);
+    stbtt_GetCodepointBitmapBox(&font.info, character, scale, scale, bbox_x1, bbox_y1, bbox_x2, bbox_y2);
+}
+
+void font_char_bmap(FontID id, i32 font_size, char character, f32* bmap_u1, f32* bmap_v1, f32* bmap_u2, f32* bmap_v2)
+{
+    stbtt_packedchar b = font.packedChars[character-CHAR_OFFSET];
+    *bmap_u1 = (f32)b.x0 / BITMAP_WIDTH;
+    *bmap_v1 = (f32)b.y0 / BITMAP_HEIGHT;
+    *bmap_u2 = (f32)b.x1 / BITMAP_WIDTH;
+    *bmap_v2 = (f32)b.y1 / BITMAP_HEIGHT;
+}
+
+void font_char_kern(FontID id, i32 font_size, char character, char next_character, i32* kern)
+{
+    f32 scale = stbtt_ScaleForPixelHeight(&font.info, font_size);
+    *kern = stbtt_GetCodepointKernAdvance(&font.info, character, next_character);
+    *kern = roundf(*kern * scale);
+}
+
 void font_destroy(void)
 {
     free(font.bitmap);
