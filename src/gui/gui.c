@@ -7,7 +7,6 @@
 
 GUI gui;
 extern Window window;
-extern Font font;
 
 static void update_components(void);
 static void update_data(void);
@@ -144,12 +143,13 @@ static void update_data_text(Component* comp)
     i32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
     char* text;             // text, equal to comp->text
+    i32 font_size = 7;
     
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);
     comp_get_align(comp, &ha, &va);
 
-    font_info(FONT_DEFAULT, 32, &ascent, &descent, &line_gap);
+    font_info(FONT_DEFAULT, font_size, &ascent, &descent, &line_gap);
     text = comp->text;
     length = strlen(text);
 
@@ -167,8 +167,8 @@ static void update_data_text(Component* comp)
         test_ox = 0;
         num_spaces = 0;
         while (right < length && text[right] != '\n' && test_ox <= cw) {
-            font_char_hmetrics(FONT_DEFAULT, 32, text[right], &adv, &lsb);
-            font_char_kern(FONT_DEFAULT, 32, text[right], text[right+1], &kern);
+            font_char_hmetrics(FONT_DEFAULT, font_size, text[right], &adv, &lsb);
+            font_char_kern(FONT_DEFAULT, font_size, text[right], text[right+1], &kern);
             test_ox += adv + kern;
             num_spaces += text[right] == ' ';
             right++;
@@ -177,14 +177,14 @@ static void update_data_text(Component* comp)
         mid = right;
         if (test_ox > cw) {
             while (mid > left && text[mid-1] != ' ') {
-                font_char_hmetrics(FONT_DEFAULT, 32, text[mid-1], &adv, &lsb);
-                font_char_kern(FONT_DEFAULT, 32, text[mid-1], text[mid], &kern);
+                font_char_hmetrics(FONT_DEFAULT, font_size, text[mid-1], &adv, &lsb);
+                font_char_kern(FONT_DEFAULT, font_size, text[mid-1], text[mid], &kern);
                 test_ox -= adv + kern;
                 mid--;
             }
             while (mid > left && text[mid-1] == ' ') {
-                font_char_hmetrics(FONT_DEFAULT, 32, text[mid-1], &adv, &lsb);
-                font_char_kern(FONT_DEFAULT, 32, text[mid-1], text[mid], &kern);
+                font_char_hmetrics(FONT_DEFAULT, font_size, text[mid-1], &adv, &lsb);
+                font_char_kern(FONT_DEFAULT, font_size, text[mid-1], text[mid], &kern);
                 test_ox -= adv + kern;
                 num_spaces -= text[mid-1] == ' ';
                 mid--;
@@ -209,10 +209,10 @@ static void update_data_text(Component* comp)
             ox = (cw - test_ox) / 2;
         
         while (left < right) {
-            font_char_hmetrics(FONT_DEFAULT, 32, text[left], &adv, &lsb);
-            font_char_bbox(FONT_DEFAULT, 32, text[left], &a1, &b1, &a2, &b2);
-            font_char_bmap(FONT_DEFAULT, 32, text[left], &u1, &v1, &u2, &v2);
-            font_char_kern(FONT_DEFAULT, 32, text[left], text[left+1], &kern);
+            font_char_hmetrics(FONT_DEFAULT, font_size, text[left], &adv, &lsb);
+            font_char_bbox(FONT_DEFAULT, font_size, text[left], &a1, &b1, &a2, &b2);
+            font_char_bmap(FONT_DEFAULT, font_size, text[left], &u1, &v1, &u2, &v2);
+            font_char_kern(FONT_DEFAULT, font_size, text[left], text[left+1], &kern);
 
             x = ox + lsb;
             y = ch - oy - b2;
