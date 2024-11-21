@@ -138,17 +138,18 @@ static void update_data_text(Component* comp)
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
     i32 left, right, mid;   // pointers for word
     u8  ha, va;             // horizontal and vertical alignment
+    i32 font_size;          // font_size = ascent - descent
     i32 num_spaces;         // count whitespace for horizontal alignment
     f32 dy;                 // change in y for vertical alignment
     i32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
     char* text;             // text, equal to comp->text
-    i32 font_size = 32;
     
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);
     comp_get_align(comp, &ha, &va);
-
+    comp_get_font_size(comp, &font_size);
+    
     font_info(FONT_DEFAULT, font_size, &ascent, &descent, &line_gap);
     text = comp->text;
     length = strlen(text);

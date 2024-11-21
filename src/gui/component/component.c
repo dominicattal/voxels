@@ -98,12 +98,12 @@ void comp_click(Component* comp, i32 button, i32 action)
 }
 
 // ---------------------------------------------------------------------------
-// info1            | info2 (same)  | info2 (text)      | info2 (ele)
-//  7 - id          | 24 - w, h     | 2 - halign        | 8 - num_children
-//  1 - is_text     |               | 2 - valign        | 1 - update_children
-// 32 - r, g, b, a  |               | 6 - font_size     | 1 - hoverable
-// 24 - x, y        |               | 4 - font          | 1 - hovered
-//                  |               |                   | 1 - 
+// info1            | info2 (same)   | info2 (text)      | info2 (ele)
+//  7 - id          | 24 - w, h      | 2 - halign        | 8 - num_children
+//  1 - is_text     | 16 - tex       | 2 - valign        | 1 - update_children
+// 32 - r, g, b, a  |  1 - hoverable | 6 - font_size     |
+// 24 - x, y        |  1 - hovered   | 4 - font          |
+//                  |  1 - clickable |                   |
 // ---------------------------------------------------------------------------
 
 #define ID_SHIFT    0
@@ -129,23 +129,23 @@ void comp_click(Component* comp, i32 button, i32 action)
 #define H_BITS      12
 #define TX_SHIFT    24
 #define TX_BITS     16
-
-#define NC_SHIFT    40
-#define NC_BITS     8
-#define HV_SHIFT    48
+#define HV_SHIFT    40
 #define HV_BITS     1
-#define HD_SHIFT    49
+#define HD_SHIFT    41
 #define HD_BITS     1
-#define CL_SHIFT    50
+#define CL_SHIFT    42
 #define CL_BITS     1
 
-#define HA_SHIFT    40
+#define NC_SHIFT    43
+#define NC_BITS     8
+
+#define HA_SHIFT    43
 #define HA_BITS     2
-#define VA_SHIFT    42
+#define VA_SHIFT    45
 #define VA_BITS     2
-#define FS_SHIFT    44
+#define FS_SHIFT    51
 #define FS_BITS     6
-#define FT_SHIFT    50
+#define FT_SHIFT    57
 #define FT_BITS     4
 
 #define SMASK(BITS)         ((1<<BITS)-1)
@@ -227,6 +227,9 @@ void comp_set_clickable(Component* comp, bool cl) {
 void comp_set_tex(Component* comp, i32 tx) {
     comp->info2 = (comp->info2 & GMASK(TX_BITS, TX_SHIFT)) | ((u64)(tx & SMASK(TX_BITS)) << TX_SHIFT);
 }
+void comp_set_font_size(Component* comp, i32 fs) {
+    comp->info2 = (comp->info2 & GMASK(FS_BITS, FS_SHIFT)) | ((u64)(fs & SMASK(FS_BITS)) << FS_SHIFT);
+}
 
 // getters 1
 void comp_get_id(Component* comp, CompID* id) {
@@ -304,6 +307,9 @@ void comp_get_clickable(Component* comp, bool* cl) {
 void comp_get_tex(Component* comp, i32* tx) {
     *tx = (comp->info2 >> TX_SHIFT) & SMASK(TX_BITS);
 }
+void comp_get_font_size(Component* comp, i32* fs) {
+    *fs = (comp->info2 >> FS_SHIFT) & SMASK(FS_BITS);
+}
 
 // getters 2
 CompID comp_id(Component* comp) {
@@ -337,8 +343,8 @@ static void initialize_functions(void)
         for (i32 j = 0; j < NUM_COMPONENT_FUNCS; j++)
             component_functions[i][j] = do_nothing;
     
-    component_functions[COMP_DEFAULT][COMP_FUNC_INIT] = comp_default_init;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT] = comp_textbox_init;
+    component_functions[COMP_DEFAULT][COMP_FUNC_INIT]  = comp_default_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT]  = comp_textbox_init;
     component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
     component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK] = comp_textbox_click;
 }
