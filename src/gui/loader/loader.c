@@ -16,6 +16,7 @@ void gui_load_main(void)
     Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
     comp_set_color(random_color, 255, 0, 255, 255);
     comp_set_text(random_color, "The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.");
+    comp_set_align(random_color, ALIGN_LEFT, ALIGN_LEFT);
     comp_attach(gui.root, random_color);
 
     comp_textbox_set_reference(click_me, random_color);
