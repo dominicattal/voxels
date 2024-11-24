@@ -138,6 +138,7 @@ static void update_data_text(Component* comp)
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
     i32 left, right, mid;   // pointers for word
     u8  ha, va;             // horizontal and vertical alignment
+    u8  justify;            // branchless justify
     i32 font_size;          // font_size = ascent - descent
     i32 num_spaces;         // count whitespace for horizontal alignment
     f32 dy;                 // change in y for vertical alignment
@@ -149,11 +150,17 @@ static void update_data_text(Component* comp)
     comp_get_size(comp, &cw, &ch);
     comp_get_align(comp, &ha, &va);
     comp_get_font_size(comp, &font_size);
-    
-    font_info(FONT_DEFAULT, font_size, &ascent, &descent, &line_gap);
     text = comp->text;
     length = strlen(text);
-
+    
+    justify = 0;
+    if (ha == ALIGN_JUSTIFY) {
+        ha = ALIGN_LEFT;
+        justify = 1;
+    }
+    
+    font_info(FONT_DEFAULT, font_size, &ascent, &descent, &line_gap);
+    
     left = right = 0;
     ox = 0;
     oy = ascent;
@@ -202,6 +209,10 @@ static void update_data_text(Component* comp)
 
         if (left == right)
             right++;
+
+        font_char_hmetrics(FONT_DEFAULT, font_size, text[right-1], &adv, &lsb);
+        font_char_bbox(FONT_DEFAULT, font_size, text[right-1], &a1, &b1, &a2, &b2);
+        test_ox -= adv - (a2 + a1);
         
         ox = ha * (cw - test_ox) / 2.0f;
 
@@ -233,7 +244,7 @@ static void update_data_text(Component* comp)
             }   
 
             ox += adv + kern;
-            if (ha == ALIGN_JUSTIFY && text[left] == ' ')
+            if (justify && text[left] == ' ')
                 ox += (cw - test_ox) / num_spaces;
 
             left++;
