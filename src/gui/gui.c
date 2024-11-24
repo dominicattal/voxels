@@ -203,7 +203,7 @@ static void update_data_text(Component* comp)
         if (left == right)
             right++;
         
-        ox = ha * (cw - test_ox) / 2;
+        ox = ha * (cw - test_ox) / 2.0f;
 
         while (left < right) {
             font_char_hmetrics(FONT_DEFAULT, font_size, text[left], &adv, &lsb);

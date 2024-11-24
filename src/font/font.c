@@ -8,8 +8,8 @@
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
-#define BITMAP_WIDTH    (1<<10)
-#define BITMAP_HEIGHT   (1<<10)
+#define BITMAP_WIDTH    (1<<11)
+#define BITMAP_HEIGHT   (1<<11)
 #define CHAR_OFFSET     32
 #define NUM_CHARS       96
 
@@ -48,7 +48,7 @@ void font_init(void)
     unsigned char* bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
     stbtt_PackBegin(&spc, bitmap, BITMAP_WIDTH, BITMAP_HEIGHT, 0, 1, NULL);
 
-    load_font(FONT_DEFAULT, "assets/Minecraft.ttf");
+    load_font(FONT_DEFAULT, "assets/mojangles.ttf");
 
     stbtt_PackEnd(&spc);
     stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, bitmap, BITMAP_WIDTH);

@@ -15,15 +15,23 @@ INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")
 LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) $(LINKER)
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
+DOBJS = $(patsubst %.c, $(OBJ_DIR)/debug/%.o, $(SRCS))
 DEPS = $(patsubst %.c, %.d, $(SRCS))
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 
 all: $(OBJS)
-	@$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) $(LIBS) -o $(TARGET)
+	@$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) $(LIBS) -O3 -o $(TARGET)
 
 $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(shell dirname $@)
 	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) $^ -c -o $@
+
+debug: $(DOBJS)
+	@$(CC) $(CFLAGS) $(INCLUDES) $(DOBJS) $(LIBS) -g -o $(TARGET)
+
+$(OBJ_DIR)/debug/%.o: %.c
+	@mkdir -p $(shell dirname $@)
+	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) $^ -g -c -o $@
 
 -include $(DEPS)
 
