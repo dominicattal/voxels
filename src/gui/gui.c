@@ -1,12 +1,24 @@
 #include "gui.h"
-#include "loader/loader.h"
+#include "component/component.h"
+#include "../renderer/renderer.h"
+#include "../window/window.h"
+#include "../font/font.h"
 #include "../renderer/texture/texture.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-GUI gui;
+typedef struct {
+    u32 vbo_length, vbo_max_length;
+    f32* vbo_buffer;
+    u32 ebo_length, ebo_max_length;
+    u32* ebo_buffer;
+    bool max_length_changed;
+    Component* root;
+} GUI;
+
+static GUI gui;
 
 static void update_components(void);
 static void update_data(void);
@@ -26,7 +38,22 @@ void gui_init(void)
     comp_set_color(gui.root, 0, 0, 0, 0);
     comp_set_hoverable(gui.root, FALSE);
 
-    gui_load_main();
+    Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
+    comp_set_color(click_me, 0, 255, 0, 150);
+    comp_set_align(click_me, ALIGN_JUSTIFY, ALIGN_TOP);
+    comp_set_clickable(click_me, TRUE);
+
+    comp_set_text(click_me, "Click Me!");
+    comp_set_hoverable(click_me, TRUE);
+    comp_attach(gui.root, click_me);
+
+    Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
+    comp_set_color(random_color, 255, 0, 255, 255);
+    comp_set_text(random_color, "The quick brown fox jumps over the lazy dog. The quick brown fox jumped over the lazy dog.");
+    comp_set_align(random_color, ALIGN_CENTER, ALIGN_TOP);
+    comp_attach(gui.root, random_color);
+
+    comp_textbox_set_reference(click_me, random_color);
 }
 
 void gui_update(void)
