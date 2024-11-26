@@ -5,6 +5,7 @@
 #include "window/window.h"
 #include "gui/gui.h"
 #include "font/font.h"
+#include "audio/audio.h"
 
 void state_init(void);
 void state_loop(void);

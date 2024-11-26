@@ -3,7 +3,7 @@ export TMP := ./build
 
 CC = gcc
 CFLAGS = -Wall -Wextra
-LINKER = -lglfw3dll -lm
+LINKER = -lglfw3dll -lm -lOpenAL32 -lsndfile
 LIB_DIR = lib
 SRC_DIR = src
 OBJ_DIR = build
