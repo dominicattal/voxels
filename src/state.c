@@ -38,8 +38,7 @@ void state_destroy(void)
 
 void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
 {
-    glfwGetWindowSize(window.handle, &window.width, &window.height);
-    glViewport(0, 0, window.width, window.height);
+    glViewport(0, 0, width, height);
     gui_update();
 }
 
@@ -55,6 +54,5 @@ void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mod
 
 void cursor_pos_callback(GLFWwindow* handle, double xpos, double ypos)
 {
-    glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
     gui_cursor_callback();
 }

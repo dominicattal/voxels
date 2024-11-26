@@ -6,11 +6,9 @@
 #include <math.h>
 
 GUI gui;
-extern Window window;
 
 static void update_components(void);
 static void update_data(void);
-static int cursor_in_bounds();
 
 void gui_init(void)
 {
@@ -21,7 +19,9 @@ void gui_init(void)
     gui.vbo_buffer = malloc(0);
     gui.ebo_buffer = malloc(0);
 
-    gui.root = comp_create(0, 0, window.resolution.x, window.resolution.y, COMP_DEFAULT);
+    i32 xres, yres;
+    window_get_resolution(&xres, &yres);
+    gui.root = comp_create(0, 0, xres, yres, COMP_DEFAULT);
     comp_set_color(gui.root, 0, 0, 0, 0);
     comp_set_hoverable(gui.root, FALSE);
 
@@ -47,7 +47,7 @@ void gui_mouse_button_callback_helper(Component* comp, i32 button, i32 action)
     i32 x, y, w, h;
     comp_get_bbox(comp, &x, &y, &w, &h);
 
-    if (comp_is_clickable(comp) && cursor_in_bounds(x, y, w, h))
+    if (comp_is_clickable(comp) && window_cursor_in_bbox(x, y, w, h))
         comp_click(comp, button, action);
 
     for (i32 i = 0; i < comp_num_children(comp); i++)
@@ -70,7 +70,7 @@ void gui_cursor_callback_helper(Component* comp)
     comp_get_bbox(comp, &x, &y, &w, &h);
 
     if (comp_is_hoverable(comp))
-        comp_hover(comp, cursor_in_bounds(x, y, w, h));
+        comp_hover(comp, window_cursor_in_bbox(x, y, w, h));
 
     for (i32 i = 0; i < comp_num_children(comp); i++)
         gui_cursor_callback_helper(comp->children[i]);
@@ -222,15 +222,12 @@ static void update_data_text(Component* comp)
             font_char_bmap(FONT_DEFAULT, font_size, text[left], &u1, &v1, &u2, &v2);
             font_char_kern(FONT_DEFAULT, font_size, text[left], text[left+1], &kern);
 
-            x = ox + lsb;
-            y = ch - oy - b2;
+            x = cx + ox + lsb;
+            y = cy + ch - oy - b2;
             w = a2 - a1;
             h = b2 - b1;
 
-            x1 = 2.0f * (cx + x - window.resolution.x / 2) / window.resolution.x;
-            y1 = 2.0f * (cy + y - window.resolution.y / 2) / window.resolution.y;
-            x2 = x1 + 2.0f * w / window.resolution.x;
-            y2 = y1 + 2.0f * h / window.resolution.y;
+            window_pixel_to_screen_bbox(x, y, w, h, &x1, &y1, &x2, &y2);
 
             ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
@@ -257,7 +254,7 @@ static void update_data_text(Component* comp)
         return;
 
     oy -= ascent - descent + line_gap;
-    dy = va * (f32)(ch - oy) / window.resolution.y;
+    window_pixel_to_screen_y(va * (ch - oy), &dy);
 
     while (vbo_idx < gui.vbo_length) {
         gui.vbo_buffer[vbo_idx + 1] -= dy;
@@ -276,10 +273,7 @@ static void update_data_helper(Component* comp)
     comp_get_color(comp, &cr, &cg, &cb, &ca);
 
     resize_gui_buffers(1);
-    x1 = 2.0f * (cx - window.resolution.x / 2) / window.resolution.x;
-    y1 = 2.0f * (cy - window.resolution.y / 2) / window.resolution.y;
-    x2 = x1 + 2.0f * cw / window.resolution.x;
-    y2 = y1 + 2.0f * ch / window.resolution.y;
+    window_pixel_to_screen_bbox(cx, cy, cw, ch, &x1, &y1, &x2, &y2);
     r = cr / 255.0f, g = cg / 255.0f, b = cb / 255.0f, a = ca / 255.0f;
 
     A = x1, A = y1, A = 0.0, A = 1.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
@@ -304,12 +298,4 @@ static void update_data(void)
         gui.max_length_changed = FALSE;
     }
     renderer_update(VAO_GUI, 0, gui.vbo_length, gui.vbo_buffer, 0, gui.ebo_length, gui.ebo_buffer);
-}
-
-static int cursor_in_bounds(i32 x, i32 y, i32 w, i32 h)
-{
-    return window.cursor.x >= x 
-        && window.cursor.x <= x + w 
-        && window.height - window.cursor.y >= y 
-        && window.height - window.cursor.y <= y + h;
 }
