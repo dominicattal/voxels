@@ -1,4 +1,5 @@
 #include "window.h"
+#include "../gui/gui.h"
 #include <glfw.h>
 #include <stdio.h>
 
@@ -7,21 +8,23 @@
 
 typedef struct {
     GLFWwindow* handle;
+    i32 width, height;
     struct {
         i32 x, y;
     } resolution;
     struct {
         GLFWcursor* handle;
+        f64 x, y;
     } cursor;
 } Window;
 
 static Window window;
 
 static void error_callback();
-extern void framebuffer_size_callback();
-extern void mouse_button_callback();
-extern void key_callback();
-extern void cursor_pos_callback();
+static void framebuffer_size_callback();
+static void mouse_button_callback();
+static void key_callback();
+static void cursor_pos_callback();
 
 void window_init(void)
 {
@@ -33,6 +36,8 @@ void window_init(void)
     window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "gui", NULL, NULL);
     window.resolution.x = DEFAULT_WINDOW_WIDTH;
     window.resolution.y = DEFAULT_WINDOW_HEIGHT;
+    glfwGetWindowSize(window.handle, &window.width, &window.height);
+    glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
     //glfwSetWindowAspectRatio(window.handle, 16, 9);
     
     glfwMakeContextCurrent(window.handle);
@@ -82,14 +87,10 @@ void window_get_resolution(i32* xres, i32* yres) {
 }
 
 bool window_cursor_in_bbox(i32 x, i32 y, i32 w, i32 h) {
-    i32 width, height;
-    f64 cursor_x, cursor_y;
-    glfwGetWindowSize(window.handle, &width, &height);
-    glfwGetCursorPos(window.handle, &cursor_x, &cursor_y);
-    return cursor_x >= x 
-        && cursor_x <= x + w 
-        && height - cursor_y >= y 
-        && height - cursor_y <= y + h;
+    return window.cursor.x >= x 
+        && window.cursor.x <= x + w 
+        && window.height - window.cursor.y >= y 
+        && window.height - window.cursor.y <= y + h;
 }
 
 void window_pixel_to_screen_x(i32 x, f32* x1) {
@@ -107,4 +108,29 @@ void window_pixel_to_screen_bbox(i32 x, i32 y, i32 w, i32 h, f32* x1, f32* y1, f
     *y1 = 2.0f * (y - window.resolution.y / 2) / window.resolution.y;
     *x2 = *x1 + 2.0f * w / window.resolution.x;
     *y2 = *y1 + 2.0f * h / window.resolution.y;
+}
+
+static void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
+{
+    window.width = width;
+    window.height = height;
+    glViewport(0, 0, window.width, window.height);
+    gui_update();
+}
+
+static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
+{
+    gui_mouse_button_callback(button, action);
+}
+
+static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)
+{
+    gui_key_callback(key, scancode, action, mods);
+}
+
+static void cursor_pos_callback(GLFWwindow* handle, f64 xpos, f64 ypos)
+{
+    window.cursor.x = xpos;
+    window.cursor.y = ypos;
+    gui_cursor_callback();
 }

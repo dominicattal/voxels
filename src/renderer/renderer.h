@@ -1,22 +1,13 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <glad.h>
 #include "../util.h"
-#include "../font/font.h"
-#include "vao/vao.h"
-#include "shader/shader.h"
-#include "texture/texture.h"
-#include "ssbo/ssbo.h"
 
-typedef struct {
-    VAO vaos[NUM_VAOS];
-    SSBO ssbos[NUM_SSBOS];
-    Shader shaders[NUM_SHADERS];
-    Texture textures[NUM_TEXTURES];
-} Renderer;
+#define NUM_VAOS 1
 
-extern Renderer renderer;
+typedef enum {
+    VAO_GUI = 0
+} VAOID;
 
 void renderer_init(void);
 void renderer_malloc(VAOID vao_index, u32 vbo_length, u32 ebo_length);

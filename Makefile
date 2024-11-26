@@ -7,6 +7,7 @@ LINKER = -lglfw3dll -lm -lOpenAL32 -lsndfile
 LIB_DIR = lib
 SRC_DIR = src
 OBJ_DIR = build
+DEP_DIR = build
 BIN_DIR = bin
 TARGET = $(BIN_DIR)/gui
 
@@ -15,7 +16,7 @@ INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")
 SRCS = $(shell find $(SRC_DIR) $(LIB_DIR) -name "*.c")
 LIBS = $(patsubst %, -L./%, $(LIB_DIRS)) $(LINKER)
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
-DEPS = $(patsubst %.c, %.d, $(SRCS))
+DEPS = $(patsubst %.c, $(DEP_DIR)/%.d, $(SRCS))
 INCLUDES = $(patsubst %, -I./%, $(INCLUDE_DIRS))
 
 all: $(OBJS)
@@ -28,6 +29,6 @@ $(OBJ_DIR)/%.o: %.c
 -include $(DEPS)
 
 clean:
-	rm -r $(OBJ_DIR) $(TARGET)
+	rm -r $(OBJ_DIR) $(DEPS) $(TARGET)
 
 .PHONY: clean

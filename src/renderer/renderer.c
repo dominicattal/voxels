@@ -1,8 +1,20 @@
 #include "renderer.h"
+#include "vao/vao.h"
+#include "shader/shader.h"
+#include "texture/texture.h"
+#include "ssbo/ssbo.h"
+#include <glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-Renderer renderer;
+typedef struct {
+    VAO vaos[NUM_VAOS];
+    SSBO ssbos[NUM_SSBOS];
+    Shader shaders[NUM_SHADERS];
+    Texture textures[NUM_TEXTURES];
+} Renderer;
+
+static Renderer renderer;
 
 static void message_callback();
 static void link_shader_ssbo();
@@ -10,8 +22,6 @@ static void set_texture_ssbo();
 
 void renderer_init(void)
 {
-    font_init();
-
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(message_callback, 0);
     glEnable(GL_BLEND);
@@ -78,6 +88,7 @@ void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels)
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
+    printf("%x, %u, %d, %p\n", source, id, length, userParam);
     printf("\nGL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n", ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, severity, message);
     exit(1);
 }

@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "loader/loader.h"
+#include "../renderer/texture/texture.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

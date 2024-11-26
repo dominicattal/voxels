@@ -14,12 +14,6 @@ typedef struct {
     EBO* ebo;
 } VAO;
 
-#define NUM_VAOS 1
-
-typedef enum {
-    VAO_GUI = 0
-} VAOID;
-
 VAO vao_create(GLenum usage, GLenum mode, u32 length);
 void vao_attr(VAO vao, u32 index, u32 length, u32 offset);
 void vao_update(VAO vao, u32 vbo_offset, u32 vbo_length, f32* vbo_buffer, u32 ebo_offset, u32 ebo_length, u32* ebo_buffer);
