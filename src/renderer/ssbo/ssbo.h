@@ -1,8 +1,6 @@
 #ifndef SSBO_H
 #define SSBO_H
 
-#include <glad.h>
-#include <glfw.h>
 #include "../../util.h"
 
 typedef struct {

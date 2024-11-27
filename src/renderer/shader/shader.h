@@ -1,8 +1,6 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <glad.h>
-#include <glfw.h>
 #include "../../util.h"
 
 typedef struct {

@@ -170,7 +170,7 @@ static void update_data_text(Component* comp)
     i32 font_size;          // font_size = ascent - descent
     i32 num_spaces;         // count whitespace for horizontal alignment
     f32 dy;                 // change in y for vertical alignment
-    i32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
+    u32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
     char* text;             // text, equal to comp->text
     

@@ -26,7 +26,7 @@ all: $(OBJS)
 
 $(OBJ_DIR)/%.o:
 	@mkdir -p $(shell dirname $@)
-	@(CC) $(CFLAGS) $(LIBS) $(INCLUDES) -c -o $@ $<
+	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) -c -o $@ $<
 
 $(DEPSH):
 

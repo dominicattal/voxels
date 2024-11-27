@@ -26,7 +26,7 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
     comp_set_bbox(comp, x, y, w, h);
     comp_set_color(comp, 0, 0, 0, 255);
     comp_set_id(comp, id);
-    comp->children = malloc(0);
+    comp->children = NULL;
     comp->data = NULL;
     component_functions[comp_id(comp)][COMP_FUNC_INIT](comp);
     return comp;
@@ -37,7 +37,10 @@ void comp_attach(Component* parent, Component* child)
     i32 num_children;
     comp_get_num_children(parent, &num_children);
     assert(num_children < MAX_NUM_CHILDREN);
-    parent->children = realloc(parent->children, (num_children + 1) * sizeof(Component*));
+    if (parent->children == NULL)
+        parent->children = malloc(sizeof(Component*));
+    else
+        parent->children = realloc(parent->children, (num_children + 1) * sizeof(Component*));
     parent->children[num_children++] = child;
     comp_set_num_children(parent, num_children);
 }
@@ -49,7 +52,12 @@ void comp_detach(Component* parent, Component* child)
     for (i32 i = 0; i < num_children; i++) {
         if (parent->children[i] == child) {
             parent->children[i] = parent->children[--num_children];
-            parent->children = realloc(parent->children, num_children * sizeof(Component*));
+            if (num_children == 0) {
+                free(parent->children);
+                parent->children = NULL;
+            } else {
+                parent->children = realloc(parent->children, num_children * sizeof(Component*));
+            }
             comp_set_num_children(parent, num_children);
             return;
         }
@@ -63,6 +71,13 @@ void comp_destroy(Component* comp)
     free(comp->children);
     free(comp->data);
     free(comp);
+}
+
+void comp_destroy_children(Component* comp) {
+    for (int i = 0; i < comp_num_children(comp); i++)
+        comp_destroy(comp->children[i]);
+    free(comp->children);
+    comp->children = NULL;
 }
 
 void comp_detach_and_destroy(Component* parent, Component* child)

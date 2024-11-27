@@ -1,7 +1,6 @@
 #ifndef VBO_H
 #define VBO_H
 
-#include <glad.h>
 #include "../../util.h"
 
 typedef struct {

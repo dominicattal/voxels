@@ -1,9 +1,9 @@
 #include "state.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <stb_truetype.h>
+#include "renderer/renderer.h"
+#include "window/window.h"
+#include "gui/gui.h"
+#include "font/font.h"
+#include "audio/audio.h"
 
 void state_init(void)
 {

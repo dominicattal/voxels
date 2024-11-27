@@ -1,5 +1,7 @@
 #include "texture.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <stb_image.h>
 
 Texture texture_create(const char* image_path)
 {

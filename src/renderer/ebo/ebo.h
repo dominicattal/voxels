@@ -1,7 +1,6 @@
 #ifndef EBO_H
 #define EBO_H
 
-#include <glad.h>
 #include "../../util.h"
 
 typedef struct {

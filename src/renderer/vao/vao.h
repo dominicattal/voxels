@@ -1,8 +1,6 @@
 #ifndef VAO_H
 #define VAO_H
 
-#include <glad.h>
-#include <glfw.h>
 #include "../../util.h"
 #include "../vbo/vbo.h"
 #include "../ebo/ebo.h"

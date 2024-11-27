@@ -9,6 +9,14 @@ typedef enum {
     VAO_GUI = 0
 } VAOID;
 
+#define NUM_TEXTURES 3
+
+typedef enum {
+    TEX_NONE = 0,
+    TEX_COLOR = 1,
+    TEX_BITMAP = 2
+} TextureID;
+
 void renderer_init(void);
 void renderer_malloc(VAOID vao_index, u32 vbo_length, u32 ebo_length);
 void renderer_update(VAOID vao_index, u32 vbo_offset, u32 vbo_length, f32* vbo_buffer, u32 ebo_offset, u32 ebo_length, u32* ebo_buffer);

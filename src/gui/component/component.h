@@ -16,8 +16,14 @@
 #define HOVER_ON        0
 #define HOVER_OFF       1
 
+#define NUM_COMPONENTS 3
+
+typedef enum CompID {
+    COMP_DEFAULT = 0,
+    COMP_TEXTBOX = 1,
+} CompID;
+
 typedef struct Component Component;
-typedef enum CompID CompID;
 
 typedef struct Component {
     u64 info1;
@@ -35,27 +41,17 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id);
 void comp_attach(Component* parent, Component* child);
 void comp_detach(Component* parent, Component* child);
 void comp_destroy(Component* comp);
+void comp_destroy_children(Component* comp);
 void comp_detach_and_destroy(Component* parent, Component* child);
 void comp_set_text(Component* comp, const char* text);
 void comp_hover(Component* comp, bool status);
 void comp_click(Component* comp, i32 button, i32 action);
 
-#define NUM_COMPONENTS 3
-
-typedef enum CompID {
-    COMP_DEFAULT = 0,
-    COMP_TEXTBOX = 1,
-} CompID;
-
-// protected component functions
-// only called from implementation
+// component functions
 void comp_default_init(Component* comp);
 void comp_textbox_init(Component* comp);
 void comp_textbox_hover(Component* comp, bool status);
 void comp_textbox_click(Component* comp, i32 buttion, i32 action);
-
-// component functions
-// useful for specific functionality
 void comp_textbox_set_reference(Component* comp, Component* ref);
 
 // Setters for packed info
