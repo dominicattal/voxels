@@ -9,7 +9,8 @@ SRC_DIR = src
 OBJ_DIR = build
 DEP_DIR = build
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/gui
+NAME = prog
+TARGET = $(BIN_DIR)/$(NAME)
 
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -name "*link")
 INCLUDE_DIRS = $(shell find $(LIB_DIR) -type d -name "*include")

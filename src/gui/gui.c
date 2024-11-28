@@ -39,8 +39,8 @@ void gui_init(void)
     comp_set_hoverable(gui.root, FALSE);
 
     Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
-    comp_set_color(click_me, 0, 255, 0, 150);
-    comp_set_align(click_me, ALIGN_JUSTIFY, ALIGN_TOP);
+    comp_set_color(click_me, 0, 255, 0, 255);
+    comp_set_align(click_me, ALIGN_LEFT, ALIGN_TOP);
     comp_set_clickable(click_me, TRUE);
 
     comp_set_text(click_me, "Click Me!");
@@ -49,7 +49,7 @@ void gui_init(void)
 
     Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
     comp_set_color(random_color, 255, 0, 255, 255);
-    comp_set_text(random_color, "The quick brown fox jumps over the lazy dog. The quick brown fox jumped over the lazy dog.");
+    comp_set_text(random_color, "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.");
     comp_set_align(random_color, ALIGN_CENTER, ALIGN_TOP);
     comp_attach(gui.root, random_color);
 
@@ -260,10 +260,10 @@ static void update_data_text(Component* comp)
             ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
 
             if (text[left] != ' ') {
-                A = x1, A = y1, A = u1, A = v2, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x1, A = y2, A = u1, A = v1, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x2, A = y2, A = u2, A = v1, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
-                A = x2, A = y1, A = u2, A = v2, A = 1, A = 1, A = 0, A = 1, A = TEX_BITMAP;
+                A = x1, A = y1, A = u1, A = v2, A = 0, A = 0, A = 0, A = 1, A = TEX_BITMAP;
+                A = x1, A = y2, A = u1, A = v1, A = 0, A = 0, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y2, A = u2, A = v1, A = 0, A = 0, A = 0, A = 1, A = TEX_BITMAP;
+                A = x2, A = y1, A = u2, A = v2, A = 0, A = 0, A = 0, A = 1, A = TEX_BITMAP;
                 B = ebo_idx, B = ebo_idx + 1, B = ebo_idx + 2, 
                 B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 3;
             }   

@@ -88,8 +88,8 @@ void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels)
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
-    printf("%x, %u, %d, %p\n", source, id, length, userParam);
-    printf("\nGL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n", ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, severity, message);
+    printf("\n%x, %x, %d, %p\n", source, id, length, userParam);
+    printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n", ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, severity, message);
     exit(1);
 }
 
