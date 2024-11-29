@@ -40,7 +40,7 @@ void gui_init(void)
 
     Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
     comp_set_color(click_me, 0, 255, 0, 255);
-    comp_set_align(click_me, ALIGN_LEFT, ALIGN_TOP);
+    comp_set_align(click_me, ALIGN_CENTER, ALIGN_TOP);
     comp_set_clickable(click_me, TRUE);
 
     comp_set_text(click_me, "Click Me!");
@@ -49,7 +49,6 @@ void gui_init(void)
 
     Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
     comp_set_color(random_color, 255, 0, 255, 255);
-    comp_set_text(random_color, "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.");
     comp_set_align(random_color, ALIGN_CENTER, ALIGN_TOP);
     comp_attach(gui.root, random_color);
 
@@ -70,7 +69,7 @@ void gui_destroy(void)
     free(gui.ebo_buffer);
 }
 
-void gui_mouse_button_callback_helper(Component* comp, i32 button, i32 action)
+static void gui_mouse_button_callback_helper(Component* comp, i32 button, i32 action)
 {
     i32 x, y, w, h;
     comp_get_bbox(comp, &x, &y, &w, &h);
@@ -87,12 +86,19 @@ void gui_mouse_button_callback(i32 button, i32 action)
     gui_mouse_button_callback_helper(gui.root, button, action);
 }
 
-void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods) 
+static void gui_key_callback_helper(Component* comp, i32 key, i32 scancode, i32 action, i32 mods)
 {
-
+    comp_key(comp, key, scancode, action, mods);
+    for (i32 i = 0; i < comp_num_children(comp); i++)
+        gui_key_callback_helper(comp->children[i], key, scancode, action, mods);
 }
 
-void gui_cursor_callback_helper(Component* comp)
+void gui_key_callback(i32 key, i32 scancode, i32 action, i32 mods) 
+{
+    gui_key_callback_helper(gui.root, key, scancode, action, mods);
+}
+
+static void gui_cursor_callback_helper(Component* comp)
 {
     i32 x, y, w, h;
     comp_get_bbox(comp, &x, &y, &w, &h);
@@ -160,6 +166,7 @@ static void update_data_text(Component* comp)
     f32 u1, v1, u2, v2;     // bitmap coordinates
     i32 a1, b1, a2, b2;     // glyph bounding box
     i32 ox, oy, test_ox;    // glyph origin
+    i32 prev_test_ox;       // edge case
     i32 x, y, w, h;         // pixel coordinates
     i32 ascent, descent;    // highest and lowest glyph offsets
     i32 line_gap;           // gap between lines
@@ -200,11 +207,12 @@ static void update_data_text(Component* comp)
             right++;
 
         left = right;
-        test_ox = 0;
+        prev_test_ox = test_ox = 0;
         num_spaces = 0;
         while (right < length && text[right] != '\n' && test_ox <= cw) {
             font_char_hmetrics(FONT_DEFAULT, font_size, text[right], &adv, &lsb);
             font_char_kern(FONT_DEFAULT, font_size, text[right], text[right+1], &kern);
+            prev_test_ox = test_ox;
             test_ox += adv + kern;
             num_spaces += text[right] == ' ';
             right++;
@@ -228,8 +236,13 @@ static void update_data_text(Component* comp)
         }
 
         if (mid == left) {
-            test_ox = cw;
-            right--;
+            if (left == right) {
+                test_ox = cw;
+                right = left + 1;
+            } else {
+                test_ox = prev_test_ox;
+                right = right - 1;
+            }
         }
         else {
             right = mid;

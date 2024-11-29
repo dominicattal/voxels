@@ -49,3 +49,11 @@ void comp_textbox_set_reference(Component* comp, Component* ref)
     Data* data = comp->data;
     data->ref = ref;
 }
+
+void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods)
+{
+    Data* data = comp->data;
+    if (data->ref == NULL && key >= 32 && key < 128 && action != GLFW_RELEASE) {
+        comp_insert_char(comp, key, -1);
+    }
+}

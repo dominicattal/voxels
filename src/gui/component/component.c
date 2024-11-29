@@ -4,11 +4,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#define NUM_COMPONENT_FUNCS 1
+#define NUM_COMPONENT_FUNCS 4
 
 #define COMP_FUNC_INIT  0
 #define COMP_FUNC_HOVER 1
 #define COMP_FUNC_CLICK 2
+#define COMP_FUNC_KEY   3
 
 static void (*component_functions[NUM_COMPONENTS][NUM_COMPONENT_FUNCS])();
 
@@ -88,7 +89,8 @@ void comp_detach_and_destroy(Component* parent, Component* child)
 
 void comp_set_text(Component* comp, const char* text)
 {
-    assert(comp_is_text(comp));   
+    assert(comp_is_text(comp));
+    assert(text != NULL);
     u32 length;
     char* copied_text;
     free(comp->text);
@@ -102,6 +104,34 @@ void comp_set_text(Component* comp, const char* text)
     comp->text = copied_text;
 }
 
+void comp_insert_text(Component* comp, const char* text, i32 idx)
+{
+
+}
+
+void comp_insert_char(Component* comp, const char c, i32 idx)
+{
+    assert(comp_is_text(comp));
+    u32 length = (comp->text == NULL) ? 0 : strlen(comp->text);
+    char* new_text = malloc((length + 2) * sizeof(char));
+    if (idx == -1 || (u32)idx >= length) {
+        strncpy(new_text, comp->text, length);
+        new_text[length] = c;
+        new_text[length+1] = '\0';
+    } else {
+        strncpy(new_text, comp->text, idx);
+        new_text[idx] = c;
+        strncpy(new_text, comp->text + idx + 1, length - idx + 1);
+    }
+    free(comp->text);
+    comp->text = new_text;
+}
+
+void comp_pop_char(Component* comp, const char c, i32 idx)
+{
+
+}
+
 void comp_hover(Component* comp, bool status)
 {
     component_functions[comp_id(comp)][COMP_FUNC_HOVER](comp, status);
@@ -110,6 +140,28 @@ void comp_hover(Component* comp, bool status)
 void comp_click(Component* comp, i32 button, i32 action)
 {
     component_functions[comp_id(comp)][COMP_FUNC_CLICK](comp, button, action);
+}
+
+void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods)
+{
+    component_functions[comp_id(comp)][COMP_FUNC_KEY](comp, key, scancode, action, mods);
+}
+
+/* --------------------------------- */
+
+static void do_nothing() {}
+
+static void initialize_functions(void)
+{
+    for (i32 i = 0; i < NUM_COMPONENTS; i++) 
+        for (i32 j = 0; j < NUM_COMPONENT_FUNCS; j++)
+            component_functions[i][j] = do_nothing;
+    
+    component_functions[COMP_DEFAULT][COMP_FUNC_INIT]  = comp_default_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT]  = comp_textbox_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK] = comp_textbox_click;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_KEY]   = comp_textbox_key;
 }
 
 // ---------------------------------------------------------------------------
@@ -346,20 +398,4 @@ bool comp_is_hovered(Component* comp) {
 }
 bool comp_is_clickable(Component* comp) {
     return (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
-}
-
-/* --------------------------------- */
-
-static void do_nothing() {}
-
-static void initialize_functions(void)
-{
-    for (i32 i = 0; i < NUM_COMPONENTS; i++) 
-        for (i32 j = 0; j < NUM_COMPONENT_FUNCS; j++)
-            component_functions[i][j] = do_nothing;
-    
-    component_functions[COMP_DEFAULT][COMP_FUNC_INIT]  = comp_default_init;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT]  = comp_textbox_init;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK] = comp_textbox_click;
 }

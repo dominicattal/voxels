@@ -44,14 +44,19 @@ void comp_destroy(Component* comp);
 void comp_destroy_children(Component* comp);
 void comp_detach_and_destroy(Component* parent, Component* child);
 void comp_set_text(Component* comp, const char* text);
+void comp_insert_text(Component* comp, const char* text, i32 idx);
+void comp_insert_char(Component* comp, const char character, i32 idx);
+void comp_pop_char(Component* comp, const char character, i32 idx);
 void comp_hover(Component* comp, bool status);
 void comp_click(Component* comp, i32 button, i32 action);
+void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
 
 // component functions
 void comp_default_init(Component* comp);
 void comp_textbox_init(Component* comp);
 void comp_textbox_hover(Component* comp, bool status);
 void comp_textbox_click(Component* comp, i32 buttion, i32 action);
+void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
 void comp_textbox_set_reference(Component* comp, Component* ref);
 
 // Setters for packed info
