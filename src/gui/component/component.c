@@ -104,11 +104,6 @@ void comp_set_text(Component* comp, const char* text)
     comp->text = copied_text;
 }
 
-void comp_insert_text(Component* comp, const char* text, i32 idx)
-{
-
-}
-
 void comp_insert_char(Component* comp, const char c, i32 idx)
 {
     assert(comp_is_text(comp));
@@ -117,19 +112,36 @@ void comp_insert_char(Component* comp, const char c, i32 idx)
     if (idx == -1 || (u32)idx >= length) {
         strncpy(new_text, comp->text, length);
         new_text[length] = c;
-        new_text[length+1] = '\0';
     } else {
         strncpy(new_text, comp->text, idx);
         new_text[idx] = c;
         strncpy(new_text, comp->text + idx + 1, length - idx + 1);
     }
+    new_text[length+1] = '\0';
     free(comp->text);
     comp->text = new_text;
 }
 
-void comp_pop_char(Component* comp, const char c, i32 idx)
+void comp_delete_char(Component* comp, i32 idx)
 {
-
+    assert(comp_is_text(comp));
+    if (comp->text == NULL) return;
+    u32 length = strlen(comp->text);
+    if (length == 1) {
+        free(comp->text);
+        comp->text = NULL;
+        return;
+    }
+    char* new_text = malloc(length * sizeof(char));
+    if (idx == -1 || (u32)idx >= length) {
+        strncpy(new_text, comp->text, length-1);
+    } else {
+        strncpy(new_text, comp->text, idx);
+        strncpy(new_text, comp->text + idx, length - idx + 1);
+    }
+    new_text[length-1] = '\0';
+    free(comp->text);
+    comp->text = new_text;
 }
 
 void comp_hover(Component* comp, bool status)

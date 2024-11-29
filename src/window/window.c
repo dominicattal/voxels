@@ -134,3 +134,38 @@ static void cursor_pos_callback(GLFWwindow* handle, f64 xpos, f64 ypos)
     window.cursor.y = ypos;
     gui_cursor_callback();
 }
+
+#define _KEY_CASE_SHIFT(_c, _sc) \
+    case _c : c = (shift) ? _sc : _c; break;
+
+#define _KEY_CASE(_c) \
+    case _c : c = _c; break;
+
+char window_get_char(i32 key, i32 mods)
+{
+    static char num_to_sym[] = { ')', '!', '@', '#', '$', '%', '^', '&', '*', '(' };
+    char c = '\0';
+    bool shift, caps;
+    shift = mods & GLFW_MOD_SHIFT;
+    caps = (mods & GLFW_MOD_CAPS_LOCK) >> 4;
+    if (key >= 'A' && key <= 'Z')
+        c = key + ((shift ^ caps) ? 0 : 'a' - 'A');
+    else if (key >= '0' && key <= '9')
+        c = (shift) ? num_to_sym[key - '0'] : key;
+    switch (key) {
+        _KEY_CASE(' ')
+        _KEY_CASE('\t')
+        _KEY_CASE_SHIFT('`', '~')
+        _KEY_CASE_SHIFT('-', '_')
+        _KEY_CASE_SHIFT('=', '+')
+        _KEY_CASE_SHIFT('[', '{')
+        _KEY_CASE_SHIFT(']', '}')
+        _KEY_CASE_SHIFT('\\', '|')
+        _KEY_CASE_SHIFT(';', ':')
+        _KEY_CASE_SHIFT('\'', '\"')
+        _KEY_CASE_SHIFT(',', '<')
+        _KEY_CASE_SHIFT('.', '>')
+        _KEY_CASE_SHIFT('/', '?')
+    }
+    return c;
+}

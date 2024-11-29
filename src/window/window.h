@@ -24,4 +24,6 @@ void window_pixel_to_screen_bbox(i32 x, i32 y, i32 w, i32 h, f32* x1, f32* y1, f
 
 void window_get_resolution(i32* xres, i32* yres);
 
+char window_get_char(i32 key, i32 mods);
+
 #endif

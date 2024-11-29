@@ -1,4 +1,5 @@
 #include "../component.h"
+#include "../../../window/window.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -53,7 +54,10 @@ void comp_textbox_set_reference(Component* comp, Component* ref)
 void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods)
 {
     Data* data = comp->data;
-    if (data->ref == NULL && key >= 32 && key < 128 && action != GLFW_RELEASE) {
-        comp_insert_char(comp, key, -1);
+    if (data->ref != NULL) return;
+    if ((key == GLFW_KEY_TAB || key >= 32 && key < 128) && action != GLFW_RELEASE) {
+        comp_insert_char(comp, window_get_char(key, mods), -1);
+    } else if (key == GLFW_KEY_BACKSPACE && action != GLFW_RELEASE) {
+        comp_delete_char(comp, -1);
     }
 }
