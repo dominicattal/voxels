@@ -138,6 +138,9 @@ static void cursor_pos_callback(GLFWwindow* handle, f64 xpos, f64 ypos)
 #define _KEY_CASE_SHIFT(_c, _sc) \
     case _c : c = (shift) ? _sc : _c; break;
 
+#define _KEY_CASE_GLFW(_c, _gc) \
+    case _gc : c = _c; break;
+
 #define _KEY_CASE(_c) \
     case _c : c = _c; break;
 
@@ -154,7 +157,8 @@ char window_get_char(i32 key, i32 mods)
         c = (shift) ? num_to_sym[key - '0'] : key;
     switch (key) {
         _KEY_CASE(' ')
-        _KEY_CASE('\t')
+        _KEY_CASE_GLFW('\t', GLFW_KEY_TAB)
+        _KEY_CASE_GLFW('\n', GLFW_KEY_ENTER)
         _KEY_CASE_SHIFT('`', '~')
         _KEY_CASE_SHIFT('-', '_')
         _KEY_CASE_SHIFT('=', '+')

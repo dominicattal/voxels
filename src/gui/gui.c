@@ -45,11 +45,11 @@ void gui_init(void)
 
     comp_set_text(click_me, "Click Me!");
     comp_set_hoverable(click_me, TRUE);
-    //comp_attach(gui.root, click_me);
+    comp_attach(gui.root, click_me);
 
     Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
     comp_set_color(random_color, 255, 0, 255, 255);
-    comp_set_align(random_color, ALIGN_CENTER, ALIGN_TOP);
+    comp_set_align(random_color, ALIGN_LEFT, ALIGN_TOP);
     comp_attach(gui.root, random_color);
 
     comp_textbox_set_reference(click_me, random_color);
@@ -203,7 +203,7 @@ static void update_data_text(Component* comp)
     vbo_idx = gui.vbo_length;
     while (right < length) {
         
-        while (right < length && text[right] == ' ')
+        while (right < length && (text[right] == ' ' || text[right] == '\n'))
             right++;
 
         left = right;
