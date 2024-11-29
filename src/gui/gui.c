@@ -45,7 +45,7 @@ void gui_init(void)
 
     comp_set_text(click_me, "Click Me!");
     comp_set_hoverable(click_me, TRUE);
-    comp_attach(gui.root, click_me);
+    //comp_attach(gui.root, click_me);
 
     Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
     comp_set_color(random_color, 255, 0, 255, 255);
@@ -251,9 +251,11 @@ static void update_data_text(Component* comp)
         if (left == right)
             right++;
 
-        font_char_hmetrics(FONT_DEFAULT, font_size, text[right-1], &adv, &lsb);
-        font_char_bbox(FONT_DEFAULT, font_size, text[right-1], &a1, &b1, &a2, &b2);
-        test_ox -= adv - (a2 + a1);
+        if (text[right-1] != ' ') {
+            font_char_hmetrics(FONT_DEFAULT, font_size, text[right-1], &adv, &lsb);
+            font_char_bbox(FONT_DEFAULT, font_size, text[right-1], &a1, &b1, &a2, &b2);
+            test_ox -= adv - (a2 + a1);
+        }
         
         ox = ha * (cw - test_ox) / 2.0f;
 
