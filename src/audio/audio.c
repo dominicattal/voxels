@@ -14,7 +14,7 @@ typedef struct {
     ALCdevice* device;
     ALCcontext* context;
     ALuint sources[MAX_NUM_SOURCES];
-    ALuint buffers[NUM_AUDIO];
+    ALuint buffers[NUM_BUFFERS];
     ALuint num_sources;
 } Audio;
 

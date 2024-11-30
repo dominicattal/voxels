@@ -1,4 +1,4 @@
-#include "../component.h"
+#include "components.h"
 #include "../../../renderer/renderer.h"
 #include "../../../window/window.h"
 #include "../../../game/game.h"

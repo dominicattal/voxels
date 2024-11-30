@@ -1,4 +1,4 @@
-#include "../component.h"
+#include "components.h"
 #include "../../../window/window.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +24,7 @@ void comp_textbox_init(Component* comp)
     comp_set_valign(comp, ALIGN_TOP);
     comp_set_is_text(comp, TRUE);
     comp_set_font(comp, FONT_TWO);
-    comp_set_font_size(comp, 24);
+    comp_set_font_size(comp, 21);
     comp->data = data_create();
 }
 

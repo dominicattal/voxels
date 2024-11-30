@@ -140,6 +140,9 @@ static void resize_gui_buffers(u32 num_components)
 
 static void update_components_helper(Component* comp, f64 dt)
 {
+    if (!comp_is_visible(comp))
+        return;
+    
     comp_update(comp, dt);
     for (i32 i = 0; i < comp_num_children(comp); i++)
         update_components_helper(comp->children[i], dt);

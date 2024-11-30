@@ -38,8 +38,8 @@ typedef struct Component {
 } Component;
 
 // main api
-void comp_init(void);
 Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id);
+void comp_init(void);
 void comp_attach(Component* parent, Component* child);
 void comp_detach(Component* parent, Component* child);
 void comp_destroy(Component* comp);
@@ -52,18 +52,6 @@ void comp_hover(Component* comp, bool status);
 void comp_click(Component* comp, i32 button, i32 action);
 void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
 void comp_update(Component* comp, f64 dt);
-
-// component functions
-void comp_default_init(Component* comp);
-void comp_textbox_init(Component* comp);
-void comp_textbox_hover(Component* comp, bool status);
-void comp_textbox_click(Component* comp, i32 buttion, i32 action);
-void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
-void comp_textbox_update(Component* comp, f64 dt);
-void comp_textbox_set_reference(Component* comp, Component* ref);
-void comp_debug_init(Component* comp);
-void comp_debug_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
-void comp_debug_update(Component* comp, f64 dt);
 
 // Setters for packed info
 void comp_set_id(Component* comp, CompID id);

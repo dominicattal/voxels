@@ -3,9 +3,10 @@
 #include "../util.h"
 #include <glfw.h>
 #include <stdio.h>
+#include <stb_image.h>
 
-#define DEFAULT_WINDOW_WIDTH  500
-#define DEFAULT_WINDOW_HEIGHT 500
+#define DEFAULT_WINDOW_WIDTH  1000
+#define DEFAULT_WINDOW_HEIGHT 1000
 
 typedef struct {
     GLFWwindow* handle;
@@ -27,6 +28,7 @@ static void framebuffer_size_callback();
 static void mouse_button_callback();
 static void key_callback();
 static void cursor_pos_callback();
+static void load_images(void);
 
 void window_init(void)
 {
@@ -51,6 +53,8 @@ void window_init(void)
     glfwSetErrorCallback(error_callback);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glViewport(0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+
+    load_images();
 
     window.dt = 0;
 }
@@ -190,4 +194,21 @@ char window_get_char(i32 key, i32 mods)
 f64 window_dt(void)
 {
     return window.dt;
+}
+
+static void load_images(void)
+{
+    GLFWimage images[2], cursor_image;
+
+    images[0].pixels = stbi_load("assets/textures/my_icon.png", &images[0].width, &images[0].height, 0, 4);
+    images[1].pixels = stbi_load("assets/textures/my_icon_small.png", &images[1].width, &images[1].height, 0, 4);
+    glfwSetWindowIcon(window.handle, 2, images);
+
+    cursor_image.pixels = stbi_load("assets/textures/cursor.png", &cursor_image.width, &cursor_image.height, 0, 4);
+    window.cursor.handle = glfwCreateCursor(&cursor_image, 8, 8);
+    glfwSetCursor(window.handle, window.cursor.handle);
+
+    stbi_image_free(images[0].pixels);
+    stbi_image_free(images[1].pixels);
+    stbi_image_free(cursor_image.pixels);
 }

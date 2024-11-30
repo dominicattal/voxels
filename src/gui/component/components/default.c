@@ -1,4 +1,4 @@
-#include "../component.h"
+#include "components.h"
 
 void comp_default_init(Component* comp)
 {

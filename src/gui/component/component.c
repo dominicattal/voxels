@@ -1,4 +1,5 @@
 #include "component.h"
+#include "components/components.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
