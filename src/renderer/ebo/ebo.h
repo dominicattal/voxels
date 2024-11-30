@@ -1,7 +1,7 @@
 #ifndef EBO_H
 #define EBO_H
 
-#include "../../util.h"
+#include "../../type.h"
 
 typedef struct {
     u32 id, length;

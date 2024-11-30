@@ -1,7 +1,7 @@
 #ifndef FONT_H
 #define FONT_H
 
-#include "../util.h"
+#include "../type.h"
 
 #define NUM_FONTS 1
 

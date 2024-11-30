@@ -1,7 +1,7 @@
 #ifndef SSBO_H
 #define SSBO_H
 
-#include "../../util.h"
+#include "../../type.h"
 
 typedef struct {
     u32 id;

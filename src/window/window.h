@@ -2,7 +2,7 @@
 #define WINDOW_H
 
 #include <glad.h>
-#include "../util.h"
+#include "../type.h"
 
 void window_init(void);
 void window_update(void);

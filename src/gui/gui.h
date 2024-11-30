@@ -1,7 +1,7 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include "../util.h"
+#include "../type.h"
 
 void gui_init(void);
 void gui_update(void);

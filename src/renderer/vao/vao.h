@@ -1,7 +1,7 @@
 #ifndef VAO_H
 #define VAO_H
 
-#include "../../util.h"
+#include "../../type.h"
 #include "../vbo/vbo.h"
 #include "../ebo/ebo.h"
 

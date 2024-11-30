@@ -1,7 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "../util.h"
+#include "../type.h"
 
 #define NUM_VAOS 1
 

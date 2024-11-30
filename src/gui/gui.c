@@ -63,7 +63,6 @@ void gui_update(void)
 
 void gui_destroy(void)
 {
-    font_destroy();
     comp_destroy(gui.root);
     free(gui.vbo_buffer);
     free(gui.ebo_buffer);

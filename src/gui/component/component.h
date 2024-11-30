@@ -1,7 +1,7 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
-#include "../../util.h"
+#include "../../type.h"
 
 #define MAX_NUM_CHILDREN  1000
 
