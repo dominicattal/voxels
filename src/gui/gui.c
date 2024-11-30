@@ -38,6 +38,9 @@ void gui_init(void)
     comp_set_color(gui.root, 0, 0, 0, 0);
     comp_set_hoverable(gui.root, FALSE);
 
+    Component* debug = comp_create(0, yres-75, 150, 75, COMP_DEBUG);
+    comp_attach(gui.root, debug);
+
     Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
     comp_set_color(click_me, 0, 255, 0, 255);
     comp_set_align(click_me, ALIGN_CENTER, ALIGN_TOP);
@@ -149,10 +152,7 @@ static void update_components(f64 dt)
 
 static void update_data_text(Component* comp)
 {
-    CompID id;
-    comp_get_id(comp, &id);
-
-    if (id != COMP_TEXTBOX)
+    if (!comp_is_text(comp))
         return;
 
     if (comp->text == NULL)
@@ -306,6 +306,9 @@ static void update_data_text(Component* comp)
 
 static void update_data_helper(Component* comp)
 {
+    if (!comp_is_visible(comp)) 
+        return;
+    
     i32 cx, cy, cw, ch;
     u8  cr, cg, cb, ca;
     f32 x1, y1, x2, y2, r, g, b, a;
@@ -324,9 +327,7 @@ static void update_data_helper(Component* comp)
     A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
     B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
 
-    if (comp_id(comp) == COMP_TEXTBOX)
-        update_data_text(comp);
-
+    update_data_text(comp);
     for (i32 i = 0; i < comp_num_children(comp); i++)
         update_data_helper(comp->children[i]);
 }

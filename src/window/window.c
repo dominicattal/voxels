@@ -17,7 +17,7 @@ typedef struct {
         GLFWcursor* handle;
         f64 x, y;
     } cursor;
-    f64 dt, last;
+    f64 dt;
 } Window;
 
 static Window window;
@@ -53,16 +53,14 @@ void window_init(void)
     glViewport(0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
 
     window.dt = 0;
-    window.last = get_time();
 }
 
 void window_update(void)
 {
+    f64 start = get_time();
     glfwPollEvents();
     glfwSwapBuffers(window.handle);
-    f64 time = get_time();
-    window.dt = time - window.last;
-    window.last = time;
+    window.dt = get_time() - start;
 }
 
 void window_close(void) 

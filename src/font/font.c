@@ -49,6 +49,7 @@ static void load_fonts(void)
 {
     load_font(FONT_DEFAULT, "assets/fonts/mojangles.ttf");
     load_font(FONT_TWO, "assets/fonts/HelvetiPixel.ttf");
+    load_font(FONT_MONOSPACE, "assets/fonts/consola.ttf");
 }
 
 void font_init(void)

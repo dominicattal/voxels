@@ -28,6 +28,7 @@ Component* comp_create(i16 x, i16 y, i16 w, i16 h, CompID id)
     comp_set_bbox(comp, x, y, w, h);
     comp_set_color(comp, 0, 0, 0, 255);
     comp_set_id(comp, id);
+    comp_set_visible(comp, TRUE);
     comp->children = NULL;
     comp->data = NULL;
     component_functions[comp_id(comp)][COMP_FUNC_INIT](comp);
@@ -181,6 +182,9 @@ static void initialize_functions(void)
     component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK]  = comp_textbox_click;
     component_functions[COMP_TEXTBOX][COMP_FUNC_KEY]    = comp_textbox_key;
     component_functions[COMP_TEXTBOX][COMP_FUNC_UPDATE] = comp_textbox_update;
+    component_functions[COMP_DEBUG][COMP_FUNC_INIT]     = comp_debug_init;
+    component_functions[COMP_DEBUG][COMP_FUNC_KEY]      = comp_debug_key;
+    component_functions[COMP_DEBUG][COMP_FUNC_UPDATE]   = comp_debug_update;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +194,7 @@ static void initialize_functions(void)
 // 32 - r, g, b, a  |  1 - hoverable | 6 - font_size     |
 // 24 - x, y        |  1 - hovered   | 4 - font          |
 //                  |  1 - clickable |                   |
+//                  |  1 - visible   |                   |
 // ---------------------------------------------------------------------------
 
 #define ID_SHIFT    0
@@ -221,17 +226,19 @@ static void initialize_functions(void)
 #define HD_BITS     1
 #define CL_SHIFT    42
 #define CL_BITS     1
+#define VS_SHIFT    43
+#define VS_BITS     1
 
-#define NC_SHIFT    43
+#define NC_SHIFT    44
 #define NC_BITS     8
 
-#define HA_SHIFT    43
+#define HA_SHIFT    44
 #define HA_BITS     2
-#define VA_SHIFT    45
+#define VA_SHIFT    46
 #define VA_BITS     2
-#define FS_SHIFT    51
+#define FS_SHIFT    48
 #define FS_BITS     6
-#define FT_SHIFT    57
+#define FT_SHIFT    54
 #define FT_BITS     4
 
 #define SMASK(BITS)         ((1<<BITS)-1)
@@ -309,6 +316,9 @@ void comp_set_hovered(Component* comp, bool hd) {
 }
 void comp_set_clickable(Component* comp, bool cl) {
     comp->info2 = (comp->info2 & GMASK(CL_BITS, CL_SHIFT)) | ((u64)(cl & SMASK(CL_BITS)) << CL_SHIFT);
+}
+void comp_set_visible(Component* comp, bool vs) {
+    comp->info2 = (comp->info2 & GMASK(VS_BITS, VS_SHIFT)) | ((u64)(vs & SMASK(VS_BITS)) << VS_SHIFT);
 }
 void comp_set_tex(Component* comp, i32 tx) {
     comp->info2 = (comp->info2 & GMASK(TX_BITS, TX_SHIFT)) | ((u64)(tx & SMASK(TX_BITS)) << TX_SHIFT);
@@ -393,6 +403,9 @@ void comp_get_hovered(Component* comp, bool* hd) {
 void comp_get_clickable(Component* comp, bool* cl) {
     *cl = (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
 }
+void comp_get_visible(Component* comp, bool* vs) {
+    *vs = (comp->info2 >> VS_SHIFT) & SMASK(VS_BITS);
+}
 void comp_get_tex(Component* comp, i32* tx) {
     *tx = (comp->info2 >> TX_SHIFT) & SMASK(TX_BITS);
 }
@@ -423,4 +436,7 @@ bool comp_is_hovered(Component* comp) {
 }
 bool comp_is_clickable(Component* comp) {
     return (comp->info2 >> CL_SHIFT) & SMASK(CL_BITS);
+}
+bool comp_is_visible(Component* comp) {
+    return (comp->info2 >> VS_SHIFT) & SMASK(VS_BITS);
 }

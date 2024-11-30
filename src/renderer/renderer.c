@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "../util.h"
 #include "vao/vao.h"
 #include "shader/shader.h"
 #include "texture/texture.h"
@@ -12,6 +13,7 @@ typedef struct {
     SSBO ssbos[NUM_SSBOS];
     Shader shaders[NUM_SHADERS];
     Texture textures[NUM_TEXTURES];
+    f64 dt;
 } Renderer;
 
 static Renderer renderer;
@@ -22,6 +24,8 @@ static void set_texture_ssbo();
 
 void renderer_init(void)
 {
+    renderer.dt = 0;
+
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(message_callback, 0);
     glEnable(GL_BLEND);
@@ -59,11 +63,15 @@ void renderer_update(VAOID vao_index, u32 vbo_offset, u32 vbo_length, f32* vbo_b
 
 void renderer_render(void)
 {
+    f64 start = get_time();
+
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     shader_use(renderer.shaders[SHADER_DEFAULT]);
     vao_draw(renderer.vaos[VAO_GUI]);
+
+    renderer.dt = get_time() - start;
 }
 
 void renderer_destroy(void)
@@ -77,6 +85,11 @@ void renderer_destroy(void)
         vao_destroy(renderer.vaos[i]);
     for (i = 0; i < NUM_TEXTURES; i++)
         texture_destroy(renderer.textures[i]);
+}
+
+f64 renderer_dt(void)
+{
+    return renderer.dt;
 }
 
 void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels)

@@ -22,6 +22,7 @@
 typedef enum CompID {
     COMP_DEFAULT = 0,
     COMP_TEXTBOX = 1,
+    COMP_DEBUG = 2
 } CompID;
 
 typedef struct Component Component;
@@ -60,6 +61,9 @@ void comp_textbox_click(Component* comp, i32 buttion, i32 action);
 void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
 void comp_textbox_update(Component* comp, f64 dt);
 void comp_textbox_set_reference(Component* comp, Component* ref);
+void comp_debug_init(Component* comp);
+void comp_debug_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
+void comp_debug_update(Component* comp, f64 dt);
 
 // Setters for packed info
 void comp_set_id(Component* comp, CompID id);
@@ -78,13 +82,14 @@ void comp_set_valign(Component* comp, u8 va);
 void comp_set_hoverable(Component* comp, bool hv);
 void comp_set_hovered(Component* comp, bool hd);
 void comp_set_clickable(Component* comp, bool cl);
+void comp_set_visible(Component* comp, bool vs);
 void comp_set_color(Component* comp, u8 r, u8 g, u8 b, u8 a);
 void comp_set_bbox(Component* comp, i32 x, i32 y, i32 w, i32 h);
 void comp_set_position(Component* comp, i32 x, i32 y);
 void comp_set_size(Component* comp, i32 w, i32 h);
 void comp_set_align(Component* comp, u8 ha, u8 va);
 void comp_set_tex(Component* comp, i32 tx);
-void comp_set_font(Component* comp, FontID font);
+void comp_set_font(Component* comp, FontID ft);
 void comp_set_font_size(Component* comp, i32 fs);
 
 // Getters for packed info
@@ -104,13 +109,14 @@ void comp_get_valign(Component* comp, u8* va);
 void comp_get_hoverable(Component* comp, bool* hv);
 void comp_get_hovered(Component* comp, bool* hd);
 void comp_get_clickable(Component* comp, bool* cl);
+void comp_get_visible(Component* comp, bool* vs);
 void comp_get_color(Component* comp, u8* r, u8* g, u8* b, u8* a);
 void comp_get_bbox(Component* comp, i32* x, i32* y, i32* w, i32* h);
 void comp_get_position(Component* comp, i32* x, i32* y);
 void comp_get_size(Component* comp, i32* w, i32* h);
 void comp_get_align(Component* comp, u8* ha, u8* va);
 void comp_get_tex(Component* comp, i32* tx);
-void comp_get_font(Component* comp, FontID* font);
+void comp_get_font(Component* comp, FontID* ft);
 void comp_get_font_size(Component* comp, i32* fs);
 
 // Second set of getters
@@ -120,6 +126,7 @@ bool comp_is_text(Component* comp);
 bool comp_is_hoverable(Component* comp);
 bool comp_is_hovered(Component* comp);
 bool comp_is_clickable(Component* comp);
+bool comp_is_visible(Component* comp);
 
 // Used for debugging info
 void print_bits(u64 x);
