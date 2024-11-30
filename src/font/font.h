@@ -3,10 +3,11 @@
 
 #include "../type.h"
 
-#define NUM_FONTS 1
+#define NUM_FONTS 2
 
 typedef enum {
     FONT_DEFAULT = 0,
+    FONT_TWO = 1
 } FontID;
 
 void font_init(void);

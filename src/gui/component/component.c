@@ -306,6 +306,9 @@ void comp_set_clickable(Component* comp, bool cl) {
 void comp_set_tex(Component* comp, i32 tx) {
     comp->info2 = (comp->info2 & GMASK(TX_BITS, TX_SHIFT)) | ((u64)(tx & SMASK(TX_BITS)) << TX_SHIFT);
 }
+void comp_set_font(Component* comp, FontID ft) {
+    comp->info2 = (comp->info2 & GMASK(FT_BITS, FT_SHIFT)) | ((u64)(ft & SMASK(FT_BITS)) << FT_SHIFT);
+}
 void comp_set_font_size(Component* comp, i32 fs) {
     comp->info2 = (comp->info2 & GMASK(FS_BITS, FS_SHIFT)) | ((u64)(fs & SMASK(FS_BITS)) << FS_SHIFT);
 }
@@ -385,6 +388,9 @@ void comp_get_clickable(Component* comp, bool* cl) {
 }
 void comp_get_tex(Component* comp, i32* tx) {
     *tx = (comp->info2 >> TX_SHIFT) & SMASK(TX_BITS);
+}
+void comp_get_font(Component* comp, FontID* ft) {
+    *ft = (comp->info2 >> FT_SHIFT) & SMASK(FT_BITS);
 }
 void comp_get_font_size(Component* comp, i32* fs) {
     *fs = (comp->info2 >> FS_SHIFT) & SMASK(FS_BITS);

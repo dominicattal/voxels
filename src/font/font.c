@@ -51,6 +51,7 @@ void font_init(void)
     stbtt_PackBegin(&spc, bitmap, BITMAP_WIDTH, BITMAP_HEIGHT, 0, 1, NULL);
 
     load_font(FONT_DEFAULT, "assets/mojangles.ttf");
+    load_font(FONT_TWO, "assets/HelvetiPixel.ttf");
 
     stbtt_PackEnd(&spc);
     stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, bitmap, BITMAP_WIDTH);
