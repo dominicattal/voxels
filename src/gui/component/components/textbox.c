@@ -7,12 +7,14 @@
 
 typedef struct {
     Component* ref;
+    f32 timer;
 } Data;
 
 static Data* data_create(void)
 {
     Data* data = malloc(sizeof(Data));
     data->ref = NULL;
+    data->timer = 0;
     return data;
 }
 
@@ -60,5 +62,15 @@ void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mo
         comp_insert_char(comp, window_get_char(key, mods), -1);
     } else if (key == GLFW_KEY_BACKSPACE && action != GLFW_RELEASE) {
         comp_delete_char(comp, -1);
+    }
+}
+
+void comp_textbox_update(Component* comp, f64 dt)
+{
+    Data* data = comp->data;
+    data->timer -= dt;
+    if (data->timer < 0) {
+        data->timer += 1;
+        comp_set_color(comp, rand() % 256, rand() % 256, rand() % 256, 255);
     }
 }

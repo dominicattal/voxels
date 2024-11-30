@@ -26,4 +26,6 @@ void window_get_resolution(i32* xres, i32* yres);
 
 char window_get_char(i32 key, i32 mods);
 
+f64  window_dt(void);
+
 #endif

@@ -20,7 +20,7 @@ typedef struct {
 
 static GUI gui;
 
-static void update_components(void);
+static void update_components(f64 dt);
 static void update_data(void);
 
 void gui_init(void)
@@ -55,9 +55,9 @@ void gui_init(void)
     comp_textbox_set_reference(click_me, random_color);
 }
 
-void gui_update(void)
+void gui_update(f64 dt)
 {
-    update_components();
+    update_components(dt);
     update_data();
 }
 
@@ -135,18 +135,16 @@ static void resize_gui_buffers(u32 num_components)
     }
 }
 
-static void update_components_helper(Component* comp)
+static void update_components_helper(Component* comp, f64 dt)
 {
-    i32 num_children;
-    comp_get_num_children(comp, &num_children);
-    for (i32 i = 0; i < num_children; i++)
-        update_components_helper(comp->children[i]);
+    comp_update(comp, dt);
+    for (i32 i = 0; i < comp_num_children(comp); i++)
+        update_components_helper(comp->children[i], dt);
 }
 
-static void update_components(void)
+static void update_components(f64 dt)
 {
-    return;
-    update_components_helper(gui.root);
+    update_components_helper(gui.root, dt);
 }
 
 static void update_data_text(Component* comp)

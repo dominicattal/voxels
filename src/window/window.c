@@ -1,5 +1,6 @@
 #include "window.h"
 #include "../gui/gui.h"
+#include "../util.h"
 #include <glfw.h>
 #include <stdio.h>
 
@@ -16,6 +17,7 @@ typedef struct {
         GLFWcursor* handle;
         f64 x, y;
     } cursor;
+    f64 dt, last;
 } Window;
 
 static Window window;
@@ -49,44 +51,58 @@ void window_init(void)
     glfwSetErrorCallback(error_callback);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glViewport(0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+
+    window.dt = 0;
+    window.last = get_time();
 }
 
 void window_update(void)
 {
     glfwPollEvents();
     glfwSwapBuffers(window.handle);
+    f64 time = get_time();
+    window.dt = time - window.last;
+    window.last = time;
 }
 
-void window_close(void) { 
+void window_close(void) 
+{ 
     glfwSetWindowShouldClose(window.handle, 1); 
 }
 
-bool window_closed(void) { 
+bool window_closed(void) 
+{ 
     return glfwWindowShouldClose(window.handle);
 }
 
-void window_destroy(void) { 
+void window_destroy(void) 
+{ 
     glfwTerminate(); 
 }
 
-bool window_mouse_button_pressed(GLenum button) { 
+bool window_mouse_button_pressed(GLenum button) 
+{ 
     return glfwGetMouseButton(window.handle, button) == GLFW_PRESS; 
 }
 
-bool window_key_pressed(GLenum key) { 
+bool window_key_pressed(GLenum key) 
+{ 
     return glfwGetKey(window.handle, key) == GLFW_PRESS; 
 }
 
-void error_callback(int x, const char *message) { 
+void error_callback(int x, const char *message) 
+{ 
     fprintf(stderr, "%d\n%s\n", x, message); 
 }
 
-void window_get_resolution(i32* xres, i32* yres) {
+void window_get_resolution(i32* xres, i32* yres) 
+{
     *xres = window.resolution.x;
     *yres = window.resolution.y;
 }
 
-bool window_cursor_in_bbox(i32 x, i32 y, i32 w, i32 h) {
+bool window_cursor_in_bbox(i32 x, i32 y, i32 w, i32 h) 
+{
     return window.cursor.x >= x 
         && window.cursor.x <= x + w 
         && window.height - window.cursor.y >= y 
@@ -115,7 +131,6 @@ static void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
     window.width = width;
     window.height = height;
     glViewport(0, 0, window.width, window.height);
-    gui_update();
 }
 
 static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
@@ -172,4 +187,9 @@ char window_get_char(i32 key, i32 mods)
         _KEY_CASE_SHIFT('/', '?')
     }
     return c;
+}
+
+f64 window_dt(void)
+{
+    return window.dt;
 }

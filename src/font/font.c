@@ -45,14 +45,17 @@ static void load_font(FontID id, const char* ttf_path)
     stbtt_PackFontRanges(&spc, fonts[id].font_buffer, 0, &fonts[id].font_range, 1);
 }
 
+static void load_fonts(void)
+{
+    load_font(FONT_DEFAULT, "assets/fonts/mojangles.ttf");
+    load_font(FONT_TWO, "assets/fonts/HelvetiPixel.ttf");
+}
+
 void font_init(void)
 {
     unsigned char* bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
     stbtt_PackBegin(&spc, bitmap, BITMAP_WIDTH, BITMAP_HEIGHT, 0, 1, NULL);
-
-    load_font(FONT_DEFAULT, "assets/mojangles.ttf");
-    load_font(FONT_TWO, "assets/HelvetiPixel.ttf");
-
+    load_fonts();
     stbtt_PackEnd(&spc);
     stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, bitmap, BITMAP_WIDTH);
     renderer_create_font_bitmap(BITMAP_WIDTH, BITMAP_HEIGHT, bitmap);

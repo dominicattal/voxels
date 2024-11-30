@@ -50,6 +50,7 @@ void comp_delete_char(Component* comp, i32 idx);
 void comp_hover(Component* comp, bool status);
 void comp_click(Component* comp, i32 button, i32 action);
 void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
+void comp_update(Component* comp, f64 dt);
 
 // component functions
 void comp_default_init(Component* comp);
@@ -57,6 +58,7 @@ void comp_textbox_init(Component* comp);
 void comp_textbox_hover(Component* comp, bool status);
 void comp_textbox_click(Component* comp, i32 buttion, i32 action);
 void comp_textbox_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
+void comp_textbox_update(Component* comp, f64 dt);
 void comp_textbox_set_reference(Component* comp, Component* ref);
 
 // Setters for packed info

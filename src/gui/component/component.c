@@ -4,12 +4,13 @@
 #include <string.h>
 #include <stdio.h>
 
-#define NUM_COMPONENT_FUNCS 4
+#define NUM_COMPONENT_FUNCS 5
 
-#define COMP_FUNC_INIT  0
-#define COMP_FUNC_HOVER 1
-#define COMP_FUNC_CLICK 2
-#define COMP_FUNC_KEY   3
+#define COMP_FUNC_INIT      0
+#define COMP_FUNC_HOVER     1
+#define COMP_FUNC_CLICK     2
+#define COMP_FUNC_KEY       3
+#define COMP_FUNC_UPDATE    4
 
 static void (*component_functions[NUM_COMPONENTS][NUM_COMPONENT_FUNCS])();
 
@@ -159,6 +160,11 @@ void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods)
     component_functions[comp_id(comp)][COMP_FUNC_KEY](comp, key, scancode, action, mods);
 }
 
+void comp_update(Component* comp, f64 dt)
+{
+    component_functions[comp_id(comp)][COMP_FUNC_UPDATE](comp, dt);
+}
+
 /* --------------------------------- */
 
 static void do_nothing() {}
@@ -169,11 +175,12 @@ static void initialize_functions(void)
         for (i32 j = 0; j < NUM_COMPONENT_FUNCS; j++)
             component_functions[i][j] = do_nothing;
     
-    component_functions[COMP_DEFAULT][COMP_FUNC_INIT]  = comp_default_init;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT]  = comp_textbox_init;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER] = comp_textbox_hover;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK] = comp_textbox_click;
-    component_functions[COMP_TEXTBOX][COMP_FUNC_KEY]   = comp_textbox_key;
+    component_functions[COMP_DEFAULT][COMP_FUNC_INIT]   = comp_default_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_INIT]   = comp_textbox_init;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_HOVER]  = comp_textbox_hover;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_CLICK]  = comp_textbox_click;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_KEY]    = comp_textbox_key;
+    component_functions[COMP_TEXTBOX][COMP_FUNC_UPDATE] = comp_textbox_update;
 }
 
 // ---------------------------------------------------------------------------
