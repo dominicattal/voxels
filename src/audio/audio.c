@@ -58,12 +58,12 @@ static int load_sounds(void);
 void audio_init() {
     audio.device = alcOpenDevice(NULL);
     if (!audio.device) {
-        fprintf(stderr, "Failed to open OpenAL device.\n");
+        printf("Failed to open OpenAL device.\n");
         exit(1);
     }
     audio.context = alcCreateContext(audio.device, NULL);
     if (!audio.context) {
-        fprintf(stderr, "Failed to create OpenAL context.\n");
+        printf("Failed to create OpenAL context.\n");
         alcCloseDevice(audio.device);
         exit(1);
     }

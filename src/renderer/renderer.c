@@ -7,6 +7,7 @@
 #include <glad.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../gui/gui.h"
 
 typedef struct {
     VAO vaos[NUM_VAOS];
@@ -49,6 +50,8 @@ void renderer_init(void)
     vao_attr(renderer.vaos[VAO_GUI], 1, 2, 2);
     vao_attr(renderer.vaos[VAO_GUI], 2, 4, 4);
     vao_attr(renderer.vaos[VAO_GUI], 3, 1, 8);
+
+
 }
 
 void renderer_malloc(VAOID vao_index, u32 vbo_length, u32 ebo_length)
@@ -63,6 +66,10 @@ void renderer_update(VAOID vao_index, u32 vbo_offset, u32 vbo_length, f32* vbo_b
 
 void renderer_render(void)
 {
+    GUIData gui_data = gui_get_data();
+    renderer_malloc(VAO_GUI, gui_data.vbo_max_length, gui_data.ebo_max_length);
+    renderer_update(VAO_GUI, 0, gui_data.vbo_length, gui_data.vbo_buffer, 0, gui_data.ebo_length, gui_data.ebo_buffer);
+
     f64 start = get_time();
 
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);

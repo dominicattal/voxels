@@ -4,7 +4,7 @@
 #include "../../font/font.h"
 #include "../../type.h"
 
-#define MAX_NUM_CHILDREN  1000
+#define MAX_NUM_CHILDREN  255
 
 #define ALIGN_LEFT      0
 #define ALIGN_CENTER    1
@@ -17,7 +17,7 @@
 #define HOVER_ON        0
 #define HOVER_OFF       1
 
-#define NUM_COMPONENTS 3
+#define NUM_COMPONENTS  3
 
 typedef enum CompID {
     COMP_DEFAULT = 0,

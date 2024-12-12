@@ -7,14 +7,17 @@ VBO* vbo_create(void)
     VBO* vbo = malloc(sizeof(vbo));
     glGenBuffers(1, &vbo->id);
     vbo_bind(vbo);
-    vbo->length = 0;
+    vbo->length = vbo->max_length = 0;
     return vbo;
 }
 
 void vbo_malloc(VBO* vbo, u32 length, GLenum usage)
 {
+    if (length == vbo->max_length)
+        return;
     vbo_bind(vbo);
     glBufferData(GL_ARRAY_BUFFER, length * sizeof(f32), NULL, usage);
+    vbo->max_length = length;
 }
 
 void vbo_update(VBO* vbo, u32 offset, u32 length, f32* buffer)

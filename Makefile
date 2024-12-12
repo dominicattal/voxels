@@ -34,14 +34,17 @@ $(OBJ_DIR)/%.o: %.c
 
 asm: $(ASMS)
 
+asm-clean:
+	@rm -f $(shell find build -name "*.s")
+
 $(ASM_DIR)/%.s: %.c
 	@mkdir -p $(shell dirname $@)
-	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDES) -S -o $@ $<
+	@$(CC) $(LIBS) $(INCLUDES) -O3 -S -o $@ $<
 
 $(DEPSH):
 
 -include $(DEPS)
 
 clean:
-	rm -r $(OBJ_DIR) $(DEP_DIR) $(TARGET)
+	rm -rf $(OBJ_DIR) $(DEP_DIR) $(TARGET)
 .PHONY: clean

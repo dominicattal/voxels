@@ -3,7 +3,6 @@
 #include "../renderer/renderer.h"
 #include "../window/window.h"
 #include "../font/font.h"
-#include "../renderer/texture/texture.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +13,6 @@ typedef struct {
     f32* vbo_buffer;
     u32 ebo_length, ebo_max_length;
     u32* ebo_buffer;
-    bool max_length_changed;
     Component* root;
 } GUI;
 
@@ -134,7 +132,6 @@ static void resize_gui_buffers(u32 num_components)
         gui.ebo_max_length += NUM_INDEXES * num_components;
         gui.vbo_buffer = realloc(gui.vbo_buffer, gui.vbo_max_length * sizeof(f32));
         gui.ebo_buffer = realloc(gui.ebo_buffer, gui.ebo_max_length * sizeof(u32));
-        gui.max_length_changed = TRUE;
     }
 }
 
@@ -339,9 +336,16 @@ static void update_data(void)
 {
     gui.vbo_length = gui.ebo_length = 0;
     update_data_helper(gui.root);
-    if (gui.max_length_changed) {
-        renderer_malloc(VAO_GUI, gui.vbo_max_length, gui.ebo_max_length);
-        gui.max_length_changed = FALSE;
-    }
-    renderer_update(VAO_GUI, 0, gui.vbo_length, gui.vbo_buffer, 0, gui.ebo_length, gui.ebo_buffer);
+}
+
+GUIData gui_get_data(void)
+{
+    GUIData data;
+    data.vbo_length = gui.vbo_length;
+    data.vbo_max_length = gui.vbo_max_length;
+    data.vbo_buffer = gui.vbo_buffer;
+    data.ebo_length = gui.ebo_length;
+    data.ebo_max_length = gui.ebo_max_length;
+    data.ebo_buffer = gui.ebo_buffer;
+    return data;
 }

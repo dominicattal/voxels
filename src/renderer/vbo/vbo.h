@@ -4,7 +4,7 @@
 #include "../../type.h"
 
 typedef struct {
-    u32 id, length;
+    u32 id, length, max_length;
 } VBO;
 
 VBO* vbo_create(void);
