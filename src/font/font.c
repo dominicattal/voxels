@@ -1,5 +1,4 @@
 #include "font.h"
-#include "../renderer/renderer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -10,6 +9,7 @@
 
 #define BITMAP_WIDTH    (1<<9)
 #define BITMAP_HEIGHT   (1<<9)
+
 #define CHAR_OFFSET     32
 #define NUM_CHARS       96
 
@@ -22,6 +22,7 @@ typedef struct {
 
 static Font fonts[NUM_FONTS];
 static stbtt_pack_context spc;
+static unsigned char* bitmap;
 
 static void load_font(FontID id, const char* ttf_path)
 {
@@ -54,13 +55,11 @@ static void load_fonts(void)
 
 void font_init(void)
 {
-    unsigned char* bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
+    bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT, sizeof(unsigned char));
     stbtt_PackBegin(&spc, bitmap, BITMAP_WIDTH, BITMAP_HEIGHT, 0, 1, NULL);
     load_fonts();
     stbtt_PackEnd(&spc);
     stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, bitmap, BITMAP_WIDTH);
-    renderer_create_font_bitmap(BITMAP_WIDTH, BITMAP_HEIGHT, bitmap);
-    free(bitmap);
 }
 
 void font_info(FontID id, i32 font_size, i32* ascent, i32* descent, i32* line_gap)
@@ -100,6 +99,13 @@ void font_char_kern(FontID id, i32 font_size, char character, char next_characte
     f32 scale = stbtt_ScaleForPixelHeight(&fonts[id].info, font_size);
     *kern = stbtt_GetCodepointKernAdvance(&fonts[id].info, character, next_character);
     *kern = roundf(*kern * scale);
+}
+
+unsigned char* font_bitmap(i32* width, i32* height)
+{
+    *width = BITMAP_WIDTH;
+    *height = BITMAP_HEIGHT;
+    return bitmap;
 }
 
 void font_destroy(void)

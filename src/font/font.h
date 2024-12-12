@@ -19,4 +19,6 @@ void font_char_bmap(FontID id, i32 font_size, char character, f32* bmap_u1, f32*
 void font_char_kern(FontID id, i32 font_size, char character, char next_character, i32* kern);
 void font_destroy(void);
 
+unsigned char* font_bitmap(i32* width, i32* height);
+
 #endif

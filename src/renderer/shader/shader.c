@@ -72,7 +72,7 @@ void shader_link(Shader shader)
     }
 }
 
-void shader_bind_uniform_block(Shader shader, u32 index, char* identifier)
+void shader_bind_uniform_block(Shader shader, u32 index, const char* identifier)
 {
     glUniformBlockBinding(shader.id, glGetUniformBlockIndex(shader.id, identifier), index);
 }

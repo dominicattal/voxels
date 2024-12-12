@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../gui/gui.h"
+#include "../font/font.h"
 
 #define NUM_VAOS 2
 
@@ -35,7 +36,6 @@ typedef struct {
     VAO vaos[NUM_VAOS];
     VBO vbos[NUM_VBOS];
     EBO ebos[NUM_EBOS];
-    SSBO ssbos[NUM_SSBOS];
     Shader shaders[NUM_SHADERS];
     Texture textures[NUM_TEXTURES];
     f64 dt;
@@ -44,7 +44,6 @@ typedef struct {
 static Renderer renderer;
 
 static void message_callback();
-static void link_shader_ssbo();
 
 static void initialize_textures()
 {
@@ -53,6 +52,12 @@ static void initialize_textures()
     renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
     renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGB, 1, 1, pixels);
+
+    i32 width, height;
+    unsigned char* bitmap = font_bitmap(&width, &height);
+    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, width, height, bitmap);
+    free(bitmap);
+    texture_bind(renderer.textures[TEX_BITMAP], 0);
 }
 
 static void initialize_shaders(void)
@@ -76,15 +81,6 @@ static void initialize_buffers(void)
     renderer.vbos[VBO_FONT] = vbo_create();
     renderer.ebos[EBO_GUI] = ebo_create();
     renderer.ebos[EBO_FONT] = ebo_create();
-
-    renderer.ssbos[SSBO_TEXTURES] = ssbo_create(NUM_TEXTURES * sizeof(u64));
-
-    u64 handles[NUM_TEXTURES];
-    for (i32 i = 0; i < NUM_TEXTURES; i++)
-        handles[i] = renderer.textures[i].handle;
-    ssbo_update(renderer.ssbos[SSBO_TEXTURES], 0, NUM_TEXTURES * sizeof(u64), handles);
-
-    link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
 }
 
 static void initialize_vaos(void)
@@ -168,8 +164,6 @@ void renderer_destroy(void)
     i32 i;
     for (i = 0; i < NUM_SHADERS; i++)
         shader_destroy(renderer.shaders[i]);
-    for (i = 0; i < NUM_SSBOS; i++)
-        ssbo_destroy(renderer.ssbos[i]);
     for (i = 0; i < NUM_VAOS; i++)
         vao_destroy(renderer.vaos[i]);
     for (i = 0; i < NUM_VBOS; i++)
@@ -185,11 +179,6 @@ f64 renderer_dt(void)
     return renderer.dt;
 }
 
-void renderer_create_font_bitmap(i32 width, i32 height, unsigned char* pixels)
-{
-    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, width, height, pixels);
-}
-
 /* --------------------------------- */
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
@@ -198,10 +187,3 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
     printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n", ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, severity, message);
     exit(1);
 }
-
-void link_shader_ssbo(ShaderID shader_id, SSBOID ssbo_id)
-{
-    shader_use(renderer.shaders[shader_id]);
-    ssbo_bind_buffer_base(renderer.ssbos[ssbo_id], ssbo_id);
-}
-
