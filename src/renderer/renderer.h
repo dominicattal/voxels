@@ -3,22 +3,25 @@
 
 #include "../type.h"
 
-#define NUM_VAOS 1
+#define NUM_VAOS 2
 
 typedef enum {
-    VAO_GUI = 0
+    VAO_GUI = 0,
+    VAO_FONT = 1
 } VAOID;
 
-#define NUM_VBOS 1
+#define NUM_VBOS 2
 
 typedef enum {
-    VBO_GUI = 0
+    VBO_GUI = 0,
+    VBO_FONT = 1
 } VBOID;
 
-#define NUM_EBOS 1
+#define NUM_EBOS 2
 
 typedef enum {
-    EBO_GUI = 0
+    EBO_GUI = 0,
+    EBO_FONT = 1
 } EBOID;
 
 #define NUM_TEXTURES 3

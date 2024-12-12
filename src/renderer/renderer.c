@@ -51,7 +51,12 @@ void renderer_init(void)
     vao_attr(renderer.vaos[VAO_GUI], 2, 4, 4);
     vao_attr(renderer.vaos[VAO_GUI], 3, 1, 8);
 
+    renderer.vaos[VAO_FONT] = vao_create(GL_STATIC_DRAW, GL_TRIANGLES, 9);
 
+    vao_attr(renderer.vaos[VAO_FONT], 0, 2, 0);
+    vao_attr(renderer.vaos[VAO_FONT], 1, 2, 2);
+    vao_attr(renderer.vaos[VAO_FONT], 2, 4, 4);
+    vao_attr(renderer.vaos[VAO_FONT], 3, 1, 8);
 }
 
 void renderer_malloc(VAOID vao_index, u32 vbo_length, u32 ebo_length)
@@ -67,8 +72,10 @@ void renderer_update(VAOID vao_index, u32 vbo_offset, u32 vbo_length, f32* vbo_b
 void renderer_render(void)
 {
     GUIData gui_data = gui_get_data();
-    renderer_malloc(VAO_GUI, gui_data.vbo_max_length, gui_data.ebo_max_length);
-    renderer_update(VAO_GUI, 0, gui_data.vbo_length, gui_data.vbo_buffer, 0, gui_data.ebo_length, gui_data.ebo_buffer);
+    renderer_malloc(VAO_GUI, gui_data.comp_vbo_max_length, gui_data.comp_ebo_max_length);
+    renderer_update(VAO_GUI, 0, gui_data.comp_vbo_length, gui_data.comp_vbo_buffer, 0, gui_data.comp_ebo_length, gui_data.comp_ebo_buffer);
+    renderer_malloc(VAO_FONT, gui_data.font_vbo_max_length, gui_data.font_ebo_max_length);
+    renderer_update(VAO_FONT, 0, gui_data.font_vbo_length, gui_data.font_vbo_buffer, 0, gui_data.font_ebo_length, gui_data.font_ebo_buffer);
 
     f64 start = get_time();
 
@@ -77,6 +84,7 @@ void renderer_render(void)
 
     shader_use(renderer.shaders[SHADER_DEFAULT]);
     vao_draw(renderer.vaos[VAO_GUI]);
+    vao_draw(renderer.vaos[VAO_FONT]);
 
     renderer.dt = get_time() - start;
 }

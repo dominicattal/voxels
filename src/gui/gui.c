@@ -9,11 +9,8 @@
 #include <math.h>
 
 typedef struct {
-    u32 vbo_length, vbo_max_length;
-    f32* vbo_buffer;
-    u32 ebo_length, ebo_max_length;
-    u32* ebo_buffer;
     Component* root;
+    GUIData data;
 } GUI;
 
 static GUI gui;
@@ -24,11 +21,6 @@ static void update_data(void);
 void gui_init(void)
 {
     comp_init();
-
-    gui.vbo_max_length = gui.ebo_max_length = 0;
-    gui.vbo_length = gui.ebo_length = 0;
-    gui.vbo_buffer = malloc(0);
-    gui.ebo_buffer = malloc(0);
 
     i32 xres, yres;
     window_get_resolution(&xres, &yres);
@@ -59,14 +51,15 @@ void gui_init(void)
 void gui_update(f64 dt)
 {
     update_components(dt);
-    update_data();
 }
 
 void gui_destroy(void)
 {
     comp_destroy(gui.root);
-    free(gui.vbo_buffer);
-    free(gui.ebo_buffer);
+    free(gui.data.comp_vbo_buffer);
+    free(gui.data.comp_ebo_buffer);
+    free(gui.data.font_vbo_buffer);
+    free(gui.data.font_ebo_buffer);
 }
 
 static void gui_mouse_button_callback_helper(Component* comp, i32 button, i32 action)
@@ -117,23 +110,43 @@ void gui_cursor_callback(void)
 
 /* ------------------------------ */
 
-#define A gui.vbo_buffer[gui.vbo_length++]
-#define B gui.ebo_buffer[gui.ebo_length++]
-
 #define FLOAT_PER_VERTEX 9
 #define NUM_VERTICES     4
 #define NUM_FLOATS       NUM_VERTICES * FLOAT_PER_VERTEX
 #define NUM_INDEXES      6
 
-static void resize_gui_buffers(u32 num_components)
+static void resize_comp_buffers(u32 num_components)
 {
-    if (gui.vbo_length + NUM_FLOATS * num_components >= gui.vbo_max_length) {
-        gui.vbo_max_length += NUM_FLOATS * num_components;
-        gui.ebo_max_length += NUM_INDEXES * num_components;
-        gui.vbo_buffer = realloc(gui.vbo_buffer, gui.vbo_max_length * sizeof(f32));
-        gui.ebo_buffer = realloc(gui.ebo_buffer, gui.ebo_max_length * sizeof(u32));
+    if (gui.data.comp_vbo_buffer == NULL) {
+        gui.data.comp_vbo_max_length += NUM_FLOATS * num_components;
+        gui.data.comp_ebo_max_length += NUM_INDEXES * num_components;
+        gui.data.comp_vbo_buffer = malloc(gui.data.comp_vbo_max_length * sizeof(f32));
+        gui.data.comp_ebo_buffer = malloc(gui.data.comp_ebo_max_length * sizeof(u32));
+    }
+    else if (gui.data.comp_vbo_length + NUM_FLOATS * num_components >= gui.data.comp_vbo_max_length) {
+        gui.data.comp_vbo_max_length += NUM_FLOATS * num_components;
+        gui.data.comp_ebo_max_length += NUM_INDEXES * num_components;
+        gui.data.comp_vbo_buffer = realloc(gui.data.comp_vbo_buffer, gui.data.comp_vbo_max_length * sizeof(f32));
+        gui.data.comp_ebo_buffer = realloc(gui.data.comp_ebo_buffer, gui.data.comp_ebo_max_length * sizeof(u32));
     }
 }
+
+static void resize_font_buffers(u32 num_glyphs)
+{
+    if (gui.data.font_vbo_buffer == NULL) {
+        gui.data.font_vbo_max_length += NUM_FLOATS * num_glyphs;
+        gui.data.font_ebo_max_length += NUM_INDEXES * num_glyphs;
+        gui.data.font_vbo_buffer = malloc(gui.data.font_vbo_max_length * sizeof(f32));
+        gui.data.font_ebo_buffer = malloc(gui.data.font_ebo_max_length * sizeof(u32));
+    }
+    if (gui.data.font_vbo_length + NUM_FLOATS * num_glyphs >= gui.data.font_vbo_max_length) {
+        gui.data.font_vbo_max_length += NUM_FLOATS * num_glyphs;
+        gui.data.font_ebo_max_length += NUM_INDEXES * num_glyphs;
+        gui.data.font_vbo_buffer = realloc(gui.data.font_vbo_buffer, gui.data.font_vbo_max_length * sizeof(f32));
+        gui.data.font_ebo_buffer = realloc(gui.data.font_ebo_buffer, gui.data.font_ebo_max_length * sizeof(u32));
+    }
+}
+
 
 static void update_components_helper(Component* comp, f64 dt)
 {
@@ -149,6 +162,9 @@ static void update_components(f64 dt)
 {
     update_components_helper(gui.root, dt);
 }
+
+#define A gui.data.font_vbo_buffer[gui.data.font_vbo_length++]
+#define B gui.data.font_ebo_buffer[gui.data.font_ebo_length++]
 
 static void update_data_text(Component* comp)
 {
@@ -198,8 +214,8 @@ static void update_data_text(Component* comp)
     left = right = 0;
     ox = 0;
     oy = ascent;
-    resize_gui_buffers(length);
-    vbo_idx = gui.vbo_length;
+    resize_font_buffers(length);
+    vbo_idx = gui.data.font_vbo_length;
     while (right < length) {
         
         while (right < length && (text[right] == ' ' || text[right] == '\t' || text[right] == '\n'))
@@ -271,7 +287,7 @@ static void update_data_text(Component* comp)
 
             window_pixel_to_screen_bbox(x, y, w, h, &x1, &y1, &x2, &y2);
 
-            ebo_idx = gui.vbo_length / FLOAT_PER_VERTEX;
+            ebo_idx = gui.data.font_vbo_length / FLOAT_PER_VERTEX;
 
             if (text[left] != '\0' && text[left] != ' ') {
                 A = x1, A = y1, A = u1, A = v2, A = 0, A = 0, A = 0, A = 1, A = TEX_BITMAP;
@@ -298,11 +314,17 @@ static void update_data_text(Component* comp)
     oy -= ascent - descent + line_gap;
     window_pixel_to_screen_y(va * (ch - oy), &dy);
 
-    while (vbo_idx < gui.vbo_length) {
-        gui.vbo_buffer[vbo_idx + 1] -= dy;
+    while (vbo_idx < gui.data.font_vbo_length) {
+        gui.data.font_vbo_buffer[vbo_idx + 1] -= dy;
         vbo_idx += FLOAT_PER_VERTEX;
     }
 }
+
+#undef A
+#undef B
+
+#define A gui.data.comp_vbo_buffer[gui.data.comp_vbo_length++]
+#define B gui.data.comp_ebo_buffer[gui.data.comp_ebo_length++]
 
 static void update_data_helper(Component* comp)
 {
@@ -312,12 +334,11 @@ static void update_data_helper(Component* comp)
     i32 cx, cy, cw, ch;
     u8  cr, cg, cb, ca;
     f32 x1, y1, x2, y2, r, g, b, a;
-    u32 idx = gui.vbo_length / FLOAT_PER_VERTEX;
+    u32 idx = gui.data.comp_vbo_length / FLOAT_PER_VERTEX;
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);
     comp_get_color(comp, &cr, &cg, &cb, &ca);
-
-    resize_gui_buffers(1);
+    resize_comp_buffers(1);
     window_pixel_to_screen_bbox(cx, cy, cw, ch, &x1, &y1, &x2, &y2);
     r = cr / 255.0f, g = cg / 255.0f, b = cb / 255.0f, a = ca / 255.0f;
 
@@ -332,20 +353,18 @@ static void update_data_helper(Component* comp)
         update_data_helper(comp->children[i]);
 }
 
+#undef A
+#undef B
+
 static void update_data(void)
 {
-    gui.vbo_length = gui.ebo_length = 0;
+    gui.data.comp_vbo_length = gui.data.comp_ebo_length = 0;
+    gui.data.font_vbo_length = gui.data.font_ebo_length = 0;
     update_data_helper(gui.root);
 }
 
 GUIData gui_get_data(void)
 {
-    GUIData data;
-    data.vbo_length = gui.vbo_length;
-    data.vbo_max_length = gui.vbo_max_length;
-    data.vbo_buffer = gui.vbo_buffer;
-    data.ebo_length = gui.ebo_length;
-    data.ebo_max_length = gui.ebo_max_length;
-    data.ebo_buffer = gui.ebo_buffer;
-    return data;
+    update_data();
+    return gui.data;
 }
