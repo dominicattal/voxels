@@ -45,34 +45,50 @@ static Renderer renderer;
 
 static void message_callback();
 static void link_shader_ssbo();
-static void set_texture_ssbo();
 
-void renderer_init(void)
+static void initialize_textures()
 {
-    renderer.dt = 0;
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(message_callback, 0);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     unsigned char pixels[4];
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 0;
     renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
     pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
     renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGB, 1, 1, pixels);
+}
 
-    renderer.shaders[SHADER_DEFAULT] = shader_create("src/renderer/shaders/default/default.vert", "src/renderer/shaders/default/default.frag");
+static void initialize_shaders(void)
+{
+    u32 vert, frag;
+    renderer.shaders[SHADER_DEFAULT] = shader_create();
+    vert = shader_compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
+    frag = shader_compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
+    glAttachShader(renderer.shaders[SHADER_DEFAULT].id, vert);
+    glAttachShader(renderer.shaders[SHADER_DEFAULT].id, frag);
+    shader_link(renderer.shaders[SHADER_DEFAULT]);
+    glDetachShader(renderer.shaders[SHADER_DEFAULT].id, vert);
+    glDetachShader(renderer.shaders[SHADER_DEFAULT].id, frag);
+    glDeleteShader(vert);
+    glDeleteShader(frag);
+}
 
+static void initialize_buffers(void)
+{
     renderer.vbos[VBO_GUI] = vbo_create();
     renderer.vbos[VBO_FONT] = vbo_create();
     renderer.ebos[EBO_GUI] = ebo_create();
     renderer.ebos[EBO_FONT] = ebo_create();
 
     renderer.ssbos[SSBO_TEXTURES] = ssbo_create(NUM_TEXTURES * sizeof(u64));
-    set_texture_ssbo();
-    link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
 
+    u64 handles[NUM_TEXTURES];
+    for (i32 i = 0; i < NUM_TEXTURES; i++)
+        handles[i] = renderer.textures[i].handle;
+    ssbo_update(renderer.ssbos[SSBO_TEXTURES], 0, NUM_TEXTURES * sizeof(u64), handles);
+
+    link_shader_ssbo(SHADER_DEFAULT, SSBO_TEXTURES);
+}
+
+static void initialize_vaos(void)
+{
     renderer.vaos[VAO_GUI] = vao_create();
 
     vao_bind(renderer.vaos[VAO_GUI]);
@@ -98,6 +114,21 @@ void renderer_init(void)
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
+}
+
+void renderer_init(void)
+{
+    renderer.dt = 0;
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(message_callback, 0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    initialize_textures();
+    initialize_shaders();
+    initialize_buffers();
+    initialize_vaos();
 }
 
 void renderer_render(void)
@@ -174,10 +205,3 @@ void link_shader_ssbo(ShaderID shader_id, SSBOID ssbo_id)
     ssbo_bind_buffer_base(renderer.ssbos[ssbo_id], ssbo_id);
 }
 
-static void set_texture_ssbo()
-{
-    u64 handles[NUM_TEXTURES];
-    for (i32 i = 0; i < NUM_TEXTURES; i++)
-        handles[i] = renderer.textures[i].handle;
-    ssbo_update(renderer.ssbos[SSBO_TEXTURES], 0, NUM_TEXTURES * sizeof(u64), handles);
-}

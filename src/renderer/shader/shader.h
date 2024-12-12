@@ -13,7 +13,9 @@ typedef enum {
     SHADER_DEFAULT = 0
 } ShaderID;
 
-Shader shader_create(char* vs_path, char* fs_path);
+Shader shader_create(void);
+u32  shader_compile(GLenum type, const char* path);
+void shader_link(Shader shader);
 void shader_bind_uniform_block(Shader shader, u32 index, char* identifier);
 void shader_use(Shader shader);
 void shader_destroy(Shader shader);

@@ -5,7 +5,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-static const char* read_file(char *path)
+static const char* read_file(const char *path)
 {
     FILE* ptr;
     char* content;
@@ -23,27 +23,27 @@ static const char* read_file(char *path)
     return content;
 }
 
-static unsigned int compile(char *s_path, GLenum type)
+u32 shader_compile(GLenum type, const char *path)
 {
     u32 shader;
     const char* shader_code;
     char info_log[512];
     i32 success;
-    DIR* dir = opendir(s_path);
+    DIR* dir = opendir(path);
     if (ENOENT == errno) {
-        printf("File %s does not exist", s_path);
+        printf("File %s does not exist", path);
         exit(1);
     }
     closedir(dir);
     shader = glCreateShader(type);
-    shader_code = read_file(s_path);
+    shader_code = read_file(path);
     glShaderSource(shader, 1, &shader_code, NULL);
     free((char*)shader_code);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        puts(s_path);
+        puts(path);
         glGetShaderInfoLog(shader, 512, NULL, info_log);
         printf(info_log);
         exit(1);
@@ -51,19 +51,17 @@ static unsigned int compile(char *s_path, GLenum type)
     return shader;
 }
 
-Shader shader_create(char* vs_path, char* fs_path)
+Shader shader_create(void)
 {
     Shader shader;
-    u32 vertex, fragment;
+    shader.id = glCreateProgram();
+    return shader;
+}
+
+void shader_link(Shader shader)
+{
     char info_log[512];
     i32 success;
-    
-    shader.id = glCreateProgram();
-    vertex = compile(vs_path, GL_VERTEX_SHADER);
-    glAttachShader(shader.id, vertex);
-    fragment = compile(fs_path, GL_FRAGMENT_SHADER);
-    glAttachShader(shader.id, fragment);
-
     glLinkProgram(shader.id);
     glGetProgramiv(shader.id, GL_LINK_STATUS, &success);
     if (!success)
@@ -72,11 +70,6 @@ Shader shader_create(char* vs_path, char* fs_path)
         printf(info_log);
         exit(1);
     }
-    glDetachShader(shader.id, vertex);
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-    glDetachShader(shader.id, fragment);
-    return shader;
 }
 
 void shader_bind_uniform_block(Shader shader, u32 index, char* identifier)

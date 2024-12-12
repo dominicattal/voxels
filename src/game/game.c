@@ -19,7 +19,7 @@ static void* game_update(void* vargp)
     f64 start;
     while (!kill_thread) {
         start = get_time();
-        sleep(5);
+        sleep(1);
         game.dt = get_time() - start;
     }
 }
