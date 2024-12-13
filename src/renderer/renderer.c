@@ -10,12 +10,7 @@
 #include "../gui/gui.h"
 #include "../font/font.h"
 
-#define NUM_VAOS 2
 
-typedef enum {
-    VAO_GUI = 0,
-    VAO_FONT = 1
-} VAOID;
 
 #define NUM_VBOS 2
 
@@ -33,7 +28,6 @@ typedef enum {
 
 
 typedef struct {
-    VAO vaos[NUM_VAOS];
     VBO vbos[NUM_VBOS];
     EBO ebos[NUM_EBOS];
     Texture textures[NUM_TEXTURES];
@@ -84,9 +78,9 @@ static void initialize_buffers(void)
 
 static void initialize_vaos(void)
 {
-    renderer.vaos[VAO_GUI] = vao_create();
+    vao_init();
 
-    vao_bind(renderer.vaos[VAO_GUI]);
+    vao_bind(VAO_GUI);
     vbo_bind(renderer.vbos[VBO_GUI]);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
@@ -97,9 +91,7 @@ static void initialize_vaos(void)
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
 
-    renderer.vaos[VAO_FONT] = vao_create();
-
-    vao_bind(renderer.vaos[VAO_FONT]);
+    vao_bind(VAO_FONT);
     vbo_bind(renderer.vbos[VBO_FONT]);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
@@ -145,12 +137,12 @@ void renderer_render(void)
 
     shader_use(SHADER_DEFAULT);
 
-    vao_bind(renderer.vaos[VAO_GUI]);
+    vao_bind(VAO_GUI);
     vbo_bind(renderer.vbos[VBO_GUI]);
     ebo_bind(renderer.ebos[EBO_GUI]);
     glDrawElements(GL_TRIANGLES, renderer.ebos[EBO_GUI].length, GL_UNSIGNED_INT, 0);
 
-    vao_bind(renderer.vaos[VAO_FONT]);
+    vao_bind(VAO_FONT);
     vbo_bind(renderer.vbos[VBO_FONT]);
     ebo_bind(renderer.ebos[EBO_FONT]);
     glDrawElements(GL_TRIANGLES, renderer.ebos[EBO_FONT].length, GL_UNSIGNED_INT, 0);
@@ -162,8 +154,7 @@ void renderer_destroy(void)
 {
     i32 i;
     shader_destroy();
-    for (i = 0; i < NUM_VAOS; i++)
-        vao_destroy(renderer.vaos[i]);
+    vao_destroy();
     for (i = 0; i < NUM_VBOS; i++)
         vbo_destroy(renderer.vbos[i]);
     for (i = 0; i < NUM_EBOS; i++)

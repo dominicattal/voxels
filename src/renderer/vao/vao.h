@@ -5,12 +5,15 @@
 #include "../vbo/vbo.h"
 #include "../ebo/ebo.h"
 
-typedef struct {
-    u32 id;
+#define NUM_VAOS 2
+
+typedef enum {
+    VAO_GUI = 0,
+    VAO_FONT = 1
 } VAO;
 
-VAO vao_create(void);
+void vao_init(void);
 void vao_bind(VAO vao);
-void vao_destroy(VAO vao);
+void vao_destroy(void);
 
 #endif

@@ -1,19 +1,18 @@
 #include "vao.h"
 
-VAO vao_create(void)
-{
-    VAO vao;
-    glGenVertexArrays(1, &vao.id);
-    return vao;
-}
+static u32 vaos[NUM_VAOS];
 
+void vao_init(void)
+{
+    glGenVertexArrays(NUM_VAOS, vaos);
+}
 
 void vao_bind(VAO vao)
 {
-    glBindVertexArray(vao.id);
+    glBindVertexArray(vaos[vao]);
 }
 
-void vao_destroy(VAO vao)
+void vao_destroy(void)
 {
-    glDeleteVertexArrays(1, &vao.id);
+    glDeleteVertexArrays(NUM_VAOS, vaos);
 }
