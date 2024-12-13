@@ -3,15 +3,18 @@
 
 #include "../../type.h"
 
-typedef struct {
-    u32 id, length, max_length;
+#define NUM_VBOS 2
+
+typedef enum {
+    VBO_GUI = 0,
+    VBO_FONT = 1
 } VBO;
 
-VBO vbo_create(void);
+void vbo_init(void);
 void vbo_bind(VBO vbo);
-void vbo_destroy(VBO vbo);
+void vbo_destroy(void);
 
-void vbo_malloc(VBO* vbo, u32 length, GLenum usage);
-void vbo_update(VBO* vbo, u32 offset, u32 length, f32* buffer);
+void vbo_malloc(VBO vbo, u32 length, GLenum usage);
+void vbo_update(VBO vbo, u32 offset, u32 length, f32* buffer);
 
 #endif

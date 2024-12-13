@@ -3,21 +3,11 @@
 #include "vao/vao.h"
 #include "shader/shader.h"
 #include "texture/texture.h"
-#include "ssbo/ssbo.h"
 #include <glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../gui/gui.h"
 #include "../font/font.h"
-
-
-
-#define NUM_VBOS 2
-
-typedef enum {
-    VBO_GUI = 0,
-    VBO_FONT = 1
-} VBOID;
 
 #define NUM_EBOS 2
 
@@ -70,8 +60,7 @@ static void initialize_shaders(void)
 
 static void initialize_buffers(void)
 {
-    renderer.vbos[VBO_GUI] = vbo_create();
-    renderer.vbos[VBO_FONT] = vbo_create();
+    vbo_init();
     renderer.ebos[EBO_GUI] = ebo_create();
     renderer.ebos[EBO_FONT] = ebo_create();
 }
@@ -81,7 +70,7 @@ static void initialize_vaos(void)
     vao_init();
 
     vao_bind(VAO_GUI);
-    vbo_bind(renderer.vbos[VBO_GUI]);
+    vbo_bind(VBO_GUI);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(4 * sizeof(f32)));
@@ -92,7 +81,7 @@ static void initialize_vaos(void)
     glEnableVertexAttribArray(3);
 
     vao_bind(VAO_FONT);
-    vbo_bind(renderer.vbos[VBO_FONT]);
+    vbo_bind(VBO_FONT);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(4 * sizeof(f32)));
@@ -121,13 +110,13 @@ void renderer_init(void)
 void renderer_render(void)
 {
     GUIData gui_data = gui_get_data();
-    vbo_malloc(&renderer.vbos[VBO_GUI],  gui_data.comp_vbo_max_length, GL_STATIC_DRAW);
+    vbo_malloc(VBO_GUI,  gui_data.comp_vbo_max_length, GL_STATIC_DRAW);
     ebo_malloc(&renderer.ebos[EBO_GUI],  gui_data.comp_ebo_max_length, GL_STATIC_DRAW);
-    vbo_update(&renderer.vbos[VBO_GUI],  0, gui_data.comp_vbo_length, gui_data.comp_vbo_buffer);
+    vbo_update(VBO_GUI,  0, gui_data.comp_vbo_length, gui_data.comp_vbo_buffer);
     ebo_update(&renderer.ebos[EBO_GUI],  0, gui_data.comp_ebo_length, gui_data.comp_ebo_buffer);
-    vbo_malloc(&renderer.vbos[VBO_FONT], gui_data.font_vbo_max_length, GL_STATIC_DRAW);
+    vbo_malloc(VBO_FONT, gui_data.font_vbo_max_length, GL_STATIC_DRAW);
     ebo_malloc(&renderer.ebos[EBO_FONT], gui_data.font_ebo_max_length, GL_STATIC_DRAW);
-    vbo_update(&renderer.vbos[VBO_FONT], 0, gui_data.font_vbo_length, gui_data.font_vbo_buffer);
+    vbo_update(VBO_FONT, 0, gui_data.font_vbo_length, gui_data.font_vbo_buffer);
     ebo_update(&renderer.ebos[EBO_FONT], 0, gui_data.font_ebo_length, gui_data.font_ebo_buffer);
 
     f64 start = get_time();
@@ -155,8 +144,7 @@ void renderer_destroy(void)
     i32 i;
     shader_destroy();
     vao_destroy();
-    for (i = 0; i < NUM_VBOS; i++)
-        vbo_destroy(renderer.vbos[i]);
+    vbo_destroy();
     for (i = 0; i < NUM_EBOS; i++)
         ebo_destroy(renderer.ebos[i]);
     for (i = 0; i < NUM_TEXTURES; i++)
