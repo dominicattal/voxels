@@ -1,34 +1,41 @@
 #include "ebo.h"
 #include <stdlib.h>
 
-EBO ebo_create(void)
+static struct {
+    u32 id, length, max_length;
+} ebos[NUM_EBOS];
+
+void ebo_init(void)
 {
-    EBO ebo;
-    glGenBuffers(1, &ebo.id);
-    ebo.length = 0;
-    return ebo;
+    for (i32 i = 0; i < NUM_EBOS; i++)
+        glGenBuffers(1, &ebos[i].id);
 }
 
 void ebo_bind(EBO ebo)
 {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebos[ebo].id);
 }
 
-void ebo_destroy(EBO ebo)
+void ebo_destroy(void)
 {
-    glDeleteBuffers(1, &ebo.id);
+    for (i32 i = 0; i < NUM_EBOS; i++)
+        glDeleteBuffers(1, &ebos[i].id);
 }
 
-void ebo_malloc(EBO* ebo, u32 length, GLenum usage)
+void ebo_malloc(EBO ebo, u32 length, GLenum usage)
 {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebos[ebo].id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(u32), NULL, usage);
 }
 
-void ebo_update(EBO* ebo, u32 offset, u32 length, u32* buffer)
+void ebo_update(EBO ebo, u32 offset, u32 length, u32* buffer)
 {
-    ebo->length = length;
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo->id);
+    ebos[ebo].length = length;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebos[ebo].id);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, (length - offset) * sizeof(u32), buffer);
 }
 
+u32 ebo_length(EBO ebo)
+{
+    return ebos[ebo].length;
+}
