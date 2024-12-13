@@ -7,82 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../gui/gui.h"
-#include "../font/font.h"
 
 
 typedef struct {
-    Texture textures[NUM_TEXTURES];
     f64 dt;
 } Renderer;
 
 static Renderer renderer;
 
 static void message_callback();
-
-static void initialize_textures()
-{
-    unsigned char pixels[4];
-    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 0;
-    renderer.textures[TEX_NONE] = texture_create_pixels(GL_RGBA, 1, 1, pixels);
-    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
-    renderer.textures[TEX_COLOR] = texture_create_pixels(GL_RGB, 1, 1, pixels);
-
-    i32 width, height;
-    unsigned char* bitmap = font_bitmap(&width, &height);
-    renderer.textures[TEX_BITMAP] = texture_create_pixels(GL_RED, width, height, bitmap);
-    free(bitmap);
-    texture_bind(renderer.textures[TEX_BITMAP], 0);
-}
-
-static void initialize_shaders(void)
-{
-    shader_init();
-    u32 vert, frag;
-    vert = shader_compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
-    frag = shader_compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
-    shader_attach(SHADER_DEFAULT, vert);
-    shader_attach(SHADER_DEFAULT, frag);
-    shader_link(SHADER_DEFAULT);
-    shader_detach(SHADER_DEFAULT, vert);
-    shader_detach(SHADER_DEFAULT, frag);
-    glDeleteShader(vert);
-    glDeleteShader(frag);
-}
-
-static void initialize_buffers(void)
-{
-    vbo_init();
-    ebo_init();
-}
-
-static void initialize_vaos(void)
-{
-    vao_init();
-
-    vao_bind(VAO_GUI);
-    vbo_bind(VBO_GUI);
-    ebo_bind(EBO_GUI);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(4 * sizeof(f32)));
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(8 * sizeof(f32)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-
-    vao_bind(VAO_FONT);
-    vbo_bind(VBO_FONT);
-    ebo_bind(EBO_FONT);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(0 * sizeof(f32)));
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(2 * sizeof(f32)));
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(4 * sizeof(f32)));
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 9 * sizeof(f32), (void*)(8 * sizeof(f32)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-}
 
 void renderer_init(void)
 {
@@ -93,10 +26,11 @@ void renderer_init(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    initialize_textures();
-    initialize_shaders();
-    initialize_buffers();
-    initialize_vaos();
+    texture_init();
+    shader_init();
+    vbo_init();
+    ebo_init();
+    vao_init();
 }
 
 void renderer_render(void)
@@ -133,13 +67,11 @@ void renderer_render(void)
 
 void renderer_destroy(void)
 {
-    i32 i;
     shader_destroy();
     vao_destroy();
     vbo_destroy();
     ebo_destroy();
-    for (i = 0; i < NUM_TEXTURES; i++)
-        texture_destroy(renderer.textures[i]);
+    texture_destroy();
 }
 
 f64 renderer_dt(void)

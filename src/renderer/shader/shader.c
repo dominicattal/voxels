@@ -57,6 +57,17 @@ void shader_init(void)
 {
     for (i32 i = 0; i < NUM_SHADERS; i++)
         shaders[i] = glCreateProgram();
+
+    u32 vert, frag;
+    vert = shader_compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
+    frag = shader_compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
+    shader_attach(SHADER_DEFAULT, vert);
+    shader_attach(SHADER_DEFAULT, frag);
+    shader_link(SHADER_DEFAULT);
+    shader_detach(SHADER_DEFAULT, vert);
+    shader_detach(SHADER_DEFAULT, frag);
+    glDeleteShader(vert);
+    glDeleteShader(frag);
 }
 
 void shader_link(ShaderID id)
