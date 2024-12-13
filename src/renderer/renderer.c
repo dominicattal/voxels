@@ -36,7 +36,6 @@ typedef struct {
     VAO vaos[NUM_VAOS];
     VBO vbos[NUM_VBOS];
     EBO ebos[NUM_EBOS];
-    Shader shaders[NUM_SHADERS];
     Texture textures[NUM_TEXTURES];
     f64 dt;
 } Renderer;
@@ -62,15 +61,15 @@ static void initialize_textures()
 
 static void initialize_shaders(void)
 {
+    shader_init();
     u32 vert, frag;
-    renderer.shaders[SHADER_DEFAULT] = shader_create();
     vert = shader_compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
     frag = shader_compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
-    glAttachShader(renderer.shaders[SHADER_DEFAULT].id, vert);
-    glAttachShader(renderer.shaders[SHADER_DEFAULT].id, frag);
-    shader_link(renderer.shaders[SHADER_DEFAULT]);
-    glDetachShader(renderer.shaders[SHADER_DEFAULT].id, vert);
-    glDetachShader(renderer.shaders[SHADER_DEFAULT].id, frag);
+    shader_attach(SHADER_DEFAULT, vert);
+    shader_attach(SHADER_DEFAULT, frag);
+    shader_link(SHADER_DEFAULT);
+    shader_detach(SHADER_DEFAULT, vert);
+    shader_detach(SHADER_DEFAULT, frag);
     glDeleteShader(vert);
     glDeleteShader(frag);
 }
@@ -144,7 +143,7 @@ void renderer_render(void)
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    shader_use(renderer.shaders[SHADER_DEFAULT]);
+    shader_use(SHADER_DEFAULT);
 
     vao_bind(renderer.vaos[VAO_GUI]);
     vbo_bind(renderer.vbos[VBO_GUI]);
@@ -162,8 +161,7 @@ void renderer_render(void)
 void renderer_destroy(void)
 {
     i32 i;
-    for (i = 0; i < NUM_SHADERS; i++)
-        shader_destroy(renderer.shaders[i]);
+    shader_destroy();
     for (i = 0; i < NUM_VAOS; i++)
         vao_destroy(renderer.vaos[i]);
     for (i = 0; i < NUM_VBOS; i++)

@@ -5,6 +5,8 @@
 #include <dirent.h>
 #include <errno.h>
 
+static u32 shaders[NUM_SHADERS];
+
 static const char* read_file(const char *path)
 {
     FILE* ptr;
@@ -51,38 +53,43 @@ u32 shader_compile(GLenum type, const char *path)
     return shader;
 }
 
-Shader shader_create(void)
+void shader_init(void)
 {
-    Shader shader;
-    shader.id = glCreateProgram();
-    return shader;
+    for (i32 i = 0; i < NUM_SHADERS; i++)
+        shaders[i] = glCreateProgram();
 }
 
-void shader_link(Shader shader)
+void shader_link(ShaderID id)
 {
     char info_log[512];
     i32 success;
-    glLinkProgram(shader.id);
-    glGetProgramiv(shader.id, GL_LINK_STATUS, &success);
+    glLinkProgram(shaders[id]);
+    glGetProgramiv(shaders[id], GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(shader.id, 512, NULL, info_log);
+        glGetProgramInfoLog(shaders[id], 512, NULL, info_log);
         printf(info_log);
         exit(1);
     }
 }
 
-void shader_bind_uniform_block(Shader shader, u32 index, const char* identifier)
+void shader_attach(ShaderID id, u32 shader)
 {
-    glUniformBlockBinding(shader.id, glGetUniformBlockIndex(shader.id, identifier), index);
+    glAttachShader(shaders[id], shader);
 }
 
-void shader_use(Shader shader)
+void shader_detach(ShaderID id, u32 shader)
 {
-    glUseProgram(shader.id);
+    glDetachShader(shaders[id], shader);
 }
 
-void shader_destroy(Shader shader)
+void shader_use(ShaderID id)
 {
-    glDeleteProgram(shader.id);
+    glUseProgram(shaders[id]);
+}
+
+void shader_destroy(void)
+{
+    for (i32 i = 0; i < NUM_SHADERS; i++)
+        glDeleteProgram(shaders[i]);
 }

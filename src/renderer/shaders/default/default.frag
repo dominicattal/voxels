@@ -1,7 +1,5 @@
 #version 460 core
 
-#extension GL_ARB_bindless_texture : require
-
 out vec4 FragColor;
 
 layout (location = 0) uniform sampler2D Texture;
