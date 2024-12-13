@@ -18,7 +18,6 @@ typedef enum {
 
 
 typedef struct {
-    VBO vbos[NUM_VBOS];
     EBO ebos[NUM_EBOS];
     Texture textures[NUM_TEXTURES];
     f64 dt;
@@ -127,12 +126,12 @@ void renderer_render(void)
     shader_use(SHADER_DEFAULT);
 
     vao_bind(VAO_GUI);
-    vbo_bind(renderer.vbos[VBO_GUI]);
+    vbo_bind(VBO_GUI);
     ebo_bind(renderer.ebos[EBO_GUI]);
     glDrawElements(GL_TRIANGLES, renderer.ebos[EBO_GUI].length, GL_UNSIGNED_INT, 0);
 
     vao_bind(VAO_FONT);
-    vbo_bind(renderer.vbos[VBO_FONT]);
+    vbo_bind(VBO_FONT);
     ebo_bind(renderer.ebos[EBO_FONT]);
     glDrawElements(GL_TRIANGLES, renderer.ebos[EBO_FONT].length, GL_UNSIGNED_INT, 0);
 
