@@ -53,6 +53,9 @@ void comp_click(Component* comp, i32 button, i32 action);
 void comp_key(Component* comp, i32 key, i32 scancode, i32 action, i32 mods);
 void comp_update(Component* comp, f64 dt);
 
+// specific functionality
+void comp_textbox_set_reference(Component* comp, Component* ref);
+
 // Setters for packed info
 void comp_set_id(Component* comp, CompID id);
 void comp_set_is_text(Component* comp, bool it);

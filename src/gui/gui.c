@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "component/component.h"
+#include "loader/loader.h"
 #include "../renderer/texture/texture.h"
 #include "../window/window.h"
 #include "../font/font.h"
@@ -21,31 +22,14 @@ static void update_data(void);
 void gui_init(void)
 {
     comp_init();
+    gui_loader_init();
 
     i32 xres, yres;
     window_get_resolution(&xres, &yres);
     gui.root = comp_create(0, 0, xres, yres, COMP_DEFAULT);
     comp_set_color(gui.root, 0, 0, 0, 0);
     comp_set_hoverable(gui.root, FALSE);
-
-    Component* debug = comp_create(0, yres-75, 150, 75, COMP_DEBUG);
-    comp_attach(gui.root, debug);
-
-    Component* click_me = comp_create(50, 50, 100, 100, COMP_TEXTBOX);
-    comp_set_color(click_me, 0, 255, 0, 255);
-    comp_set_align(click_me, ALIGN_CENTER, ALIGN_TOP);
-    comp_set_clickable(click_me, TRUE);
-
-    comp_set_text(click_me, "Click Me!");
-    comp_set_hoverable(click_me, TRUE);
-    comp_attach(gui.root, click_me);
-
-    Component* random_color = comp_create(150, 150, 250, 250, COMP_TEXTBOX);
-    comp_set_color(random_color, 255, 0, 255, 255);
-    comp_set_align(random_color, ALIGN_LEFT, ALIGN_TOP);
-    comp_attach(gui.root, random_color);
-
-    comp_textbox_set_reference(click_me, random_color);
+    gui_load(GUI_DEFAULT, gui.root);
 }
 
 void gui_update(f64 dt)
