@@ -1,4 +1,5 @@
 #include "shader.h"
+#include "../texture/texture.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,15 +89,17 @@ void shader_init(void)
         shaders[i] = glCreateProgram();
 
     u32 vert, frag;
-    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
-    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
-    attach(SHADER_DEFAULT, vert);
-    attach(SHADER_DEFAULT, frag);
-    link(SHADER_DEFAULT);
-    detach(SHADER_DEFAULT, vert);
-    detach(SHADER_DEFAULT, frag);
+    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/gui.vert");
+    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/gui.frag");
+    attach(SHADER_GUI, vert);
+    attach(SHADER_GUI, frag);
+    link(SHADER_GUI);
+    detach(SHADER_GUI, vert);
+    detach(SHADER_GUI, frag);
     delete(vert);
     delete(frag);
+    shader_use(SHADER_GUI);
+    glUniform1i(glGetUniformLocation(shaders[SHADER_GUI], "TEX_ID_FONT"), 2);
 }
 
 void shader_use(Shader id)

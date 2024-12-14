@@ -6,7 +6,7 @@
 #define NUM_SHADERS 1
 
 typedef enum {
-    SHADER_DEFAULT = 0
+    SHADER_GUI = 0
 } Shader;
 
 void shader_init(void);
