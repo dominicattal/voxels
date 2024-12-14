@@ -31,6 +31,8 @@ void renderer_init(void)
     vbo_init();
     ebo_init();
     vao_init();
+
+    texture_bind(TEX_BITMAP, 0);
 }
 
 void renderer_render(void)
@@ -78,8 +80,6 @@ f64 renderer_dt(void)
 {
     return renderer.dt;
 }
-
-/* --------------------------------- */
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {

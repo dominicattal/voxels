@@ -16,6 +16,6 @@ void ebo_destroy(void);
 
 void ebo_malloc(EBO ebo, u32 length, GLenum usage);
 void ebo_update(EBO ebo, u32 offset, u32 length, u32* buffer);
-u32 ebo_length(EBO ebo);
+u32  ebo_length(EBO ebo);
 
 #endif

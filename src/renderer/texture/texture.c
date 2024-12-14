@@ -38,7 +38,7 @@ static u32 texture_create_pixels(GLenum type, i32 width, i32 height, const unsig
     glBindTexture(GL_TEXTURE_2D, texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     return texture;
 }
 
@@ -54,7 +54,6 @@ void texture_init(void)
     unsigned char* bitmap = font_bitmap(&width, &height);
     textures[TEX_BITMAP].id = texture_create_pixels(GL_RED, width, height, bitmap);
     free(bitmap);
-    texture_bind(TEX_BITMAP, 0);
 }
 
 void texture_bind(Texture texture, u32 location)

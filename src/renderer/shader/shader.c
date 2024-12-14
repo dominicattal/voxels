@@ -25,7 +25,7 @@ static const char* read_file(const char *path)
     return content;
 }
 
-u32 shader_compile(GLenum type, const char *path)
+static u32 compile(GLenum type, const char *path)
 {
     u32 shader;
     const char* shader_code;
@@ -53,24 +53,7 @@ u32 shader_compile(GLenum type, const char *path)
     return shader;
 }
 
-void shader_init(void)
-{
-    for (i32 i = 0; i < NUM_SHADERS; i++)
-        shaders[i] = glCreateProgram();
-
-    u32 vert, frag;
-    vert = shader_compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
-    frag = shader_compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
-    shader_attach(SHADER_DEFAULT, vert);
-    shader_attach(SHADER_DEFAULT, frag);
-    shader_link(SHADER_DEFAULT);
-    shader_detach(SHADER_DEFAULT, vert);
-    shader_detach(SHADER_DEFAULT, frag);
-    glDeleteShader(vert);
-    glDeleteShader(frag);
-}
-
-void shader_link(ShaderID id)
+static void link(Shader id)
 {
     char info_log[512];
     i32 success;
@@ -84,17 +67,39 @@ void shader_link(ShaderID id)
     }
 }
 
-void shader_attach(ShaderID id, u32 shader)
+static void attach(Shader id, u32 shader)
 {
     glAttachShader(shaders[id], shader);
 }
 
-void shader_detach(ShaderID id, u32 shader)
+static void detach(Shader id, u32 shader)
 {
     glDetachShader(shaders[id], shader);
 }
 
-void shader_use(ShaderID id)
+static void delete(u32 shader)
+{
+    glDeleteShader(shader);
+}
+
+void shader_init(void)
+{
+    for (i32 i = 0; i < NUM_SHADERS; i++)
+        shaders[i] = glCreateProgram();
+
+    u32 vert, frag;
+    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/default/default.vert");
+    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/default/default.frag");
+    attach(SHADER_DEFAULT, vert);
+    attach(SHADER_DEFAULT, frag);
+    link(SHADER_DEFAULT);
+    detach(SHADER_DEFAULT, vert);
+    detach(SHADER_DEFAULT, frag);
+    delete(vert);
+    delete(frag);
+}
+
+void shader_use(Shader id)
 {
     glUseProgram(shaders[id]);
 }
