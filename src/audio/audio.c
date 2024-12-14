@@ -16,13 +16,12 @@ typedef struct {
     ALuint sources[MAX_NUM_SOURCES];
     ALuint buffers[NUM_BUFFERS];
     ALuint num_sources;
+    pthread_t thread_id;
+    bool kill_thread;
+    sem_t mutex;
 } Audio;
 
 static Audio audio;
-
-static pthread_t thread_id;
-static bool kill_thread;
-static sem_t mutex;
 
 static void checkError(const char* msg) {
     ALenum error = alGetError();
@@ -35,10 +34,10 @@ static void checkError(const char* msg) {
 
 static void *audio_update(void *vargp)
 {
-    while (!kill_thread) {
-        sem_wait(&mutex);
-        for (ALint i = 0; i < audio.num_sources; i++) {
-            ALuint source_state, source, tmp;
+    while (!audio.kill_thread) {
+        sem_wait(&audio.mutex);
+        for (ALuint i = 0; i < audio.num_sources; i++) {
+            ALint source_state, source, tmp;
             source = audio.sources[i];
             alGetSourcei(source, AL_SOURCE_STATE, &source_state);
             if (source_state == AL_STOPPED) {
@@ -49,11 +48,11 @@ static void *audio_update(void *vargp)
                 i--;
             }
         }
-        sem_post(&mutex);
+        sem_post(&audio.mutex);
     }
 }
 
-static int load_sounds(void);
+static void load_sounds(void);
 
 void audio_init() {
     audio.device = alcOpenDevice(NULL);
@@ -78,9 +77,9 @@ void audio_init() {
 
     load_sounds();
 
-    kill_thread = FALSE;
-    sem_init(&mutex, 0, 1);
-    pthread_create(&thread_id, NULL, audio_update, NULL);
+    audio.kill_thread = FALSE;
+    sem_init(&audio.mutex, 0, 1);
+    pthread_create(&audio.thread_id, NULL, audio_update, NULL);
 }
 
 void audio_play_sound(AudioID id)
@@ -88,19 +87,19 @@ void audio_play_sound(AudioID id)
     if (audio.num_sources >= MAX_NUM_SOURCES)
         return;
     ALuint source = audio.sources[audio.num_sources];
-    sem_wait(&mutex);
+    sem_wait(&audio.mutex);
     alSourcei(source, AL_BUFFER, audio.buffers[id]);
     alSourcePlay(source);
     checkError("Failed to play source.");
     audio.num_sources++;
-    sem_post(&mutex);
+    sem_post(&audio.mutex);
 }
 
 void audio_destroy()
 {
-    kill_thread = TRUE;
-    pthread_join(thread_id, NULL);
-    sem_destroy(&mutex);
+    audio.kill_thread = TRUE;
+    pthread_join(audio.thread_id, NULL);
+    sem_destroy(&audio.mutex);
 
     for (ALint i = 0; i < MAX_NUM_SOURCES; i++) {
         alSourceStop(audio.sources[i]);
@@ -168,7 +167,7 @@ static int load_sound(ALuint id, char *path)
     free(samples);
 }
 
-static int load_sounds(void)
+static void load_sounds(void)
 {
     load_sound(AUD_DEFAULT, "assets/audio/gui_click.wav");
     load_sound(AUD_HIT, "assets/audio/hit.wav");

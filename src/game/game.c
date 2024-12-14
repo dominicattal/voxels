@@ -6,20 +6,19 @@
 
 typedef struct {
     f64 dt;
+    pthread_t thread_id;
+    bool kill_thread;
+    sem_t mutex; 
 } Game;
 
 static Game game;
 
-static pthread_t thread_id;
-static bool kill_thread;
-static sem_t mutex; 
-
 static void *game_update(void* vargp)
 {
     f64 start;
-    while (!kill_thread) {
+    while (!game.kill_thread) {
         start = get_time();
-        sleep(1);
+        sleep(5);
         game.dt = get_time() - start;
     }
 }
@@ -27,16 +26,16 @@ static void *game_update(void* vargp)
 void game_init(void)
 {
     game.dt = 0;
-    kill_thread = FALSE;
-    sem_init(&mutex, 0, 1);
-    pthread_create(&thread_id, NULL, game_update, NULL);
+    game.kill_thread = FALSE;
+    sem_init(&game.mutex, 0, 1);
+    pthread_create(&game.thread_id, NULL, game_update, NULL);
 }
 
 void game_destroy(void)
 {
-    kill_thread = TRUE;
-    pthread_join(thread_id, NULL);
-    sem_destroy(&mutex);
+    game.kill_thread = TRUE;
+    pthread_join(game.thread_id, NULL);
+    sem_destroy(&game.mutex);
 }
 
 f64 game_dt(void)

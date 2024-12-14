@@ -13,13 +13,14 @@ void state_init(void)
     window_init();
     font_init();
     renderer_init();
-    //audio_init();
+    audio_init();
     gui_init();
     game_init();
 }
 
 void state_loop(void)
 {
+    audio_play_sound(AUD_DEFAULT);
     while (!window_closed()) 
     {
         gui_update(window_dt());
@@ -33,7 +34,7 @@ void state_destroy(void)
     window_destroy();
     font_destroy();
     renderer_destroy();
-    //audio_destroy();
+    audio_destroy();
     gui_destroy();
     game_destroy();
 }
