@@ -14,7 +14,7 @@ static pthread_t thread_id;
 static bool kill_thread;
 static sem_t mutex; 
 
-static void* game_update(void* vargp)
+static void *game_update(void* vargp)
 {
     f64 start;
     while (!kill_thread) {

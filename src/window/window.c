@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stb_image.h>
 
-#define DEFAULT_WINDOW_WIDTH  1000
-#define DEFAULT_WINDOW_HEIGHT 1000
+#define DEFAULT_WINDOW_WIDTH  500
+#define DEFAULT_WINDOW_HEIGHT 500
 
 typedef struct {
     GLFWwindow* handle;
@@ -42,7 +42,7 @@ void window_init(void)
     window.resolution.y = DEFAULT_WINDOW_HEIGHT;
     glfwGetWindowSize(window.handle, &window.width, &window.height);
     glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
-    //glfwSetWindowAspectRatio(window.handle, 16, 9);
+    glfwSetWindowAspectRatio(window.handle, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
     
     glfwMakeContextCurrent(window.handle);
     glfwSetFramebufferSizeCallback(window.handle, framebuffer_size_callback);
@@ -105,10 +105,12 @@ void window_get_resolution(i32* xres, i32* yres)
 
 bool window_cursor_in_bbox(i32 x, i32 y, i32 w, i32 h) 
 {
-    return window.cursor.x >= x 
-        && window.cursor.x <= x + w 
-        && window.height - window.cursor.y >= y 
-        && window.height - window.cursor.y <= y + h;
+    f32 cursor_x = window.cursor.x * (f32)window.resolution.x  / window.width;
+    f32 cursor_y = (window.height - window.cursor.y) * (f32)window.resolution.y / window.height;
+    return cursor_x >= x 
+        && cursor_x <= x + w 
+        && cursor_y >= y 
+        && cursor_y <= y + h;
 }
 
 void window_pixel_to_screen_x(i32 x, f32* x1) {

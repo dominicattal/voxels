@@ -37,7 +37,7 @@ static void load_font(FontID id, const char* ttf_path)
     
     stbtt_InitFont(&fonts[id].info, fonts[id].font_buffer, 0);
 
-    fonts[id].font_range.font_size = 24;         
+    fonts[id].font_range.font_size = 16;         
     fonts[id].font_range.first_unicode_codepoint_in_range = CHAR_OFFSET; 
     fonts[id].font_range.array_of_unicode_codepoints = NULL;
     fonts[id].font_range.num_chars = NUM_CHARS;       
