@@ -100,6 +100,16 @@ void shader_init(void)
     delete(frag);
     shader_use(SHADER_GUI);
     glUniform1i(glGetUniformLocation(shaders[SHADER_GUI], "TEX_ID_FONT"), 2);
+
+    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/test.vert");
+    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/test.frag");
+    attach(SHADER_GAME, vert);
+    attach(SHADER_GAME, frag);
+    link(SHADER_GAME);
+    detach(SHADER_GAME, vert);
+    detach(SHADER_GAME, frag);
+    delete(vert);
+    delete(frag);
 }
 
 void shader_use(Shader id)
@@ -111,4 +121,10 @@ void shader_destroy(void)
 {
     for (i32 i = 0; i < NUM_SHADERS; i++)
         glDeleteProgram(shaders[i]);
+}
+
+void shader_uniform_matrix_4fv(Shader shader, const char* identifier, i32 count, const f32* value)
+{
+    shader_use(shader);
+    glUniformMatrix4fv(glGetUniformLocation(shaders[shader], identifier), count, GL_FALSE, value);
 }

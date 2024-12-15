@@ -16,9 +16,6 @@ typedef struct {
 
 static GUI gui;
 
-static void update_components(f64 dt);
-static void update_data(void);
-
 void gui_init(void)
 {
     comp_init();
@@ -32,9 +29,19 @@ void gui_init(void)
     gui_load(GUI_DEFAULT, gui.root);
 }
 
+static void update_components_helper(Component* comp, f64 dt)
+{
+    if (!comp_is_visible(comp))
+        return;
+    
+    comp_update(comp, dt);
+    for (i32 i = 0; i < comp_num_children(comp); i++)
+        update_components_helper(comp->children[i], dt);
+}
+
 void gui_update(f64 dt)
 {
-    update_components(dt);
+    update_components_helper(gui.root, dt);
 }
 
 void gui_destroy(void)
@@ -129,22 +136,6 @@ static void resize_font_buffers(u32 num_glyphs)
         gui.data.font_vbo_buffer = realloc(gui.data.font_vbo_buffer, gui.data.font_vbo_max_length * sizeof(f32));
         gui.data.font_ebo_buffer = realloc(gui.data.font_ebo_buffer, gui.data.font_ebo_max_length * sizeof(u32));
     }
-}
-
-
-static void update_components_helper(Component* comp, f64 dt)
-{
-    if (!comp_is_visible(comp))
-        return;
-    
-    comp_update(comp, dt);
-    for (i32 i = 0; i < comp_num_children(comp); i++)
-        update_components_helper(comp->children[i], dt);
-}
-
-static void update_components(f64 dt)
-{
-    update_components_helper(gui.root, dt);
 }
 
 #define A gui.data.font_vbo_buffer[gui.data.font_vbo_length++]

@@ -2,7 +2,7 @@
 #define WINDOW_H
 
 #include <glad.h>
-#include "../type.h"
+#include "../util/util.h"
 
 void window_init(void);
 void window_update(void);
@@ -27,5 +27,6 @@ void window_get_resolution(i32* xres, i32* yres);
 char window_get_char(i32 key, i32 mods);
 
 f64  window_dt(void);
+f32  window_aspect_ratio(void);
 
 #endif

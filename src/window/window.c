@@ -1,6 +1,6 @@
 #include "window.h"
 #include "../gui/gui.h"
-#include "../util.h"
+#include "../camera/camera.h"
 #include <glfw.h>
 #include <stdio.h>
 #include <stb_image.h>
@@ -37,7 +37,7 @@ void window_init(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "gui", NULL, NULL);
+    window.handle = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "program", NULL, NULL);
     window.resolution.x = DEFAULT_WINDOW_WIDTH;
     window.resolution.y = DEFAULT_WINDOW_HEIGHT;
     glfwGetWindowSize(window.handle, &window.width, &window.height);
@@ -196,6 +196,11 @@ char window_get_char(i32 key, i32 mods)
 f64 window_dt(void)
 {
     return window.dt;
+}
+
+f32  window_aspect_ratio(void)
+{
+    return (f32)window.resolution.y / window.resolution.x;
 }
 
 static void load_images(void)

@@ -1,7 +1,7 @@
 #ifndef GUI_LOADER_H
 #define GUI_LOADER_H
 
-#include "../../util.h"
+#include "../../util/util.h"
 #include "../component/component.h"
 
 #define NUM_PRESETS 1

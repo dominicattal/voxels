@@ -2,7 +2,7 @@
 #define COMPONENT_H
 
 #include "../../font/font.h"
-#include "../../type.h"
+#include "../../util/util.h"
 
 #define MAX_NUM_CHILDREN  255
 

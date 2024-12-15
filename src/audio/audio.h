@@ -1,7 +1,7 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include "../type.h"
+#include "../util/util.h"
 
 #define NUM_AUDIO 3
 

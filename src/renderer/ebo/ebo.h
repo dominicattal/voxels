@@ -1,13 +1,14 @@
 #ifndef EBO_H
 #define EBO_H
 
-#include "../../type.h"
+#include "../../util/util.h"
 
-#define NUM_EBOS 2
+#define NUM_EBOS 3
 
 typedef enum {
     EBO_GUI = 0,
-    EBO_FONT = 1
+    EBO_FONT = 1,
+    EBO_GAME = 2
 } EBO;
 
 void ebo_init(void);

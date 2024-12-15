@@ -29,6 +29,12 @@ void vao_init(void)
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
+
+    vao_bind(VAO_GAME);
+    vbo_bind(VBO_GAME);
+    vbo_bind(EBO_GAME);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(0);
 }
 
 void vao_bind(VAO vao)

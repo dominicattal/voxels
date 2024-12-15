@@ -1,13 +1,14 @@
 #ifndef VBO_H
 #define VBO_H
 
-#include "../../type.h"
+#include "../../util/util.h"
 
-#define NUM_VBOS 2
+#define NUM_VBOS 3
 
 typedef enum {
     VBO_GUI = 0,
-    VBO_FONT = 1
+    VBO_FONT = 1,
+    VBO_GAME = 2
 } VBO;
 
 void vbo_init(void);
