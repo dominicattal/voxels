@@ -26,13 +26,11 @@ void renderer_init(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    texture_init();
     shader_init();
+    texture_init();
     vbo_init();
     ebo_init();
     vao_init();
-
-    texture_bind(TEX_BITMAP, 0);
 }
 
 void renderer_render(void)

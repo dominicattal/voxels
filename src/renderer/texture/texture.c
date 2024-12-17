@@ -1,14 +1,32 @@
 #include "texture.h"
 #include "../../font/font.h"
+#include "../shader/shader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stb_image.h>
 
-static struct {
-    u32 id;
-} textures[NUM_TEXTURES];
+#define NUM_TEXTURE_UNITS 3
 
-static u32 texture_create(const char* image_path)
+typedef struct {
+    u16 u1, v1, u2, v2;
+} UV;
+
+#define UVINIT(u, v, w, h) (UV) { u, v, u+w, v+h }
+
+static struct {
+    UV* coords;
+    u32 id, location;
+} texture_units[NUM_TEXTURE_UNITS];
+
+typedef struct {
+    u8 idx1, idx2;
+} IDX;
+
+#define IDXINIT(idx1, idx2) (IDX) { idx1, idx2 }
+
+static IDX textures[NUM_TEXTURES];
+
+static u32 texture_create_from_path(const char* image_path)
 {
     u32 texture;
     i32 width, height, nrChannels;
@@ -31,7 +49,7 @@ static u32 texture_create(const char* image_path)
     return texture;
 }
 
-static u32 texture_create_pixels(GLenum type, i32 width, i32 height, const unsigned char* pixels)
+static u32 texture_create_from_pixels(GLenum type, i32 width, i32 height, const unsigned char* pixels)
 {
     u32 texture;
     glGenTextures(1, &texture);
@@ -44,26 +62,57 @@ static u32 texture_create_pixels(GLenum type, i32 width, i32 height, const unsig
 
 void texture_init(void)
 {
-    unsigned char pixels[4];
-    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 0;
-    textures[TEX_NONE].id = texture_create_pixels(GL_RGBA, 1, 1, pixels);
-    pixels[0] = pixels[1] = pixels[2] = pixels[3] = 255;
-    textures[TEX_COLOR].id = texture_create_pixels(GL_RGB, 1, 1, pixels);
-
     i32 width, height;
     unsigned char* bitmap = font_bitmap(&width, &height);
-    textures[TEX_BITMAP].id = texture_create_pixels(GL_RED, width, height, bitmap);
+    texture_units[0].id = texture_create_from_pixels(GL_RED, width, height, bitmap);
     free(bitmap);
-}
 
-void texture_bind(Texture texture, u32 location)
-{
-    glActiveTexture(GL_TEXTURE0 + location);
-    glBindTexture(GL_TEXTURE_2D, textures[texture].id);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_units[0].id);
+
+    u32 tex;
+    tex = texture_create_from_path("assets/textures/objects/object_atlas.png");
+    texture_units[1].id = tex;
+    texture_units[1].location = 1;
+    texture_units[1].coords = malloc(3 * sizeof(u64));
+    texture_units[1].coords[0] = UVINIT(0, 0, 16, 16);
+    texture_units[1].coords[1] = UVINIT(17, 0, 16, 16);
+    texture_units[1].coords[2] = UVINIT(34, 0, 16, 16);
+    textures[TEX_OBJECT1] = IDXINIT(1, 0);
+    textures[TEX_OBJECT2] = IDXINIT(1, 1);
+    textures[TEX_OBJECT3] = IDXINIT(1, 2);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    shader_use(SHADER_GUI);
+    glUniform1i(shader_get_uniform_location(SHADER_GUI, "Texture"), 0);
+    shader_use(SHADER_GAME);
+    glUniform1i(shader_get_uniform_location(SHADER_GAME, "texture"), 1);
 }
 
 void texture_destroy(void)
 {
-    for (i32 i = 0; i < NUM_TEXTURES; i++)
-        glDeleteTextures(1, &textures[i].id);
+    for (i32 i = 0; i < NUM_TEXTURE_UNITS; i++) {
+        glDeleteTextures(1, &texture_units[i].id);
+        free(texture_units[i].coords);
+    }
+}
+
+void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2, f32* v2)
+{
+    u8 idx1, idx2;
+    idx1 = textures[texture].idx1;
+    idx2 = textures[texture].idx2;
+    
+    *location = texture_units[idx1].location;
+    *u1 = texture_units[idx1].coords[idx2].u1 / 1024.0;
+    *v1 = texture_units[idx1].coords[idx2].v1 / 1024.0;
+    *u2 = texture_units[idx1].coords[idx2].u2 / 1024.0;
+    *v2 = texture_units[idx1].coords[idx2].v2 / 1024.0;
+}
+
+u32 texture_location(Texture texture)
+{
+    return texture_units[textures[texture].idx1].location;
 }

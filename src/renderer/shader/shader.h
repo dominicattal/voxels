@@ -14,6 +14,7 @@ void shader_init(void);
 void shader_use(Shader shader);
 void shader_destroy(void);
 
+u32  shader_get_uniform_location(Shader shader, const char* identifier);
 void shader_uniform_matrix_4fv(Shader shader, const char* identifier, i32 count, const f32* value);
 
 #endif

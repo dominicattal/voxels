@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stb_image.h>
 
-#define DEFAULT_WINDOW_WIDTH  500
-#define DEFAULT_WINDOW_HEIGHT 500
+#define DEFAULT_WINDOW_WIDTH  1000
+#define DEFAULT_WINDOW_HEIGHT 1000
 
 typedef struct {
     GLFWwindow* handle;

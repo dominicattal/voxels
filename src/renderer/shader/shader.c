@@ -123,6 +123,11 @@ void shader_destroy(void)
         glDeleteProgram(shaders[i]);
 }
 
+u32 shader_get_uniform_location(Shader shader, const char* identifier)
+{
+    return glGetUniformLocation(shaders[shader], identifier);
+}
+
 void shader_uniform_matrix_4fv(Shader shader, const char* identifier, i32 count, const f32* value)
 {
     shader_use(shader);

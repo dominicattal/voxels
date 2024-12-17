@@ -1,15 +1,16 @@
 #include "game.h"
 #include "object/object.h"
+#include "../renderer/texture/texture.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
 
-#define NUM_OBJECTS 100
-#define FLOAT_PER_VERTEX 3
-#define NUM_VERTICES 8
-#define INDEXES_PER_FACE 6
-#define NUM_FACES 6
+#define NUM_OBJECTS         100
+#define FLOATS_PER_VERTEX   6
+#define VERTICES_PER_FACE   4
+#define INDICES_PER_FACE    6
+#define FACES_PER_OBJECT    6
 
 typedef struct {
     GameData data;
@@ -36,10 +37,10 @@ static void *game_update(void* vargp)
 void game_init(void)
 {
     for (i32 i = 0; i < NUM_OBJECTS; i++)
-        game.objects[i] = object_create(i/10*2, i%10*2, i/10*2);
+        game.objects[i] = object_create(3 + (i % 3), i/10*2, i%10*2, i/10*2);
 
-    game.data.vbo_max_length = NUM_OBJECTS * FLOAT_PER_VERTEX * NUM_VERTICES;
-    game.data.ebo_max_length = NUM_OBJECTS * INDEXES_PER_FACE * NUM_FACES;
+    game.data.vbo_max_length = NUM_OBJECTS * FACES_PER_OBJECT * VERTICES_PER_FACE * FLOATS_PER_VERTEX;
+    game.data.ebo_max_length = NUM_OBJECTS * FACES_PER_OBJECT * INDICES_PER_FACE;
     game.data.vbo_buffer = malloc(game.data.vbo_max_length * sizeof(f32));
     game.data.ebo_buffer = malloc(game.data.ebo_max_length * sizeof(u32));
 
@@ -78,7 +79,7 @@ void game_update_data(void)
     static u8 tx[] = {0, 1, 1, 0};
     static u8 ty[] = {0, 0, 1, 1};
     static u8 winding[] = {0, 1, 2, 0, 2, 3};
-    static u8 sides[][4] = {
+    static u8 faces[][4] = {
         {4, 5, 7, 6}, // +x
         {1, 0, 2, 3}, // -x
         {2, 6, 7, 3}, // +y
@@ -87,16 +88,26 @@ void game_update_data(void)
         {0, 4, 6, 2}  // -z
     };
 
-    for (i32 i = 0; i < NUM_OBJECTS; i++) {
-        u32 idx = game.data.vbo_length / FLOAT_PER_VERTEX;
-        for (i32 j = 0; j < NUM_VERTICES; j++) {
-            A = dx[j] + game.objects[i]->position.x;
-            A = dy[j] + game.objects[i]->position.y;
-            A = dz[j] + game.objects[i]->position.z;
+    for (i32 obj_num = 0; obj_num < NUM_OBJECTS; obj_num++) {
+        Object* obj = game.objects[obj_num];
+        f32 u1, v1, u2, v2;
+        u32 location;
+        texture_get_info(obj->id, &location, &u1, &v1, &u2, &v2);
+        f32 u[2] = {u1, u2};
+        f32 v[2] = {v1, v2};
+        for (i32 face_num = 0; face_num < FACES_PER_OBJECT; face_num++) {
+            u32 idx = game.data.vbo_length / FLOATS_PER_VERTEX;
+            for (i32 i = 0; i < VERTICES_PER_FACE; i++) {
+                A = obj->position.x + dx[faces[face_num][i]];
+                A = obj->position.y + dy[faces[face_num][i]];
+                A = obj->position.z + dz[faces[face_num][i]];
+                A = u[tx[i]];
+                A = v[ty[i]];
+                A = location;
+            }
+            for (i32 i = 0; i < INDICES_PER_FACE; i++)
+                B = idx + winding[i];
         }
-        for (i32 j = 0; j < NUM_FACES; j++)
-            for (i32 k = 0; k < INDEXES_PER_FACE; k++)
-                B = idx + sides[j][winding[k]];
     }
 }
 

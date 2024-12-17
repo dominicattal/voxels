@@ -49,7 +49,7 @@ static void load_font(FontID id, const char* ttf_path)
 static void load_fonts(void)
 {
     load_font(FONT_DEFAULT, "assets/fonts/mojangles.ttf");
-    load_font(FONT_TWO, "assets/fonts/HelvetiPixel.ttf");
+    load_font(FONT_TWO, "assets/fonts/times.ttf");
     load_font(FONT_MONOSPACE, "assets/fonts/consola.ttf");
 }
 
