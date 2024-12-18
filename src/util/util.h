@@ -4,6 +4,7 @@
 #include "type.h"
 #include "vec.h"
 #include "list.h"
+#include "env.h"
 
 void sleep(i32 msec);
 f64  get_time(void);
