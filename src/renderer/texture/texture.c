@@ -15,11 +15,12 @@ typedef struct {
 
 static struct {
     UV* coords;
-    u32 id, location;
+    u32 id;
 } texture_units[NUM_TEXTURE_UNITS];
 
 typedef struct {
-    u8 idx1, idx2;
+    u8 idx1; // location
+    u8 idx2; // uv idx
 } IDX;
 
 #define IDXINIT(idx1, idx2) (IDX) { idx1, idx2 }
@@ -73,7 +74,6 @@ void texture_init(void)
     u32 tex;
     tex = texture_create_from_path("assets/textures/objects/object_atlas.png");
     texture_units[1].id = tex;
-    texture_units[1].location = 1;
     texture_units[1].coords = malloc(3 * sizeof(u64));
     texture_units[1].coords[0] = UVINIT(0, 0, 16, 16);
     texture_units[1].coords[1] = UVINIT(17, 0, 16, 16);
@@ -85,10 +85,11 @@ void texture_init(void)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, tex);
 
+    i32 texs[2] = {0, 1};
     shader_use(SHADER_GUI);
-    glUniform1i(shader_get_uniform_location(SHADER_GUI, "Texture"), 0);
+    glUniform1iv(shader_get_uniform_location(SHADER_GUI, "textures"), 2, texs);
     shader_use(SHADER_GAME);
-    glUniform1i(shader_get_uniform_location(SHADER_GAME, "texture"), 1);
+    glUniform1iv(shader_get_uniform_location(SHADER_GAME, "textures"), 2, texs);
 }
 
 void texture_destroy(void)
@@ -105,14 +106,9 @@ void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2,
     idx1 = textures[texture].idx1;
     idx2 = textures[texture].idx2;
     
-    *location = texture_units[idx1].location;
+    *location = 0;
     *u1 = texture_units[idx1].coords[idx2].u1 / 1024.0;
     *v1 = texture_units[idx1].coords[idx2].v1 / 1024.0;
     *u2 = texture_units[idx1].coords[idx2].u2 / 1024.0;
     *v2 = texture_units[idx1].coords[idx2].v2 / 1024.0;
-}
-
-u32 texture_location(Texture texture)
-{
-    return texture_units[textures[texture].idx1].location;
 }

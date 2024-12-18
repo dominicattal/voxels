@@ -2,7 +2,7 @@
 
 out vec4 FragColor;
 
-layout (location = 0) uniform sampler2D Texture;
+uniform sampler2D textures[2];
 
 uniform int TEX_ID_FONT;
 
@@ -14,7 +14,7 @@ void main()
 {
     FragColor = Color;
     if (TexId == TEX_ID_FONT) {
-        vec4 tex = texture(Texture, TexCoord);
+        vec4 tex = texture(textures[0], TexCoord);
         tex = vec4(1.0f, 1.0f, 1.0f, tex.r);
         FragColor = tex * Color;
     }
