@@ -1,7 +1,7 @@
 #ifndef EBO_H
 #define EBO_H
 
-#include "../../util/util.h"
+#include "../util/util.h"
 
 #define NUM_EBOS 3
 

@@ -1,6 +1,6 @@
 #include "texture.h"
-#include "../../font/font.h"
-#include "../shader/shader.h"
+#include "../font/font.h"
+#include "shader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stb_image.h>

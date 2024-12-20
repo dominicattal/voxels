@@ -1,7 +1,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "../../util/util.h"
+#include "../util/util.h"
 
 #define NUM_SHADERS 2
 

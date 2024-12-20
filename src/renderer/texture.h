@@ -1,7 +1,7 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "../../util/util.h"
+#include "../util/util.h"
 
 #define NUM_TEXTURES 6
 

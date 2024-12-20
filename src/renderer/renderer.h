@@ -2,6 +2,11 @@
 #define RENDERER_H
 
 #include "../util/util.h"
+#include "vao.h"
+#include "shader.h"
+#include "texture.h"
+#include "vbo.h"
+#include "ebo.h"
 
 void renderer_init(void);
 void renderer_render(void);

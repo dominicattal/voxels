@@ -1,8 +1,8 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
-#include "../../font/font.h"
-#include "../../util/util.h"
+#include "../font/font.h"
+#include "../util/util.h"
 
 #define MAX_NUM_CHILDREN  255
 

@@ -1,9 +1,9 @@
 #ifndef VAO_H
 #define VAO_H
 
-#include "../../util/util.h"
-#include "../vbo/vbo.h"
-#include "../ebo/ebo.h"
+#include "../util/util.h"
+#include "vbo.h"
+#include "ebo.h"
 
 #define NUM_VAOS 3
 

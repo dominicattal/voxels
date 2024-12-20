@@ -1,13 +1,24 @@
 #include "gui.h"
-#include "component/component.h"
-#include "loader/loader.h"
-#include "../renderer/texture/texture.h"
+#include "component.h"
+#include "loader.h"
+#include "../renderer/renderer.h"
 #include "../window/window.h"
 #include "../font/font.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+typedef struct {
+    u32 comp_vbo_length, comp_vbo_max_length;
+    f32* comp_vbo_buffer;
+    u32 comp_ebo_length, comp_ebo_max_length;
+    u32* comp_ebo_buffer;
+    u32 font_vbo_length, font_vbo_max_length;
+    f32* font_vbo_buffer;
+    u32 font_ebo_length, font_ebo_max_length;
+    u32* font_ebo_buffer;
+} GUIData;
 
 typedef struct {
     Component* root;
@@ -338,8 +349,29 @@ static void update_data(void)
     update_data_helper(gui.root);
 }
 
-GUIData gui_get_data(void)
+void gui_render(void)
 {
     update_data();
-    return gui.data;
+
+    vbo_malloc(VBO_GUI,  gui.data.comp_vbo_max_length, GL_STATIC_DRAW);
+    ebo_malloc(EBO_GUI,  gui.data.comp_ebo_max_length, GL_STATIC_DRAW);
+    vbo_update(VBO_GUI,  0, gui.data.comp_vbo_length, gui.data.comp_vbo_buffer);
+    ebo_update(EBO_GUI,  0, gui.data.comp_ebo_length, gui.data.comp_ebo_buffer);
+    vbo_malloc(VBO_FONT, gui.data.font_vbo_max_length, GL_STATIC_DRAW);
+    ebo_malloc(EBO_FONT, gui.data.font_ebo_max_length, GL_STATIC_DRAW);
+    vbo_update(VBO_FONT, 0, gui.data.font_vbo_length, gui.data.font_vbo_buffer);
+    ebo_update(EBO_FONT, 0, gui.data.font_ebo_length, gui.data.font_ebo_buffer);
+
+    glDisable(GL_DEPTH_TEST);
+    shader_use(SHADER_GUI);
+
+    vao_bind(VAO_GUI);
+    vbo_bind(VBO_GUI);
+    ebo_bind(EBO_GUI);
+    glDrawElements(GL_TRIANGLES, ebo_length(EBO_GUI), GL_UNSIGNED_INT, 0);
+
+    vao_bind(VAO_FONT);
+    vbo_bind(VBO_FONT);
+    ebo_bind(EBO_FONT);
+    glDrawElements(GL_TRIANGLES, ebo_length(EBO_FONT), GL_UNSIGNED_INT, 0);
 }

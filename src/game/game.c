@@ -1,6 +1,6 @@
 #include "game.h"
 #include "object/object.h"
-#include "../renderer/texture/texture.h"
+#include "../renderer/renderer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -11,6 +11,13 @@
 #define VERTICES_PER_FACE   4
 #define INDICES_PER_FACE    6
 #define FACES_PER_OBJECT    6
+
+typedef struct {
+    u32 vbo_length, vbo_max_length;
+    f32* vbo_buffer;
+    u32 ebo_length, ebo_max_length;
+    u32* ebo_buffer;
+} GameData;
 
 typedef struct {
     GameData data;
@@ -114,10 +121,21 @@ void game_update_data(void)
 #undef A
 #undef B
 
-GameData game_get_data(void)
+void game_render(void)
 {
     sem_wait(&game.mutex);
     game_update_data();
     sem_post(&game.mutex);
-    return game.data;
+
+    vbo_malloc(VBO_GAME, game.data.vbo_max_length, GL_STATIC_DRAW);
+    ebo_malloc(EBO_GAME, game.data.ebo_max_length, GL_STATIC_DRAW);
+    vbo_update(VBO_GAME, 0, game.data.vbo_length, game.data.vbo_buffer);
+    ebo_update(EBO_GAME, 0, game.data.ebo_length, game.data.ebo_buffer);
+    glEnable(GL_DEPTH_TEST);
+    shader_use(SHADER_GAME);
+
+    vao_bind(VAO_GAME);
+    vbo_bind(VBO_GAME);
+    ebo_bind(EBO_GAME);
+    glDrawElements(GL_TRIANGLES, ebo_length(EBO_GAME), GL_UNSIGNED_INT, 0);
 }

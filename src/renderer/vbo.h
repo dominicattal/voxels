@@ -1,7 +1,7 @@
 #ifndef VBO_H
 #define VBO_H
 
-#include "../../util/util.h"
+#include "../util/util.h"
 
 #define NUM_VBOS 3
 

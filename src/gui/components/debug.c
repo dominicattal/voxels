@@ -1,7 +1,7 @@
 #include "components.h"
-#include "../../../renderer/renderer.h"
-#include "../../../window/window.h"
-#include "../../../game/game.h"
+#include "../../renderer/renderer.h"
+#include "../../window/window.h"
+#include "../../game/game.h"
 #include <glfw.h>
 #include <stdio.h>
 #include <stdlib.h>
