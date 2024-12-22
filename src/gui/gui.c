@@ -164,13 +164,10 @@ static void update_data_text(Component* comp)
     f32 x1, y1, x2, y2;     // screen coordinates
     f32 u1, v1, u2, v2;     // bitmap coordinates
     i32 a1, b1, a2, b2;     // glyph bounding box
-    i32 ox, oy, test_ox;    // glyph origin
-    i32 prev_test_ox;       // edge case
     i32 x, y, w, h;         // pixel coordinates
     i32 ascent, descent;    // highest and lowest glyph offsets
     i32 line_gap;           // gap between lines
     i32 adv, lsb, kern;     // advance, left side bearing, kerning
-    i32 left, right, mid;   // pointers for word
     u8  ha, va;             // horizontal and vertical alignment
     u8  justify;            // branchless justify
     i32 font_size;          // font_size = ascent - descent
@@ -180,6 +177,10 @@ static void update_data_text(Component* comp)
     u32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
     char* text;             // text, equal to comp->text
+
+    register i32 ox, oy, test_ox;    // glyph origin
+    register i32 prev_test_ox;       // edge case
+    register i32 left, right, mid;   // pointers for word
     
     comp_get_position(comp, &cx, &cy);
     comp_get_size(comp, &cw, &ch);

@@ -1,7 +1,7 @@
 #ifndef GUI_PRESETS_H
 #define GUI_PRESETS_H
 
-#include "../../component/component.h"
+#include "../component.h"
 
 void gui_preset_default(Component* comp);
 
