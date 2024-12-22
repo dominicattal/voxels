@@ -1,13 +1,14 @@
 #include "texture.h"
 #include "../font/font.h"
 #include "shader.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include <stb_rect_pack.h>
 
-#define NUM_TEXTURE_UNITS 3
+#define NUM_TEXTURE_UNITS  3
 #define NUM_IMAGES_TO_PACK 3
 
 typedef struct {
@@ -15,54 +16,30 @@ typedef struct {
     char* path;
 } Image;
 
+typedef struct {
+    u16 u1, v1, u2, v2;
+} UV;
+
+typedef struct {
+    i8 location;
+    i8 uv_idx;
+} TEX;
+
 static Image images[NUM_IMAGES_TO_PACK] = {
     (Image) { TEX_OBJECT1, "assets/textures/objects/object1.png" },
     (Image) { TEX_OBJECT2, "assets/textures/objects/object2.png" },
     (Image) { TEX_OBJECT3, "assets/textures/objects/object3.png" }
 };
 
-typedef struct {
-    u16 u1, v1, u2, v2;
-} UV;
-
-#define UVINIT(u, v, w, h) (UV) { u, v, u+w, v+h }
+static TEX textures[NUM_TEXTURES];
 
 static struct {
     UV* coords;
     u32 id;
 } texture_units[NUM_TEXTURE_UNITS];
 
-typedef struct {
-    u8 idx1; // location
-    u8 idx2; // uv idx
-} IDX;
-
-#define IDXINIT(idx1, idx2) (IDX) { idx1, idx2 }
-
-static IDX textures[NUM_TEXTURES];
-
-static u32 texture_create_from_path(const char* image_path)
-{
-    u32 texture;
-    i32 width, height, nrChannels;
-    unsigned char *data = stbi_load(image_path, &width, &height, &nrChannels, 4);
-    f32 col[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    if (data == NULL) {
-        printf("Could not open %s\n", image_path);
-        exit(1);
-    }
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameterfv(texture, GL_TEXTURE_BORDER_COLOR, col);
-    glTextureStorage2D(texture, 1, GL_RGBA8, width, height);
-    glTextureSubImage2D(texture, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    stbi_image_free(data);
-    return texture;
-}
+#define UVINIT(u, v, w, h) (UV) { u, v, u+w, v+h }
+#define TEXINIT(location, uv_idx) (IDX) { location, uv_idx }
 
 static u32 texture_create_from_pixels(GLenum type, i32 width, i32 height, const unsigned char* pixels)
 {
@@ -85,20 +62,6 @@ void texture_init(void)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_units[0].id);
 
-    u32 tex;
-    tex = texture_create_from_path("assets/textures/objects/object_atlas.png");
-    texture_units[1].id = tex;
-    texture_units[1].coords = malloc(3 * sizeof(u64));
-    texture_units[1].coords[0] = UVINIT(0, 0, 16, 16);
-    texture_units[1].coords[1] = UVINIT(17, 0, 16, 16);
-    texture_units[1].coords[2] = UVINIT(34, 0, 16, 16);
-    textures[TEX_OBJECT1] = IDXINIT(1, 0);
-    textures[TEX_OBJECT2] = IDXINIT(1, 1);
-    textures[TEX_OBJECT3] = IDXINIT(1, 2);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
     i32 texs[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     shader_use(SHADER_GUI);
     glUniform1iv(shader_get_uniform_location(SHADER_GUI, "textures"), 2, texs);
@@ -114,6 +77,10 @@ void texture_init(void)
     unsigned char* bitmap;
     i32 num_nodes = bitmap_width;
     i32 num_rects = NUM_IMAGES_TO_PACK;
+    i32 num_rects_packed;
+    i32 location;
+    i32 uv_idx;
+    u32 tex;
     stbrp_context* context_rgb;
     stbrp_context* context_rgba;
     stbrp_node* nodes_rgb;
@@ -140,6 +107,7 @@ void texture_init(void)
             ++num_rects_rgba;
         } else {
             printf("Unsupported number of channels (%d) for image %d: %s\n", num_channels, images[i].tex, images[i].path);
+            stbi_image_free(image_data[i]);
         }
     }
 
@@ -152,12 +120,15 @@ void texture_init(void)
     stbrp_pack_rects(context_rgb, rects_rgb, num_rects_rgb);
 
     num_channels = 3;
+    num_rects_packed = 0;
+    location = 1;
     bitmap = calloc(bitmap_height * bitmap_width * num_channels, sizeof(unsigned char));
-    for (i32 i = 0; i < num_rects; i++) {
+    for (i32 i = 0; i < num_rects; ++i) {
         if (!rects_rgb[i].was_packed) {
             printf("Failed to pack image %d: %s\n", images[i].tex, images[i].path);
             continue;
         }
+        ++num_rects_packed;
         // height, width, channels, index in data, index in bitmap
         i32 y, x, c, data_idx, bitmap_idx;
         for (y = 0; y < rects_rgb[i].h - padding; ++y) {
@@ -176,6 +147,32 @@ void texture_init(void)
                 }
             }
         }
+    }
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureStorage2D(tex, 1, GL_RGB8, bitmap_width, bitmap_height);
+    glTextureSubImage2D(tex, 0, 0, 0, bitmap_width, bitmap_height, GL_RGB, GL_UNSIGNED_BYTE, bitmap);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    texture_units[location].id = tex;
+    texture_units[location].coords = malloc(sizeof(UV) * num_rects_packed);
+    uv_idx = 0;
+    for (i32 i = 0; i < num_rects; ++i) {
+        stbrp_rect rect = rects_rgb[i];
+        if (!rect.was_packed) {
+            textures[rect.id].location = -1;
+            textures[rect.id].uv_idx = -1;
+            continue;
+        }
+        texture_units[location].coords[uv_idx] = UVINIT(rect.x, rect.y, rect.w-padding, rect.h-padding);
+        textures[rect.id].location = location;
+        textures[rect.id].uv_idx = uv_idx;
+        ++uv_idx;
     }
 
     stbi_write_png("data/packed.png", bitmap_width, bitmap_height, num_channels, bitmap, 0);
@@ -206,13 +203,10 @@ void texture_destroy(void)
 
 void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2, f32* v2)
 {
-    u8 idx1, idx2;
-    idx1 = textures[texture].idx1;
-    idx2 = textures[texture].idx2;
-    
-    *location = 0;
-    *u1 = texture_units[idx1].coords[idx2].u1 / 1024.0;
-    *v1 = texture_units[idx1].coords[idx2].v1 / 1024.0;
-    *u2 = texture_units[idx1].coords[idx2].u2 / 1024.0;
-    *v2 = texture_units[idx1].coords[idx2].v2 / 1024.0;
+    assert(textures[texture].location != -1);
+    *location = textures[texture].location;
+    *u1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u1 / 1024.0;
+    *v1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v1 / 1024.0;
+    *u2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u2 / 1024.0;
+    *v2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v2 / 1024.0;
 }
