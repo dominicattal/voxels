@@ -10,6 +10,7 @@
 
 #define NUM_TEXTURE_UNITS  3
 #define NUM_IMAGES_TO_PACK 3
+#define PADDING 1
 
 typedef struct {
     Texture tex;
@@ -52,28 +53,73 @@ static u32 texture_create_from_pixels(GLenum type, i32 width, i32 height, const 
     return texture;
 }
 
-void texture_init(void)
+static void create_font_textures(i32* tex_unit_idx) 
 {
-    i32 width1, height1;
-    unsigned char* bitmap1 = font_bitmap(&width1, &height1);
-    texture_units[0].id = texture_create_from_pixels(GL_RED, width1, height1, bitmap1);
-    free(bitmap1);
-
+    i32 width, height;
+    unsigned char* bitmap = font_bitmap(&width, &height);
+    texture_units[0].id = texture_create_from_pixels(GL_RED, width, height, bitmap);
+    free(bitmap);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_units[0].id);
+}
 
-    i32 texs[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-    shader_use(SHADER_GUI);
-    glUniform1iv(shader_get_uniform_location(SHADER_GUI, "textures"), 2, texs);
-    shader_use(SHADER_GAME);
-    glUniform1iv(shader_get_uniform_location(SHADER_GAME, "textures"), 2, texs);
+static void create_rgb_textures(i32* tex_unit_idx)
+{
 
-    i32 padding = 1;
+}
+
+static void create_rgba_textures(i32* tex_unit_idx)
+{
+
+}
+
+static void initialize_rects(stbrp_rect* rects_rgb, stbrp_rect* rects_rgba, unsigned char** image_data, i32* num_rects_rgb_out, i32* num_rects_rgba_out)
+{
+    register i32 num_rects_rgb, num_rects_rgba, i;
+    i32 width, height, num_channels;
+    num_rects_rgb = num_rects_rgba = 0;
+    for (i = 0; i < NUM_IMAGES_TO_PACK; i++) {
+        image_data[i] = stbi_load(images[i].path, &width, &height, &num_channels, 0);
+        if (num_channels == 3) {
+            rects_rgb[num_rects_rgb].id = images[i].tex;
+            rects_rgb[num_rects_rgb].w  = PADDING + width;
+            rects_rgb[num_rects_rgb].h  = PADDING + height;
+            ++num_rects_rgb;
+        } else if (num_channels == 4) {
+            rects_rgba[num_rects_rgba].id = images[i].tex;
+            rects_rgba[num_rects_rgba].w  = PADDING + width;
+            rects_rgba[num_rects_rgba].h  = PADDING + height;
+            ++num_rects_rgba;
+        } else {
+            printf("Unsupported number of channels (%d) for image %d: %s\n", num_channels, images[i].tex, images[i].path);
+            stbi_image_free(image_data[i]);
+        }
+    }
+    *num_rects_rgb_out  = num_rects_rgb;
+    *num_rects_rgba_out = num_rects_rgba;
+}
+
+void texture_init(void)
+{
+    i32 tex_unit_idx;
+    tex_unit_idx = 0;
+
+    create_font_textures(&tex_unit_idx);
+    
+    stbrp_rect* rects_rgb;
+    stbrp_rect* rects_rgba;
+    unsigned char** image_data;
+    i32 num_rects_rgb, num_rects_rgba;
+
+    rects_rgb  = malloc(sizeof(stbrp_rect) * NUM_IMAGES_TO_PACK);
+    rects_rgba = malloc(sizeof(stbrp_rect) * NUM_IMAGES_TO_PACK);
+    image_data = malloc(sizeof(unsigned char*) * NUM_IMAGES_TO_PACK);
+
+    initialize_rects(rects_rgb, rects_rgba, image_data, &num_rects_rgb, &num_rects_rgba);
+
     i32 bitmap_width = 1024;
     i32 bitmap_height = 1024;
     i32 width, height, num_channels;
-    i32 num_rects_rgb, num_rects_rgba;
-    unsigned char** image_data;
     unsigned char* bitmap;
     i32 num_nodes = bitmap_width;
     i32 num_rects = NUM_IMAGES_TO_PACK;
@@ -85,31 +131,6 @@ void texture_init(void)
     stbrp_context* context_rgba;
     stbrp_node* nodes_rgb;
     stbrp_node* nodes_rgba;
-    stbrp_rect* rects_rgb;
-    stbrp_rect* rects_rgba;
-
-    rects_rgb  = malloc(sizeof(stbrp_rect) * NUM_IMAGES_TO_PACK);
-    rects_rgba = malloc(sizeof(stbrp_rect) * NUM_IMAGES_TO_PACK);
-    image_data = malloc(sizeof(unsigned char*) * NUM_IMAGES_TO_PACK);
-    num_rects_rgb = num_rects_rgba = 0;
-
-    for (i32 i = 0; i < NUM_IMAGES_TO_PACK; i++) {
-        image_data[i] = stbi_load(images[i].path, &width, &height, &num_channels, 0);
-        if (num_channels == 3) {
-            rects_rgb[num_rects_rgb].id = images[i].tex;
-            rects_rgb[num_rects_rgb].w  = padding + width;
-            rects_rgb[num_rects_rgb].h  = padding + height;
-            ++num_rects_rgb;
-        } else if (num_channels == 4) {
-            rects_rgba[num_rects_rgba].id = images[i].tex;
-            rects_rgba[num_rects_rgba].w  = padding + width;
-            rects_rgba[num_rects_rgba].h  = padding + height;
-            ++num_rects_rgba;
-        } else {
-            printf("Unsupported number of channels (%d) for image %d: %s\n", num_channels, images[i].tex, images[i].path);
-            stbi_image_free(image_data[i]);
-        }
-    }
 
     context_rgb  = malloc(sizeof(stbrp_context));
     context_rgba = malloc(sizeof(stbrp_context));
@@ -131,11 +152,11 @@ void texture_init(void)
         ++num_rects_packed;
         // height, width, channels, index in data, index in bitmap
         i32 y, x, c, data_idx, bitmap_idx;
-        for (y = 0; y < rects_rgb[i].h - padding; ++y) {
-            for (x = 0; x < rects_rgb[i].w - padding; ++x) {
+        for (y = 0; y < rects_rgb[i].h - PADDING; ++y) {
+            for (x = 0; x < rects_rgb[i].w - PADDING; ++x) {
                 for (c = 0; c < num_channels; ++c) {
 
-                    data_idx =   y * num_channels * (rects_rgb[i].w - padding)
+                    data_idx =   y * num_channels * (rects_rgb[i].w - PADDING)
                                + x * num_channels 
                                + c;
 
@@ -169,7 +190,7 @@ void texture_init(void)
             textures[rect.id].uv_idx = -1;
             continue;
         }
-        texture_units[location].coords[uv_idx] = UVINIT(rect.x, rect.y, rect.w-padding, rect.h-padding);
+        texture_units[location].coords[uv_idx] = UVINIT(rect.x, rect.y, rect.w-PADDING, rect.h-PADDING);
         textures[rect.id].location = location;
         textures[rect.id].uv_idx = uv_idx;
         ++uv_idx;
@@ -191,6 +212,12 @@ void texture_init(void)
     free(nodes_rgba);
     free(rects_rgb);
     free(rects_rgba);
+
+    i32 texs[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    shader_use(SHADER_GUI);
+    glUniform1iv(shader_get_uniform_location(SHADER_GUI, "textures"), 2, texs);
+    shader_use(SHADER_GAME);
+    glUniform1iv(shader_get_uniform_location(SHADER_GAME, "textures"), 2, texs);
 }
 
 void texture_destroy(void)
