@@ -2,7 +2,7 @@
 
 out vec4 FragColor;
 
-uniform sampler2D textures[2];
+uniform sampler2D textures[16];
 
 uniform int TEX_ID_FONT;
 

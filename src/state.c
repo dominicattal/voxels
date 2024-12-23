@@ -66,7 +66,6 @@ static void process_input(f32 dt)
 void state_loop(void)
 {
     f64 dt = 0, time;
-    audio_play_sound(AUD_DEFAULT);
     while (!window_closed()) 
     {
         time = get_time();

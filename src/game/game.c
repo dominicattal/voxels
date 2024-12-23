@@ -44,7 +44,7 @@ static void *game_update(void* vargp)
 void game_init(void)
 {
     for (i32 i = 0; i < NUM_OBJECTS; i++)
-        game.objects[i] = object_create(3 + (i % 3), i/10*2, i%10*2, i/10*2);
+        game.objects[i] = object_create(3 + (i % 4), i/10*2, i%10*2, i/10*2);
 
     game.data.vbo_max_length = NUM_OBJECTS * FACES_PER_OBJECT * VERTICES_PER_FACE * FLOATS_PER_VERTEX;
     game.data.ebo_max_length = NUM_OBJECTS * FACES_PER_OBJECT * INDICES_PER_FACE;

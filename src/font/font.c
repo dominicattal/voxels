@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <stb_image_write.h>
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
@@ -59,7 +58,6 @@ void font_init(void)
     stbtt_PackBegin(&spc, bitmap, BITMAP_WIDTH, BITMAP_HEIGHT, 0, 1, NULL);
     load_fonts();
     stbtt_PackEnd(&spc);
-    stbi_write_png("data/out.png", BITMAP_WIDTH, BITMAP_HEIGHT, 1, bitmap, BITMAP_WIDTH);
 }
 
 void font_info(FontID id, i32 font_size, i32* ascent, i32* descent, i32* line_gap)
