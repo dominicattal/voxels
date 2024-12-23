@@ -10,8 +10,8 @@
 
 #define NUM_TEXTURE_UNITS  16
 
-#define BITMAP_WIDTH  1024
-#define BITMAP_HEIGHT 1024
+#define BITMAP_WIDTH  16
+#define BITMAP_HEIGHT 16
 #define PADDING 0
 
 typedef struct {
@@ -104,7 +104,8 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
 {
     i32 num_nodes, num_rects_packed;
     i32 y, x, c, data_idx, bitmap_idx;
-    i32 location, uv_idx;
+    i32 location, uv_idx, new_rect_idx;
+    i32 all_rects_packed;
     u32 tex;
     unsigned char* bitmap;
     stbrp_context* context;
@@ -116,16 +117,14 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
     nodes    = malloc(sizeof(stbrp_node) * num_nodes);
 
     stbrp_init_target(context, BITMAP_WIDTH, BITMAP_HEIGHT, nodes, num_nodes);
-    stbrp_pack_rects(context, rects, num_rects);
+    all_rects_packed = stbrp_pack_rects(context, rects, num_rects);
 
     num_rects_packed = 0;
     location = *tex_unit_location;
     bitmap = calloc(BITMAP_WIDTH * BITMAP_HEIGHT * num_channels, sizeof(unsigned char));
     for (i32 i = 0; i < num_rects; ++i) {
-        if (!rects[i].was_packed) {
-            printf("Failed to pack image\n");
+        if (!rects[i].was_packed)
             continue;
-        }
         ++num_rects_packed;
         // height, width, channels, index in data, index in bitmap
         for (y = 0; y < rects[i].h - PADDING; ++y) {
@@ -160,11 +159,11 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
 
     texture_units[location].id = tex;
     texture_units[location].coords = malloc(sizeof(UV) * num_rects_packed);
+    new_rect_idx = 0;
     for (i32 i = 0; i < num_rects; ++i) {
         stbrp_rect rect = rects[i];
         if (!rect.was_packed) {
-            textures[rect.id].location = -1;
-            textures[rect.id].uv_idx = -1;
+            rects[new_rect_idx++] = rect;
             continue;
         }
         texture_units[location].coords[uv_idx] = UVINIT(rect.x, rect.y, rect.w-PADDING, rect.h-PADDING);
@@ -183,6 +182,14 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
     free(context);
     free(nodes);
     free(bitmap);
+
+    if (!all_rects_packed) {
+        if (*tex_unit_location == NUM_TEXTURE_UNITS) {
+            puts("Out of texture units to pack to");
+            exit(1);
+        }
+        pack_textures(tex_unit_location, image_data, rects, new_rect_idx, num_channels);
+    }
 }
 
 
@@ -235,8 +242,8 @@ void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2,
 {
     assert(textures[texture].location != -1);
     *location = textures[texture].location;
-    *u1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u1 / 1024.0;
-    *v1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v1 / 1024.0;
-    *u2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u2 / 1024.0;
-    *v2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v2 / 1024.0;
+    *u1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u1 / (f32)BITMAP_WIDTH;
+    *v1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v1 / (f32)BITMAP_HEIGHT;
+    *u2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u2 / (f32)BITMAP_WIDTH;
+    *v2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v2 / (f32)BITMAP_HEIGHT;
 }
