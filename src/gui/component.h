@@ -80,7 +80,7 @@ void comp_set_position(Component* comp, i32 x, i32 y);
 void comp_set_size(Component* comp, i32 w, i32 h);
 void comp_set_align(Component* comp, u8 ha, u8 va);
 void comp_set_tex(Component* comp, i32 tx);
-void comp_set_font(Component* comp, FontID ft);
+void comp_set_font(Component* comp, Font ft);
 void comp_set_font_size(Component* comp, i32 fs);
 
 // Getters for packed info
@@ -107,7 +107,7 @@ void comp_get_position(Component* comp, i32* x, i32* y);
 void comp_get_size(Component* comp, i32* w, i32* h);
 void comp_get_align(Component* comp, u8* ha, u8* va);
 void comp_get_tex(Component* comp, i32* tx);
-void comp_get_font(Component* comp, FontID* ft);
+void comp_get_font(Component* comp, Font* ft);
 void comp_get_font_size(Component* comp, i32* fs);
 
 // Second set of getters

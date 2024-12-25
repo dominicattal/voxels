@@ -79,8 +79,8 @@ void state_loop(void)
 
 void state_destroy(void)
 {
-    window_destroy();
     font_destroy();
+    window_destroy();
     renderer_destroy();
     audio_destroy();
     gui_destroy();

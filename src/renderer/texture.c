@@ -10,8 +10,8 @@
 
 #define NUM_TEXTURE_UNITS  16
 
-#define BITMAP_WIDTH  16
-#define BITMAP_HEIGHT 16
+#define BITMAP_WIDTH  1024
+#define BITMAP_HEIGHT 1024
 #define PADDING 0
 
 typedef struct {
@@ -46,30 +46,26 @@ static struct {
 #define UVINIT(u, v, w, h) (UV) { u, v, u+w, v+h }
 #define TEXINIT(location, uv_idx) (IDX) { location, uv_idx }
 
-static u32 texture_create_from_pixels(GLenum type, i32 width, i32 height, const unsigned char* pixels)
-{
-    u32 texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    return texture;
-}
-
 static void create_font_textures(i32* tex_unit_location) 
 {
     i32 width, height;
+    u32 tex;
     unsigned char* bitmap = font_bitmap(&width, &height);
-    texture_units[*tex_unit_location].id = texture_create_from_pixels(GL_RED, width, height, bitmap);
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glActiveTexture(GL_TEXTURE0 + *tex_unit_location);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    texture_units[*tex_unit_location].id = tex;
     if (ENV_EXPORT_TEXTURE_ATLASES) {
         char path[512];
         sprintf(path, "data/packed%d.png", *tex_unit_location);
         stbi_write_png(path, width, height, 1, bitmap, 0);
     }
     free(bitmap);
-    glActiveTexture(GL_TEXTURE0 + *tex_unit_location);
-    glBindTexture(GL_TEXTURE_2D, texture_units[*tex_unit_location].id);
     (*tex_unit_location)++;
 }
 
@@ -130,16 +126,17 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
         for (y = 0; y < rects[i].h - PADDING; ++y) {
             for (x = 0; x < rects[i].w - PADDING; ++x) {
                 for (c = 0; c < num_channels; ++c) {
+                    stbrp_rect rect = rects[i];
 
-                    data_idx   =    y * num_channels * (rects[i].w - PADDING)
+                    data_idx   =    y * num_channels * (rect.w - PADDING)
                                  +  x * num_channels 
                                  +  c;
 
-                    bitmap_idx =   (y + rects[i].y) * num_channels * BITMAP_WIDTH
-                                 + (x + rects[i].x) * num_channels
+                    bitmap_idx =   (y + rect.y) * num_channels * BITMAP_WIDTH
+                                 + (x + rect.x) * num_channels
                                  +  c;
 
-                    bitmap[bitmap_idx] = image_data[textures[rects[i].id].location][data_idx];
+                    bitmap[bitmap_idx] = image_data[textures[rect.id].location][data_idx];
                 }
             }
         }

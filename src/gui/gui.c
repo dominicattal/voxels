@@ -23,6 +23,7 @@ typedef struct {
 typedef struct {
     Component* root;
     GUIData data;
+    bool initialized;
 } GUI;
 
 static GUI gui;
@@ -38,6 +39,7 @@ void gui_init(void)
     comp_set_color(gui.root, 0, 0, 0, 0);
     comp_set_hoverable(gui.root, FALSE);
     gui_load(GUI_DEFAULT, gui.root);
+    gui.initialized = TRUE;
 }
 
 static void update_components_helper(Component* comp, f64 dt)
@@ -57,6 +59,9 @@ void gui_update(f64 dt)
 
 void gui_destroy(void)
 {
+    if (!gui.initialized)
+        return;
+        
     comp_destroy(gui.root);
     free(gui.data.comp_vbo_buffer);
     free(gui.data.comp_ebo_buffer);
@@ -171,7 +176,7 @@ static void update_data_text(Component* comp)
     u8  ha, va;             // horizontal and vertical alignment
     u8  justify;            // branchless justify
     i32 font_size;          // font_size = ascent - descent
-    FontID font;            // font
+    Font font;              // font
     i32 num_spaces;         // count whitespace for horizontal alignment
     f32 dy;                 // change in y for vertical alignment
     u32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph

@@ -324,7 +324,7 @@ void comp_set_visible(Component* comp, bool vs) {
 void comp_set_tex(Component* comp, i32 tx) {
     comp->info2 = (comp->info2 & GMASK(TX_BITS, TX_SHIFT)) | ((u64)(tx & SMASK(TX_BITS)) << TX_SHIFT);
 }
-void comp_set_font(Component* comp, FontID ft) {
+void comp_set_font(Component* comp, Font ft) {
     comp->info2 = (comp->info2 & GMASK(FT_BITS, FT_SHIFT)) | ((u64)(ft & SMASK(FT_BITS)) << FT_SHIFT);
 }
 void comp_set_font_size(Component* comp, i32 fs) {
@@ -410,7 +410,7 @@ void comp_get_visible(Component* comp, bool* vs) {
 void comp_get_tex(Component* comp, i32* tx) {
     *tx = (comp->info2 >> TX_SHIFT) & SMASK(TX_BITS);
 }
-void comp_get_font(Component* comp, FontID* ft) {
+void comp_get_font(Component* comp, Font* ft) {
     *ft = (comp->info2 >> FT_SHIFT) & SMASK(FT_BITS);
 }
 void comp_get_font_size(Component* comp, i32* fs) {
