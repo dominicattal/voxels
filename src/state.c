@@ -12,7 +12,6 @@
 
 void state_init(void)
 {
-    font_init();
     window_init();
     renderer_init();
     camera_init();
@@ -79,7 +78,6 @@ void state_loop(void)
 
 void state_destroy(void)
 {
-    font_destroy();
     window_destroy();
     renderer_destroy();
     audio_destroy();

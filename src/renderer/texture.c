@@ -48,24 +48,9 @@ static struct {
 
 static void create_font_textures(i32* tex_unit_location) 
 {
-    i32 width, height;
-    u32 tex;
-    unsigned char* bitmap = font_bitmap(&width, &height);
-
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    texture_units[*tex_unit_location].id = font_init();
     glActiveTexture(GL_TEXTURE0 + *tex_unit_location);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    texture_units[*tex_unit_location].id = tex;
-    if (ENV_EXPORT_TEXTURE_ATLASES) {
-        char path[512];
-        sprintf(path, "data/packed%d.png", *tex_unit_location);
-        stbi_write_png(path, width, height, 1, bitmap, 0);
-    }
-    free(bitmap);
+    glBindTexture(GL_TEXTURE_2D, texture_units[*tex_unit_location].id);
     (*tex_unit_location)++;
 }
 
@@ -229,6 +214,7 @@ void texture_init(void)
 
 void texture_destroy(void)
 {
+    font_destroy();
     for (i32 i = 0; i < NUM_TEXTURE_UNITS; i++) {
         glDeleteTextures(1, &texture_units[i].id);
         free(texture_units[i].coords);
