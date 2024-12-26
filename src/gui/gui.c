@@ -288,8 +288,8 @@ static void update_data_text(Component* comp)
                 A = x1, A = y2, A = u1, A = v1, A = 0, A = 0, A = 0, A = 1, A = location;
                 A = x2, A = y2, A = u2, A = v1, A = 0, A = 0, A = 0, A = 1, A = location;
                 A = x2, A = y1, A = u2, A = v2, A = 0, A = 0, A = 0, A = 1, A = location;
-                B = ebo_idx, B = ebo_idx + 1, B = ebo_idx + 2, 
-                B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 3;
+                B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 1, 
+                B = ebo_idx, B = ebo_idx + 3, B = ebo_idx + 2;
             }   
 
             ox += adv + kern;
@@ -340,7 +340,7 @@ static void update_data_helper(Component* comp)
     A = x1, A = y2, A = 0.0, A = 0.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
     A = x2, A = y2, A = 1.0, A = 0.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
     A = x2, A = y1, A = 1.0, A = 1.0, A = r, A = g, A = b, A = a, A = TEX_COLOR;
-    B = idx, B = idx + 1, B = idx + 2, B = idx, B = idx + 2, B = idx + 3;
+    B = idx, B = idx + 2, B = idx + 1, B = idx, B = idx + 3, B = idx + 2;
 
     update_data_text(comp);
     for (i32 i = 0; i < comp_num_children(comp); i++)
@@ -361,25 +361,22 @@ void gui_render(void)
 {
     update_data();
 
-    vbo_malloc(VBO_GUI,  gui.data.comp_vbo_max_length, GL_STATIC_DRAW);
+    vbo_malloc(VBO_GUI,  gui.data.comp_vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
     ebo_malloc(EBO_GUI,  gui.data.comp_ebo_max_length, GL_STATIC_DRAW);
-    vbo_update(VBO_GUI,  0, gui.data.comp_vbo_length, gui.data.comp_vbo_buffer);
+    vbo_update(VBO_GUI,  0, gui.data.comp_vbo_length * sizeof(f32), gui.data.comp_vbo_buffer);
     ebo_update(EBO_GUI,  0, gui.data.comp_ebo_length, gui.data.comp_ebo_buffer);
-    vbo_malloc(VBO_FONT, gui.data.font_vbo_max_length, GL_STATIC_DRAW);
+    vbo_malloc(VBO_FONT, gui.data.font_vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
     ebo_malloc(EBO_FONT, gui.data.font_ebo_max_length, GL_STATIC_DRAW);
-    vbo_update(VBO_FONT, 0, gui.data.font_vbo_length, gui.data.font_vbo_buffer);
+    vbo_update(VBO_FONT, 0, gui.data.font_vbo_length * sizeof(f32), gui.data.font_vbo_buffer);
     ebo_update(EBO_FONT, 0, gui.data.font_ebo_length, gui.data.font_ebo_buffer);
 
-    glDisable(GL_DEPTH_TEST);
     shader_use(SHADER_GUI);
 
     vao_bind(VAO_GUI);
-    vbo_bind(VBO_GUI);
     ebo_bind(EBO_GUI);
     glDrawElements(GL_TRIANGLES, ebo_length(EBO_GUI), GL_UNSIGNED_INT, 0);
 
     vao_bind(VAO_FONT);
-    vbo_bind(VBO_FONT);
     ebo_bind(EBO_FONT);
     glDrawElements(GL_TRIANGLES, ebo_length(EBO_FONT), GL_UNSIGNED_INT, 0);
 }

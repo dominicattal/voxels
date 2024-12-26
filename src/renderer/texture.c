@@ -20,7 +20,7 @@ typedef struct {
 } Image;
 
 typedef struct {
-    u16 u1, v1, u2, v2;
+    u16 u, v, w, h;
 } UV;
 
 typedef struct {
@@ -43,7 +43,7 @@ static struct {
     u32 id;
 } texture_units[NUM_TEXTURE_UNITS];
 
-#define UVINIT(u, v, w, h) (UV) { u, v, u+w, v+h }
+#define UVINIT(u, v, w, h) (UV) { u, v, w, h }
 #define TEXINIT(location, uv_idx) (IDX) { location, uv_idx }
 
 static void create_font_textures(i32* tex_unit_location) 
@@ -222,13 +222,13 @@ void texture_destroy(void)
     }
 }
 
-void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2, f32* v2)
+void texture_get_info(Texture texture, u32* location, f32* u, f32* v, f32* w, f32* h)
 {
     *location = textures[texture].location;
-    *u1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u1 / (f32)BITMAP_WIDTH;
-    *v1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v1 / (f32)BITMAP_HEIGHT;
-    *u2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u2 / (f32)BITMAP_WIDTH;
-    *v2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v2 / (f32)BITMAP_HEIGHT;
+    *u = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u / (f32)BITMAP_WIDTH;
+    *v = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v / (f32)BITMAP_HEIGHT;
+    *w = texture_units[textures[texture].location].coords[textures[texture].uv_idx].w / (f32)BITMAP_WIDTH;
+    *h = texture_units[textures[texture].location].coords[textures[texture].uv_idx].h / (f32)BITMAP_HEIGHT;
 }
 
 u32 texture_location(Texture texture)

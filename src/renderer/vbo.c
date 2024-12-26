@@ -3,14 +3,15 @@
 #include <stdlib.h>
 
 static struct {
-    u32 id, length, max_length;
+    u32 id;
+    size_t max_size;
 } vbos[NUM_VBOS];
 
 void vbo_init(void)
 {
     for (i32 i = 0; i < NUM_VBOS; i++) {
         glGenBuffers(1, &vbos[i].id);
-        vbos[i].length = vbos[i].max_length = 0;
+        vbos[i].max_size = 0;
     }
 }
 
@@ -25,18 +26,17 @@ void vbo_destroy(void)
         glDeleteBuffers(1, &vbos[i].id);
 }
 
-void vbo_malloc(VBO vbo, u32 length, GLenum usage)
+void vbo_malloc(VBO vbo, size_t size, GLenum usage)
 {
-    if (length == vbos[vbo].max_length)
+    if (size == vbos[vbo].max_size)
         return;
     glBindBuffer(GL_ARRAY_BUFFER, vbos[vbo].id);
-    glBufferData(GL_ARRAY_BUFFER, length * sizeof(f32), NULL, usage);
-    vbos[vbo].max_length = length;
+    glBufferData(GL_ARRAY_BUFFER, size, NULL, usage);
+    vbos[vbo].max_size = size;
 }
 
-void vbo_update(VBO vbo, u32 offset, u32 length, f32* buffer)
+void vbo_update(VBO vbo, size_t offset, size_t size, f32* buffer)
 {
-    vbos[vbo].length = length;
     glBindBuffer(GL_ARRAY_BUFFER, vbos[vbo].id);
-    glBufferSubData(GL_ARRAY_BUFFER, offset, (length - offset) * sizeof(f32), buffer);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, size, buffer);
 }

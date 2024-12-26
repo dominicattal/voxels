@@ -8,8 +8,8 @@
 #define DEFAULT_PITCH       PI / 3
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
-#define DEFAULT_ROTSPEED    5
-#define DEFAULT_MOVESPEED   5
+#define DEFAULT_ROTSPEED    12
+#define DEFAULT_MOVESPEED   25
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {

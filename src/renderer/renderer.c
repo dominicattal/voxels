@@ -5,7 +5,6 @@
 #include "../gui/gui.h"
 #include "../game/game.h"
 
-
 typedef struct {
     f64 dt;
 } Renderer;
@@ -22,6 +21,8 @@ void renderer_init(void)
     glDebugMessageCallback(message_callback, 0);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
 
     shader_init();
     texture_init();
@@ -36,8 +37,10 @@ void renderer_render(void)
 
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    
+    glEnable(GL_DEPTH_TEST);
     game_render();
+    glDisable(GL_DEPTH_TEST);
     gui_render();
 
     renderer.dt = get_time() - start;
