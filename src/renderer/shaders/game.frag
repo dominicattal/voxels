@@ -9,5 +9,4 @@ in flat int location;
 
 void main() {
     FragColor = texture(textures[location], UV);
-    FragColor = vec4(1.0, 0.0, 1.0, 1.0);
 }

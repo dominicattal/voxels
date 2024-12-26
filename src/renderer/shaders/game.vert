@@ -14,6 +14,7 @@ out flat int location;
 
 void main() {
     gl_Position = proj * view * vec4(aPos + aPosOffset, 1.0);
-    UV = aUV;
+    UV.x = aUVOffset.x + aUV.x * aUVOffset.w;
+    UV.y = aUVOffset.y + aUV.y * aUVOffset.z;
     location = int(round(aLocation));
 }

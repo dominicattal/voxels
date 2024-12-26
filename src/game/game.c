@@ -7,7 +7,7 @@
 #include <semaphore.h>
 
 #define NUM_OBJECTS         100
-#define FLOATS_PER_VERTEX   6
+#define FLOATS_PER_VERTEX   5
 #define VERTICES_PER_FACE   4
 #define INDICES_PER_FACE    6
 #define FACES_PER_OBJECT    6
@@ -15,8 +15,6 @@
 typedef struct {
     u32 vbo_length, vbo_max_length;
     f32* vbo_buffer;
-    u32 ebo_length, ebo_max_length;
-    u32* ebo_buffer;
 } GameData;
 
 typedef struct {
@@ -49,9 +47,7 @@ void game_init(void)
         game.objects[i] = object_create(3 + (i % 4), i/10*2, i%10*2, i/10*2);
 
     game.data.vbo_max_length = NUM_OBJECTS * 8;
-    game.data.ebo_max_length = NUM_OBJECTS * 8;
     game.data.vbo_buffer = malloc(game.data.vbo_max_length * sizeof(f32));
-    game.data.ebo_buffer = malloc(game.data.ebo_max_length * sizeof(u32));
     initialize_instance_mesh();
 
     game.dt = 0;
@@ -63,7 +59,6 @@ void game_init(void)
 void game_destroy(void)
 {
     free(game.data.vbo_buffer);
-    free(game.data.ebo_buffer);
     game.kill_thread = TRUE;
     pthread_join(game.thread_id, NULL);
     sem_destroy(&game.mutex);
@@ -130,8 +125,8 @@ void initialize_instance_mesh(void)
         for (i32 i = 0; i < INDICES_PER_FACE; i++)
             ebo_buffer[ebo_idx++] = face_num * 4 + winding[i];
     }
-    vbo_malloc(VBO_GAME_INSTANCE, FACES_PER_OBJECT * VERTICES_PER_FACE * 5 * sizeof(f32), GL_STATIC_DRAW);
-    vbo_update(VBO_GAME_INSTANCE, 0, FACES_PER_OBJECT * VERTICES_PER_FACE * 5 * sizeof(f32), vbo_buffer);
+    vbo_malloc(VBO_GAME, FACES_PER_OBJECT * VERTICES_PER_FACE * FLOATS_PER_VERTEX * sizeof(f32), GL_STATIC_DRAW);
+    vbo_update(VBO_GAME, 0, FACES_PER_OBJECT * VERTICES_PER_FACE * FLOATS_PER_VERTEX * sizeof(f32), vbo_buffer);
     ebo_malloc(EBO_GAME, FACES_PER_OBJECT * INDICES_PER_FACE * sizeof(u32), GL_STATIC_DRAW);
     ebo_update(EBO_GAME, 0, FACES_PER_OBJECT * INDICES_PER_FACE * sizeof(u32), ebo_buffer);
 }
@@ -142,8 +137,8 @@ void game_render(void)
     game_update_data();
     sem_post(&game.mutex);
 
-    vbo_malloc(VBO_GAME, game.data.vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
-    vbo_update(VBO_GAME, 0, game.data.vbo_length * sizeof(f32), game.data.vbo_buffer);
+    vbo_malloc(VBO_GAME_INSTANCE, game.data.vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
+    vbo_update(VBO_GAME_INSTANCE, 0, game.data.vbo_length * sizeof(f32), game.data.vbo_buffer);
     shader_use(SHADER_GAME);
 
     vao_bind(VAO_GAME);
