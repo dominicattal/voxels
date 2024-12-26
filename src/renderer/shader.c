@@ -98,10 +98,9 @@ void shader_init(void)
     delete(vert);
     delete(frag);
     shader_use(SHADER_GUI);
-    glUniform1i(glGetUniformLocation(shaders[SHADER_GUI], "TEX_ID_FONT"), 2);
 
-    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/test.vert");
-    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/test.frag");
+    vert = compile(GL_VERTEX_SHADER, "src/renderer/shaders/game.vert");
+    frag = compile(GL_FRAGMENT_SHADER, "src/renderer/shaders/game.frag");
     attach(SHADER_GAME, vert);
     attach(SHADER_GAME, frag);
     link(SHADER_GAME);

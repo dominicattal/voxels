@@ -51,6 +51,7 @@ static void create_font_textures(i32* tex_unit_location)
     texture_units[*tex_unit_location].id = font_init();
     glActiveTexture(GL_TEXTURE0 + *tex_unit_location);
     glBindTexture(GL_TEXTURE_2D, texture_units[*tex_unit_location].id);
+    glUniform1i(shader_get_uniform_location(SHADER_GUI, "TEX_ID_FONT"), *tex_unit_location);
     (*tex_unit_location)++;
 }
 
@@ -223,10 +224,14 @@ void texture_destroy(void)
 
 void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2, f32* v2)
 {
-    assert(textures[texture].location != -1);
     *location = textures[texture].location;
     *u1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u1 / (f32)BITMAP_WIDTH;
     *v1 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v1 / (f32)BITMAP_HEIGHT;
     *u2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u2 / (f32)BITMAP_WIDTH;
     *v2 = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v2 / (f32)BITMAP_HEIGHT;
+}
+
+u32 texture_location(Texture texture)
+{
+    return textures[texture].location;
 }

@@ -19,5 +19,6 @@ void texture_init(void);
 void texture_destroy(void);
 
 void texture_get_info(Texture texture, u32* location, f32* u1, f32* v1, f32* u2, f32* v2);
+u32  texture_location(Texture texture);
 
 #endif
