@@ -42,6 +42,7 @@ static void update_view_matrix()
 static void update_proj_matrix()
 {
     perspective(camera.proj, window_aspect_ratio(), camera.fov);
+    //orthographic(camera.proj, window_aspect_ratio(), camera.zoom);
     renderer_uniform_update_proj(camera.proj);
 }
 
