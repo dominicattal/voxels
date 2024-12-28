@@ -5,7 +5,6 @@
 #include "renderer/renderer.h"
 #include "window/window.h"
 #include "gui/gui.h"
-#include "font/font.h"
 #include "audio/audio.h"
 #include "camera/camera.h"
 #include <glfw.h>

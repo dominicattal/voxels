@@ -4,11 +4,11 @@ out vec4 FragColor;
 
 uniform sampler2D textures[16];
 
-uniform int TEX_ID_FONT;
-
-struct Tex 
-{
-    vec4 uv;
+struct Tex {
+    float u;
+    float v;
+    float w;
+    float h;
     int location;
 };
 
@@ -17,16 +17,15 @@ layout (std430, binding = 1) buffer readonly Textures
     Tex texs[];
 };
 
-in vec2 TexCoord;
+in vec2 UV;
 in vec4 Color;
-in flat int TexId;
+in flat int ID;
 
 void main()
 {
-    FragColor = Color;
-    if (TexId == TEX_ID_FONT) {
-        vec4 tex = texture(textures[0], TexCoord);
-        tex = vec4(1.0f, 1.0f, 1.0f, tex.r);
-        FragColor = tex * Color;
-    }
+    vec2 TexCoord;
+    Tex tex = texs[ID];
+    TexCoord.x = tex.u + UV.x * tex.w;
+    TexCoord.y = tex.v + UV.y * tex.h;
+    FragColor = texture(textures[tex.location], TexCoord) * Color;
 }
