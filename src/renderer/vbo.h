@@ -16,6 +16,6 @@ void vbo_bind(VBO vbo);
 void vbo_destroy(void);
 
 void vbo_malloc(VBO vbo, size_t size, GLenum usage);
-void vbo_update(VBO vbo, size_t offset, size_t size, f32* buffer);
+void vbo_update(VBO vbo, size_t offset, size_t size, void* buffer);
 
 #endif

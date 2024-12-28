@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define NUM_OBJECTS         100
+#define NUM_OBJECTS         1000
 #define FLOATS_PER_VERTEX   5
 #define VERTICES_PER_FACE   4
 #define INDICES_PER_FACE    6
@@ -44,7 +44,7 @@ static void *game_update(void* vargp)
 void game_init(void)
 {
     for (i32 i = 0; i < NUM_OBJECTS; i++)
-        game.objects[i] = object_create(3 + (i % 4), i/10*2, i%10*2, i/10*2);
+        game.objects[i] = object_create(3 + (i % 4), (i>>10)&31, (i>>5)&31, i & 31);
 
     game.data.vbo_max_length = NUM_OBJECTS * 8;
     game.data.vbo_buffer = malloc(game.data.vbo_max_length * sizeof(f32));

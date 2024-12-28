@@ -7,6 +7,8 @@
 #include "texture.h"
 #include "vbo.h"
 #include "ebo.h"
+#include "ssbo.h"
+#include "ubo.h"
 
 void renderer_init(void);
 void renderer_render(void);

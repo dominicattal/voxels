@@ -6,6 +6,17 @@ uniform sampler2D textures[16];
 
 uniform int TEX_ID_FONT;
 
+struct Tex 
+{
+    vec4 uv;
+    int location;
+};
+
+layout (std430, binding = 1) buffer readonly Textures
+{
+    Tex texs[];
+};
+
 in vec2 TexCoord;
 in vec4 Color;
 in flat int TexId;

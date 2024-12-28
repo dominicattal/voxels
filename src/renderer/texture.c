@@ -1,6 +1,7 @@
 #include "texture.h"
 #include "../font/font.h"
 #include "shader.h"
+#include "ssbo.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -207,10 +208,28 @@ void texture_init(void)
     i32 texs[NUM_TEXTURE_UNITS];
     for (i32 i = 0; i < NUM_TEXTURE_UNITS; ++i)
         texs[i] = i;
+
     shader_use(SHADER_GUI);
     glUniform1iv(shader_get_uniform_location(SHADER_GUI, "textures"), NUM_TEXTURE_UNITS, texs);
     shader_use(SHADER_GAME);
     glUniform1iv(shader_get_uniform_location(SHADER_GAME, "textures"), NUM_TEXTURE_UNITS, texs);
+
+    struct {
+        f32 u, v, w, h;
+        i32 location;
+    } ssbo_buffer[NUM_TEXTURES];
+
+    for (i32 i = 0; i < NUM_TEXTURES; i++) {
+        ssbo_buffer[i].location = textures[i].location;
+        ssbo_buffer[i].u = texture_units[textures[i].location].coords[textures[i].uv_idx].u;
+        ssbo_buffer[i].v = texture_units[textures[i].location].coords[textures[i].uv_idx].v;
+        ssbo_buffer[i].w = texture_units[textures[i].location].coords[textures[i].uv_idx].w;
+        ssbo_buffer[i].h = texture_units[textures[i].location].coords[textures[i].uv_idx].h;
+    }
+
+    //ssbo_bind(SSBO_TEXTURE);
+    //ssbo_malloc(SSBO_TEXTURE, sizeof(ssbo_buffer), GL_STATIC_DRAW);
+    //ssbo_update(SSBO_TEXTURE, 0, sizeof(ssbo_buffer), ssbo_buffer);    
 }
 
 void texture_destroy(void)

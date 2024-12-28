@@ -25,6 +25,8 @@ void renderer_init(void)
     glCullFace(GL_BACK);
 
     shader_init();
+    ssbo_init();
+    ubo_init();
     texture_init();
     vbo_init();
     ebo_init();
