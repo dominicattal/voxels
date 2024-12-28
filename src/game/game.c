@@ -88,7 +88,7 @@ void game_update_data(void)
         A = v;
         A = w;
         A = h;
-        A = location;
+        A = obj.id;
     }
 }
 

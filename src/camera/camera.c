@@ -4,8 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#define DEFAULT_YAW         PI / 2
-#define DEFAULT_PITCH       PI / 3
+#define DEFAULT_YAW         PI
+#define DEFAULT_PITCH       0
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
 #define DEFAULT_ROTSPEED    12
