@@ -181,7 +181,6 @@ static void update_data_text(Component* comp)
     f32 dy;                 // change in y for vertical alignment
     u32 ebo_idx, vbo_idx;   // ebo index of current glyph, vbo index of first glyph
     i32 length;             // index in text, length of text
-    u32 location;           // font bitmap texture unit location
     char* text;             // text, equal to comp->text
 
     register i32 ox, oy, test_ox;    // glyph origin
@@ -281,13 +280,12 @@ static void update_data_text(Component* comp)
             window_pixel_to_screen_bbox(x, y, w, h, &x1, &y1, &x2, &y2);
 
             ebo_idx = gui.data.font_vbo_length / FLOAT_PER_VERTEX;
-            location = texture_location(TEX_BITMAP);
 
             if (text[left] != '\0' && text[left] != ' ') {
-                A = x1, A = y1, A = u1, A = v2, A = 0, A = 0, A = 0, A = 1, A = location;
-                A = x1, A = y2, A = u1, A = v1, A = 0, A = 0, A = 0, A = 1, A = location;
-                A = x2, A = y2, A = u2, A = v1, A = 0, A = 0, A = 0, A = 1, A = location;
-                A = x2, A = y1, A = u2, A = v2, A = 0, A = 0, A = 0, A = 1, A = location;
+                A = x1, A = y1, A = u1, A = v2, A = 0, A = 0, A = 0, A = 1, A = 0;
+                A = x1, A = y2, A = u1, A = v1, A = 0, A = 0, A = 0, A = 1, A = 0;
+                A = x2, A = y2, A = u2, A = v1, A = 0, A = 0, A = 0, A = 1, A = 0;
+                A = x2, A = y1, A = u2, A = v2, A = 0, A = 0, A = 0, A = 1, A = 0;
                 B = ebo_idx, B = ebo_idx + 2, B = ebo_idx + 1, 
                 B = ebo_idx, B = ebo_idx + 3, B = ebo_idx + 2;
             }   

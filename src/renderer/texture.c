@@ -21,12 +21,8 @@ typedef struct {
 } Image;
 
 typedef struct {
-    u16 u, v, w, h;
-} UV;
-
-typedef struct {
-    i8 location;
-    i8 uv_idx;
+    f32 u, v, w, h;
+    i32 location;
 } TEX;
 
 #define NUM_IMAGES_TO_PACK 4
@@ -37,26 +33,18 @@ static Image images[NUM_IMAGES_TO_PACK] = {
     (Image) { TEX_OBJECT4, "assets/textures/objects/object4.png" }
 };
 
-static TEX textures[NUM_TEXTURES];
-
-static struct {
-    UV* coords;
-    u32 id;
-} texture_units[NUM_TEXTURE_UNITS];
-
-#define UVINIT(u, v, w, h) (UV) { u, v, w, h }
-#define TEXINIT(location, uv_idx) (IDX) { location, uv_idx }
+static u32 texture_units[NUM_TEXTURE_UNITS];
 
 static void create_font_textures(i32* tex_unit_location) 
 {
-    texture_units[*tex_unit_location].id = font_init();
+    texture_units[*tex_unit_location] = font_init();
     glActiveTexture(GL_TEXTURE0 + *tex_unit_location);
-    glBindTexture(GL_TEXTURE_2D, texture_units[*tex_unit_location].id);
+    glBindTexture(GL_TEXTURE_2D, texture_units[*tex_unit_location]);
     glUniform1i(shader_get_uniform_location(SHADER_GUI, "TEX_ID_FONT"), *tex_unit_location);
     (*tex_unit_location)++;
 }
 
-static void initialize_rects(stbrp_rect* rects_rgb, stbrp_rect* rects_rgba, unsigned char** image_data, i32* num_rects_rgb_out, i32* num_rects_rgba_out)
+static void initialize_rects(TEX* textures, stbrp_rect* rects_rgb, stbrp_rect* rects_rgba, unsigned char** image_data, i32* num_rects_rgb_out, i32* num_rects_rgba_out)
 {
     register i32 num_rects_rgb, num_rects_rgba, i;
     i32 width, height, num_channels;
@@ -83,7 +71,7 @@ static void initialize_rects(stbrp_rect* rects_rgb, stbrp_rect* rects_rgba, unsi
     *num_rects_rgba_out = num_rects_rgba;
 }
 
-static void pack_textures(i32* tex_unit_location, unsigned char** image_data, stbrp_rect* rects, i32 num_rects, i32 num_channels)
+static void pack_textures(i32* tex_unit_location, TEX* textures, unsigned char** image_data, stbrp_rect* rects, i32 num_rects, i32 num_channels)
 {
     i32 num_nodes, num_rects_packed;
     i32 y, x, c, data_idx, bitmap_idx;
@@ -141,8 +129,7 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
     glActiveTexture(GL_TEXTURE0 + location);
     glBindTexture(GL_TEXTURE_2D, tex);
 
-    texture_units[location].id = tex;
-    texture_units[location].coords = malloc(sizeof(UV) * num_rects_packed);
+    texture_units[location] = tex;
     new_rect_idx = 0;
     for (i32 i = 0; i < num_rects; ++i) {
         stbrp_rect rect = rects[i];
@@ -150,9 +137,11 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
             rects[new_rect_idx++] = rect;
             continue;
         }
-        texture_units[location].coords[uv_idx] = UVINIT(rect.x, rect.y, rect.w-PADDING, rect.h-PADDING);
+        textures[rect.id].u = (f32)rect.x / BITMAP_WIDTH;
+        textures[rect.id].v = (f32)rect.y / BITMAP_HEIGHT;
+        textures[rect.id].w = (f32)(rect.w-PADDING) / BITMAP_WIDTH;
+        textures[rect.id].h = (f32)(rect.h-PADDING) / BITMAP_HEIGHT;
         textures[rect.id].location = location;
-        textures[rect.id].uv_idx = uv_idx;
         ++uv_idx;
     }
 
@@ -172,13 +161,15 @@ static void pack_textures(i32* tex_unit_location, unsigned char** image_data, st
             puts("Out of texture units to pack to");
             exit(1);
         }
-        pack_textures(tex_unit_location, image_data, rects, new_rect_idx, num_channels);
+        pack_textures(tex_unit_location, textures, image_data, rects, new_rect_idx, num_channels);
     }
 }
 
 
 void texture_init(void)
 {
+    TEX textures[NUM_TEXTURES];
+
     i32 tex_unit_location;
     tex_unit_location = 0;
 
@@ -193,10 +184,10 @@ void texture_init(void)
     rects_rgba = malloc(sizeof(stbrp_rect) * NUM_IMAGES_TO_PACK);
     image_data = malloc(sizeof(unsigned char*) * NUM_IMAGES_TO_PACK);
 
-    initialize_rects(rects_rgb, rects_rgba, image_data, &num_rects_rgb, &num_rects_rgba);
+    initialize_rects(textures, rects_rgb, rects_rgba, image_data, &num_rects_rgb, &num_rects_rgba);
 
-    pack_textures(&tex_unit_location, image_data, rects_rgb, num_rects_rgb, 3);
-    pack_textures(&tex_unit_location, image_data, rects_rgba, num_rects_rgba, 4);
+    pack_textures(&tex_unit_location, textures, image_data, rects_rgb, num_rects_rgb, 3);
+    pack_textures(&tex_unit_location, textures, image_data, rects_rgba, num_rects_rgba, 4);
 
     for (i32 i = 0; i < NUM_IMAGES_TO_PACK; i++)
         stbi_image_free(image_data[i]);
@@ -214,52 +205,14 @@ void texture_init(void)
     shader_use(SHADER_GAME);
     glUniform1iv(shader_get_uniform_location(SHADER_GAME, "textures"), NUM_TEXTURE_UNITS, texs);
 
-    struct {
-        f32 u, v, w, h;
-        i32 location;
-    } ssbo_buffer[NUM_TEXTURES];
-
-    for (i32 i = 0; i < NUM_TEXTURES; i++) {
-        if (texture_units[textures[i].location].coords == NULL) {
-            ssbo_buffer[i].u = 0;
-            ssbo_buffer[i].v = 0;
-            ssbo_buffer[i].w = 0;
-            ssbo_buffer[i].h = 0;
-            ssbo_buffer[i].location = 0;
-            continue;
-        }
-        ssbo_buffer[i].u = (f32)texture_units[textures[i].location].coords[textures[i].uv_idx].u / BITMAP_WIDTH;
-        ssbo_buffer[i].v = (f32)texture_units[textures[i].location].coords[textures[i].uv_idx].v / BITMAP_HEIGHT;
-        ssbo_buffer[i].w = (f32)texture_units[textures[i].location].coords[textures[i].uv_idx].w / BITMAP_WIDTH;
-        ssbo_buffer[i].h = (f32)texture_units[textures[i].location].coords[textures[i].uv_idx].h / BITMAP_HEIGHT;
-        ssbo_buffer[i].location = textures[i].location;
-    }
-
     ssbo_bind(SSBO_TEXTURE);
-    ssbo_malloc(SSBO_TEXTURE, sizeof(ssbo_buffer), GL_STATIC_DRAW);
-    ssbo_update(SSBO_TEXTURE, 0, sizeof(ssbo_buffer), ssbo_buffer);
+    ssbo_malloc(SSBO_TEXTURE, sizeof(textures), GL_STATIC_DRAW);
+    ssbo_update(SSBO_TEXTURE, 0, sizeof(textures), textures);
     ssbo_bind_buffer_base(SSBO_TEXTURE, 1);
 }
 
 void texture_destroy(void)
 {
     font_destroy();
-    for (i32 i = 0; i < NUM_TEXTURE_UNITS; i++) {
-        glDeleteTextures(1, &texture_units[i].id);
-        free(texture_units[i].coords);
-    }
-}
-
-void texture_get_info(Texture texture, u32* location, f32* u, f32* v, f32* w, f32* h)
-{
-    *location = textures[texture].location;
-    *u = texture_units[textures[texture].location].coords[textures[texture].uv_idx].u / (f32)BITMAP_WIDTH;
-    *v = texture_units[textures[texture].location].coords[textures[texture].uv_idx].v / (f32)BITMAP_HEIGHT;
-    *w = texture_units[textures[texture].location].coords[textures[texture].uv_idx].w / (f32)BITMAP_WIDTH;
-    *h = texture_units[textures[texture].location].coords[textures[texture].uv_idx].h / (f32)BITMAP_HEIGHT;
-}
-
-u32 texture_location(Texture texture)
-{
-    return textures[texture].location;
+    glDeleteTextures(NUM_TEXTURE_UNITS, texture_units);
 }

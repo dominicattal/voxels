@@ -78,16 +78,9 @@ void game_update_data(void)
 
     for (i32 obj_num = 0; obj_num < NUM_OBJECTS; obj_num++) {
         Object obj = game.objects[obj_num];
-        f32 u, v, w, h;
-        u32 location;
-        texture_get_info(obj.id, &location, &u, &v, &w, &h);
         A = obj.position.x;
         A = obj.position.y;
         A = obj.position.z;
-        A = u;
-        A = v;
-        A = w;
-        A = h;
         A = obj.id;
     }
 }

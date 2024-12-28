@@ -3,8 +3,7 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aUV;
 layout (location = 2) in vec3 aPosOffset;
-layout (location = 3) in vec4 aUVOffset;
-layout (location = 4) in float aID;
+layout (location = 3) in float aID;
 
 uniform mat4 proj;
 uniform mat4 view;
