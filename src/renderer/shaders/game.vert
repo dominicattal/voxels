@@ -5,8 +5,11 @@ layout (location = 1) in vec2 aUV;
 layout (location = 2) in vec3 aPosOffset;
 layout (location = 3) in float aID;
 
-uniform mat4 proj;
-uniform mat4 view;
+layout (std140) uniform Matrices
+{
+    mat4 view;
+    mat4 proj;
+};
 
 out vec2 UV;
 out flat int ID;

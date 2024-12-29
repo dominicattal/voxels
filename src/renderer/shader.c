@@ -126,6 +126,11 @@ u32 shader_get_uniform_location(Shader shader, const char* identifier)
     return glGetUniformLocation(shaders[shader], identifier);
 }
 
+void shader_bind_uniform_block(Shader shader, u32 index, const char* identifier)
+{
+    glUniformBlockBinding(shaders[shader], glGetUniformBlockIndex(shaders[shader], identifier), index);
+}
+
 void shader_uniform_matrix_4fv(Shader shader, const char* identifier, i32 count, const f32* value)
 {
     shader_use(shader);
