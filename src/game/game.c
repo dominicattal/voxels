@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define NUM_BLOCKS          100000
+#define NUM_BLOCKS          120
 #define FLOATS_PER_VERTEX   5
 #define VERTICES_PER_FACE   4
 #define INDICES_PER_FACE    6
@@ -14,7 +14,7 @@
 
 typedef struct {
     u32 vbo_length, vbo_max_length;
-    f32* vbo_buffer;
+    u32* vbo_buffer;
 } GameData;
 
 typedef struct {
@@ -46,8 +46,8 @@ void game_init(void)
     for (i32 i = 0; i < NUM_BLOCKS; i++)
         game.blocks[i] = block_create(3 + (rand() % 3), rand()%1000,rand()%32, rand()%1000);
 
-    game.data.vbo_max_length = NUM_BLOCKS * 8;
-    game.data.vbo_buffer = malloc(game.data.vbo_max_length * sizeof(f32));
+    game.data.vbo_max_length = NUM_BLOCKS;
+    game.data.vbo_buffer = malloc(game.data.vbo_max_length * sizeof(u32));
     initialize_instance_mesh();
 
     game.dt = 0;
@@ -59,15 +59,17 @@ void game_init(void)
 
     for (i32 i = 0; i < NUM_BLOCKS; i++) {
         Block block = game.blocks[i];
-        game.data.vbo_buffer[game.data.vbo_length++] = block.position.x;
-        game.data.vbo_buffer[game.data.vbo_length++] = block.position.y;
-        game.data.vbo_buffer[game.data.vbo_length++] = block.position.z;
-        game.data.vbo_buffer[game.data.vbo_length++] = block.id;
+        u32 info = 0;
+        info |= block.position.x & 31;
+        info |= (block.position.y & 31) << 5;
+        info |= (block.position.z & 31) << 10;
+        info |= (block.id & 31) << 15;
+        game.data.vbo_buffer[game.data.vbo_length++] = info;
     }
 
     vbo_bind(VBO_GAME_INSTANCE);
-    vbo_malloc(VBO_GAME_INSTANCE, game.data.vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
-    vbo_update(VBO_GAME_INSTANCE, 0, game.data.vbo_length * sizeof(f32), game.data.vbo_buffer);
+    vbo_malloc(VBO_GAME_INSTANCE, game.data.vbo_max_length * sizeof(u32), GL_STATIC_DRAW);
+    vbo_update(VBO_GAME_INSTANCE, 0, game.data.vbo_length * sizeof(u32), game.data.vbo_buffer);
 }
 
 void game_destroy(void)
@@ -99,26 +101,29 @@ void initialize_instance_mesh(void)
         {5, 1, 3, 7}, // +z
         {0, 4, 6, 2}  // -z
     };
-    f32 vbo_buffer[FACES_PER_BLOCK * VERTICES_PER_FACE * 5];
+    u8 vbo_buffer[FACES_PER_BLOCK * VERTICES_PER_FACE];
     u32 ebo_buffer[FACES_PER_BLOCK * INDICES_PER_FACE];
     i32 vbo_idx = 0, ebo_idx = 0;
     for (i32 face_num = 0; face_num < FACES_PER_BLOCK; face_num++) {
         for (i32 i = 0; i < VERTICES_PER_FACE; i++) {
-            vbo_buffer[vbo_idx++] = dx[faces[face_num][i]];
-            vbo_buffer[vbo_idx++] = dy[faces[face_num][i]];
-            vbo_buffer[vbo_idx++] = dz[faces[face_num][i]];
-            vbo_buffer[vbo_idx++] = tx[i];
-            vbo_buffer[vbo_idx++] = ty[i];
+            vbo_buffer[vbo_idx] = 0;
+            vbo_buffer[vbo_idx] |= dx[faces[face_num][i]];
+            vbo_buffer[vbo_idx] |= dy[faces[face_num][i]] << 1;
+            vbo_buffer[vbo_idx] |= dz[faces[face_num][i]] << 2;
+            vbo_buffer[vbo_idx] |= tx[i] << 3;
+            vbo_buffer[vbo_idx] |= ty[i] << 4;
+            vbo_idx++;
         }
         for (i32 i = 0; i < INDICES_PER_FACE; i++)
             ebo_buffer[ebo_idx++] = face_num * 4 + winding[i];
     }
+
     vbo_bind(VBO_GAME);
-    vbo_malloc(VBO_GAME, FACES_PER_BLOCK * VERTICES_PER_FACE * FLOATS_PER_VERTEX * sizeof(f32), GL_STATIC_DRAW);
-    vbo_update(VBO_GAME, 0, FACES_PER_BLOCK * VERTICES_PER_FACE * FLOATS_PER_VERTEX * sizeof(f32), vbo_buffer);
+    vbo_malloc(VBO_GAME, sizeof(vbo_buffer), GL_STATIC_DRAW);
+    vbo_update(VBO_GAME, 0, sizeof(vbo_buffer), vbo_buffer);
     ebo_bind(EBO_GAME);
-    ebo_malloc(EBO_GAME, FACES_PER_BLOCK * INDICES_PER_FACE * sizeof(u32), GL_STATIC_DRAW);
-    ebo_update(EBO_GAME, 0, FACES_PER_BLOCK * INDICES_PER_FACE * sizeof(u32), ebo_buffer);
+    ebo_malloc(EBO_GAME, sizeof(ebo_buffer), GL_STATIC_DRAW);
+    ebo_update(EBO_GAME, 0, sizeof(ebo_buffer), ebo_buffer);
 }
 
 void game_render(void)

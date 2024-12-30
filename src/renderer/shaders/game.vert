@@ -1,9 +1,7 @@
 #version 460 core
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aUV;
-layout (location = 2) in vec3 aPosOffset;
-layout (location = 3) in float aID;
+layout (location = 0) in uint aInfo;
+layout (location = 1) in uint aInstanceInfo;
 
 layout (std140) uniform Matrices
 {
@@ -12,10 +10,12 @@ layout (std140) uniform Matrices
 };
 
 out vec2 UV;
-out flat int ID;
+out flat uint ID;
 
 void main() {
-    gl_Position = proj * view * vec4(aPos + aPosOffset, 1.0);
-    UV = aUV;
-    ID = int(round(aID));
+    vec3 position = vec3(aInfo & 1, (aInfo >> 1) & 1, (aInfo >> 2) & 1);
+    vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
+    UV = vec2((aInfo >> 3) & 1, (aInfo >> 4) & 1);
+    ID = (aInstanceInfo >> 15);
+    gl_Position = proj * view * vec4(position + offset, 1.0);
 }

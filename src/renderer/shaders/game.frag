@@ -18,7 +18,7 @@ layout (std430, binding = 1) readonly buffer Textures
 };
 
 in vec2 UV;
-in flat int ID;
+in flat uint ID;
 
 void main() {
     vec2 TexCoord;

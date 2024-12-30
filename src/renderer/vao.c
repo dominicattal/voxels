@@ -33,17 +33,12 @@ void vao_init(void)
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);
     vbo_bind(VBO_GAME);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(f32), (void*)(0 * sizeof(f32)));
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, sizeof(u8), (void*)0);
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
     vbo_bind(VBO_GAME_INSTANCE);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)(0 * sizeof(f32)));
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)(3 * sizeof(f32)));
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-    glVertexAttribDivisor(2, 1);
-    glVertexAttribDivisor(3, 1);
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(u32), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribDivisor(1, 1);
 }
 
 void vao_bind(VAO vao)
