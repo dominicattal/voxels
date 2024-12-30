@@ -17,6 +17,7 @@ typedef struct {
     struct {
         GLFWcursor* handle;
         f64 x, y;
+        bool hidden;
     } cursor;
     f64 dt;
 } Window;
@@ -50,6 +51,8 @@ void window_init(void)
     glfwSetCursorPosCallback(window.handle, cursor_pos_callback);
     glfwSetKeyCallback(window.handle, key_callback);
     glfwSetInputMode(window.handle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+    glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    window.cursor.hidden = TRUE;
     glfwSetErrorCallback(error_callback);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glViewport(0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
@@ -144,14 +147,27 @@ static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
 
 static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)
 {
+    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        window.cursor.hidden = TRUE;
+    }
+    if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+        glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        window.cursor.hidden = FALSE;
+    }
     gui_key_callback(key, scancode, action, mods);
 }
 
 static void cursor_pos_callback(GLFWwindow* handle, f64 xpos, f64 ypos)
 {
+    if (window.cursor.hidden) {
+        camera_rotate(window.cursor.x - xpos, window.dt);
+        camera_tilt(ypos - window.cursor.y, window.dt);
+    } else {
+        gui_cursor_callback();
+    }
     window.cursor.x = xpos;
     window.cursor.y = ypos;
-    gui_cursor_callback();
 }
 
 #define _KEY_CASE_SHIFT(_c, _sc) \
