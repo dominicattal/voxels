@@ -45,11 +45,11 @@ typedef struct {
 
 #define NUM_IMAGES_TO_PACK 5
 static Image images[NUM_IMAGES_TO_PACK] = {
-    (Image) { TEX_COLOR, "assets/textures/objects/color.png" },
-    (Image) { TEX_OBJECT1, "assets/textures/objects/object1.png" },
-    (Image) { TEX_OBJECT2, "assets/textures/objects/object2.png" },
-    (Image) { TEX_OBJECT3, "assets/textures/objects/object3.png" },
-    (Image) { TEX_OBJECT4, "assets/textures/objects/object4.png" }
+    (Image) { TEX_COLOR, "assets/textures/color.png" },
+    (Image) { TEX_BLOCK1, "assets/textures/blocks/block1.png" },
+    (Image) { TEX_BLOCK2, "assets/textures/blocks/block2.png" },
+    (Image) { TEX_BLOCK3, "assets/textures/blocks/block3.png" },
+    (Image) { TEX_BLOCK4, "assets/textures/blocks/block4.png" }
 };
 
 static u32 texture_units[NUM_TEXTURE_UNITS];
