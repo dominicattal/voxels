@@ -13,9 +13,8 @@ typedef enum {
 
 void vbo_init(void);
 void vbo_bind(VBO vbo);
-void vbo_destroy(void);
-
 void vbo_malloc(VBO vbo, size_t size, GLenum usage);
 void vbo_update(VBO vbo, size_t offset, size_t size, void* buffer);
+void vbo_destroy(void);
 
 #endif

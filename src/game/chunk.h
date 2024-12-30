@@ -8,9 +8,10 @@ typedef struct {
         u32 vbo_length, vbo_max_length;
         u32* vbo_buffer;
     } data;
+    vec3 position;
 } Chunk;
 
-Chunk* chunk_create(void);
+Chunk* chunk_create(f32 x, f32 y, f32 z);
 void chunk_draw(Chunk* chunk);
 void chunk_destroy(Chunk* chunk);
 

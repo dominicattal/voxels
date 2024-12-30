@@ -28,10 +28,10 @@ void renderer_init(void)
     shader_init();
     ssbo_init();
     ubo_init();
-    ubo_init();
     texture_init();
     vbo_init();
     ebo_init();
+    dibo_init();
     vao_init();
 
     ubo_bind(UBO_MATRICES);
@@ -60,6 +60,9 @@ void renderer_destroy(void)
     shader_destroy();
     vao_destroy();
     vbo_destroy();
+    ssbo_destroy();
+    ubo_destroy();
+    dibo_destroy();
     ebo_destroy();
     texture_destroy();
 }

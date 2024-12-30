@@ -9,6 +9,7 @@
 #include "ebo.h"
 #include "ssbo.h"
 #include "ubo.h"
+#include "dibo.h"
 
 void renderer_init(void);
 void renderer_render(void);
