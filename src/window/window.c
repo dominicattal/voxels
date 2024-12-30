@@ -56,6 +56,7 @@ void window_init(void)
     glfwSetErrorCallback(error_callback);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glViewport(0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+    glfwSwapInterval(0);
 
     load_images();
 
@@ -161,8 +162,8 @@ static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, 
 static void cursor_pos_callback(GLFWwindow* handle, f64 xpos, f64 ypos)
 {
     if (window.cursor.hidden) {
-        camera_rotate(window.cursor.x - xpos, window.dt);
-        camera_tilt(ypos - window.cursor.y, window.dt);
+        camera_rotate(window.cursor.x - xpos, 0.001);
+        camera_tilt(ypos - window.cursor.y, 0.001);
     } else {
         gui_cursor_callback();
     }

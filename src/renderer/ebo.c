@@ -24,14 +24,12 @@ void ebo_destroy(void)
 
 void ebo_malloc(EBO ebo, u32 length, GLenum usage)
 {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebos[ebo].id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(u32), NULL, usage);
 }
 
 void ebo_update(EBO ebo, u32 offset, u32 length, u32* buffer)
 {
     ebos[ebo].length = length;
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebos[ebo].id);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, (length - offset) * sizeof(u32), buffer);
 }
 

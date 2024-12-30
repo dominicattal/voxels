@@ -21,12 +21,10 @@ void vbo_destroy(void)
 
 void vbo_malloc(VBO vbo, size_t size, GLenum usage)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[vbo]);
     glBufferData(GL_ARRAY_BUFFER, size, NULL, usage);
 }
 
 void vbo_update(VBO vbo, size_t offset, size_t size, void* buffer)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[vbo]);
     glBufferSubData(GL_ARRAY_BUFFER, offset, size, buffer);
 }
