@@ -6,21 +6,29 @@
 
 #define NUM_CHUNKS 16 * 1 * 16
 #define RENDER_DISTANCE 8
+#define INDICES_PER_FACE 6
+
+#define NEGX 0
+#define POSX 1
+#define NEGY 2
+#define POSY 3
+#define NEGZ 4
+#define POSZ 5
 
 typedef struct {
     Block blocks[32768];
-    vec3 position;
+    i32 x, y, z;
     u16 num_blocks;
 } Chunk;
 
 typedef struct {
-    u32 total_block_count;
+    u32 total_face_count;
     u32 chunk_mesh_length;
     u32 chunk_indirect_length;
     u32 chunk_world_pos_length;
     u32* chunk_mesh_buffer;
     u32* chunk_indirect_buffer;
-    f32* chunk_world_pos_buffer;
+    i32* chunk_world_pos_buffer;
     Chunk** chunks;
 } ChunkState;
 
@@ -29,11 +37,15 @@ static ChunkState state;
 static Chunk* chunk_load(i32 x, i32 y, i32 z)
 {
     Chunk* chunk = calloc(1, sizeof(Chunk));
-    chunk->position = vec3_create(x, y, z);
+    chunk->x = x;
+    chunk->y = y;
+    chunk->z = z;
 
+    chunk->blocks[0] = 4;
+    chunk->num_blocks++;
     for (i32 i = 0; i < 32 * 32; i++) {
-        chunk->blocks[i] = 4;
-        chunk->num_blocks++;
+        //chunk->blocks[i] = (i % 3) ? 0 : 4;
+        //chunk->num_blocks++;
     }
 
     return chunk;
@@ -41,13 +53,31 @@ static Chunk* chunk_load(i32 x, i32 y, i32 z)
 
 static void chunk_build_mesh(Chunk* chunk)
 {
+    u32 total_faces = 0;
+    u32 face_counts[6];
+    for (i32 i = 0; i < 6; i++)
+        face_counts[i] = 0;
+
+    // first pass to figure out number of faces for each side
+    for (i32 i = 0; i < 32768; i++) {
+        if (chunk->blocks[i] != 0) {
+            face_counts[NEGX]++;
+            face_counts[POSX]++;
+            face_counts[NEGY]++;
+            face_counts[POSY]++;
+            face_counts[NEGZ]++;
+            face_counts[POSZ]++;
+            total_faces += 6;
+        }
+    }
+
     i32 idx1, idx2, idx3;
     idx1 = state.chunk_mesh_length;
     idx2 = state.chunk_indirect_length;
     idx3 = state.chunk_world_pos_length;
-    state.chunk_mesh_length += chunk->num_blocks;
-    state.chunk_indirect_length += 5;
-    state.chunk_world_pos_length += 3;
+    state.chunk_mesh_length += total_faces;
+    state.chunk_indirect_length += 5 * 6;
+    state.chunk_world_pos_length += 4 * 6;
     if (state.chunk_mesh_buffer == NULL) {
         state.chunk_mesh_buffer = malloc(state.chunk_mesh_length * sizeof(u32));
         state.chunk_indirect_buffer = malloc(state.chunk_indirect_length * sizeof(u32));
@@ -58,19 +88,40 @@ static void chunk_build_mesh(Chunk* chunk)
         state.chunk_world_pos_buffer = realloc(state.chunk_world_pos_buffer, state.chunk_world_pos_length * sizeof(f32));
     }
 
-    u32 count = 36;
-    u32 instance_count = chunk->num_blocks;
-    u32 first_idx = 0;
-    u32 base_vertex = 0;
-    u32 base_instance = chunk->num_blocks * (state.total_block_count++);
-    state.chunk_indirect_buffer[idx2++] = count;
-    state.chunk_indirect_buffer[idx2++] = instance_count;
-    state.chunk_indirect_buffer[idx2++] = first_idx;
-    state.chunk_indirect_buffer[idx2++] = base_vertex;
-    state.chunk_indirect_buffer[idx2++] = base_instance;
-    state.chunk_world_pos_buffer[idx3++] = chunk->position.x;
-    state.chunk_world_pos_buffer[idx3++] = chunk->position.y;
-    state.chunk_world_pos_buffer[idx3++] = chunk->position.z;
+    u32 count;
+    u32 instance_count;
+    u32 first_index;
+    i32 base_vertex;
+    u32 base_instance;
+
+    for (i32 i = 0; i < 6; i++) {
+        count = INDICES_PER_FACE;
+        instance_count = face_counts[i];
+        first_index = 0; // CW or CCW
+        base_vertex = 0;
+        base_instance = state.total_face_count;
+        state.chunk_indirect_buffer[idx2++] = count;
+        state.chunk_indirect_buffer[idx2++] = instance_count;
+        state.chunk_indirect_buffer[idx2++] = first_index;
+        state.chunk_indirect_buffer[idx2++] = base_vertex;
+        state.chunk_indirect_buffer[idx2++] = base_instance;
+        state.chunk_world_pos_buffer[idx3++] = chunk->x;
+        state.chunk_world_pos_buffer[idx3++] = chunk->y;
+        state.chunk_world_pos_buffer[idx3++] = chunk->z;
+        state.chunk_world_pos_buffer[idx3++] = i;
+        state.total_face_count += face_counts[i];
+    }
+
+    // fill chunk mesh buffer
+    u32 prefix[6];
+    for (i32 i = 0; i < 6; i++)
+        prefix[i] = 0;
+    for (i32 i = 1; i < 6; i++)
+        prefix[i] = prefix[i-1] + face_counts[i-1];
+
+    u32 idxs[6];
+    for (i32 i = 0; i < 6; i++)
+        idxs[i] = 0;
 
     u32 info;
     for (i32 i = 0; i < 32768; i++) {
@@ -80,14 +131,15 @@ static void chunk_build_mesh(Chunk* chunk)
             info |= ((i>>5) & 31) << 5;
             info |= ((i>>10) & 31) << 10;
             info |= chunk->blocks[i] << 15;
-            state.chunk_mesh_buffer[idx1++] = info;
+            for (i32 j = 0; j < 6; j++)
+                state.chunk_mesh_buffer[idx1+(idxs[j]++)+prefix[j]] = info;
         }
     }
 }
 
 void chunk_init(void)
 {
-    state.total_block_count = 0;
+    state.total_face_count = 0;
     state.chunk_mesh_length = 0;
     state.chunk_indirect_length = 0;
     state.chunk_world_pos_length = 0;
@@ -108,8 +160,8 @@ void chunk_init(void)
     dibo_malloc(DIBO_GAME, state.chunk_indirect_length * sizeof(u32), GL_STATIC_DRAW);
     dibo_update(DIBO_GAME, 0, state.chunk_indirect_length * sizeof(u32), state.chunk_indirect_buffer);
     ssbo_bind(SSBO_GAME);
-    ssbo_malloc(SSBO_GAME, state.chunk_world_pos_length * sizeof(f32), GL_STATIC_DRAW);
-    ssbo_update(SSBO_GAME, 0, state.chunk_world_pos_length * sizeof(f32), state.chunk_world_pos_buffer);
+    ssbo_malloc(SSBO_GAME, state.chunk_world_pos_length * sizeof(u32), GL_STATIC_DRAW);
+    ssbo_update(SSBO_GAME, 0, state.chunk_world_pos_length * sizeof(u32), state.chunk_world_pos_buffer);
 }
 
 void chunk_update(void)
@@ -127,7 +179,7 @@ void chunk_draw(void)
     ebo_bind(EBO_GAME);
 
     // for some reason cant use this and GL_LINE, so use for loop instead for that
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, NUM_CHUNKS, 0);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, 6 * NUM_CHUNKS, 0);
 }
 
 void chunk_destroy(void)

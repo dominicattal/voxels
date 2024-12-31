@@ -8,13 +8,6 @@
 #define FALSE 0
 #define TRUE  1
 
-#define RIGHT  0
-#define LEFT   1
-#define UP     2
-#define DOWN   3
-#define TOP    4
-#define BOTTOM 5
-
 typedef GLboolean bool;
 typedef GLbyte    i8;
 typedef GLubyte   u8;
