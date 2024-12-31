@@ -41,14 +41,41 @@ static Chunk* chunk_load(i32 x, i32 y, i32 z)
     chunk->y = y;
     chunk->z = z;
 
-    chunk->blocks[0] = 4;
-    chunk->num_blocks++;
     for (i32 i = 0; i < 32 * 32; i++) {
-        //chunk->blocks[i] = (i % 3) ? 0 : 4;
-        //chunk->num_blocks++;
+        chunk->blocks[i] = 4;
+        chunk->num_blocks++;
     }
 
     return chunk;
+}
+
+static bool opaque_block(Chunk* chunk, i32 idx, i32 dir)
+{
+    i32 x, y, z, new_idx;
+    x = idx & 31;
+    y = (idx>>5) & 31;
+    z = (idx>>10) & 31;
+    switch (dir) {
+        case NEGX:
+            new_idx = (x-1) + (y<<5) + (z<<10);
+            return (x > 0) && (chunk->blocks[new_idx] != 0);
+        case POSX:
+            new_idx = (x+1) + (y<<5) + (z<<10);
+            return (x < 31) && (chunk->blocks[new_idx] != 0);
+        case NEGY:
+            new_idx = x + ((y-1)<<5) + (z<<10);
+            return (y > 0) && (chunk->blocks[new_idx] != 0);
+        case POSY:
+            new_idx = x + ((y+1)<<5) + (z<<10);
+            return (y < 31) && (chunk->blocks[new_idx] != 0);
+        case NEGZ:
+            new_idx = x + (y<<5) + ((z-1)<<10);
+            return (z > 0) && (chunk->blocks[new_idx] != 0);
+        case POSZ:
+            new_idx = x + (y<<5) + ((z+1)<<10);
+            return (z < 31) && (chunk->blocks[new_idx] != 0);
+    }
+    return FALSE;
 }
 
 static void chunk_build_mesh(Chunk* chunk)
@@ -61,13 +88,12 @@ static void chunk_build_mesh(Chunk* chunk)
     // first pass to figure out number of faces for each side
     for (i32 i = 0; i < 32768; i++) {
         if (chunk->blocks[i] != 0) {
-            face_counts[NEGX]++;
-            face_counts[POSX]++;
-            face_counts[NEGY]++;
-            face_counts[POSY]++;
-            face_counts[NEGZ]++;
-            face_counts[POSZ]++;
-            total_faces += 6;
+            for (i32 dir = 0; dir < 6; dir++) {
+                if (!opaque_block(chunk, i, dir)) {
+                    face_counts[dir]++;
+                    total_faces++;
+                }
+            }
         }
     }
 
@@ -131,8 +157,9 @@ static void chunk_build_mesh(Chunk* chunk)
             info |= ((i>>5) & 31) << 5;
             info |= ((i>>10) & 31) << 10;
             info |= chunk->blocks[i] << 15;
-            for (i32 j = 0; j < 6; j++)
-                state.chunk_mesh_buffer[idx1+(idxs[j]++)+prefix[j]] = info;
+            for (i32 dir = 0; dir < 6; dir++)
+                if (!opaque_block(chunk, i, dir))
+                    state.chunk_mesh_buffer[idx1+(idxs[dir]++)+prefix[dir]] = info;
         }
     }
 }
@@ -153,6 +180,8 @@ void chunk_init(void)
         chunk_build_mesh(state.chunks[i]);
     }
 
+    if (state.chunk_mesh_buffer == NULL)
+        return;
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, state.chunk_mesh_length * sizeof(u32), GL_STATIC_DRAW);
     vbo_update(VBO_GAME_INSTANCE, 0, state.chunk_mesh_length * sizeof(u32), state.chunk_mesh_buffer);
@@ -174,6 +203,9 @@ void chunk_update(void)
 
 void chunk_draw(void)
 {
+    if (state.chunk_mesh_buffer == NULL)
+        return;
+
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);

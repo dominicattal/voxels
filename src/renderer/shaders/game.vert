@@ -25,27 +25,27 @@ out vec2 UV;
 out flat uint ID;
 
 void main() {
-    vec3 position = vec3(aInfo & 1, 0, (aInfo >> 1) & 1);
+    uint a = aInfo & 1;
+    uint b = (aInfo >> 1) & 1;
+    vec3 position;
     switch (chunk_positions[4*gl_DrawID+3]) {
         case NEGX:
-            position.xyz = position.xzy;
+            position = vec3(0, a, b);
             break;
         case POSX:
-            position.xyz = position.yzx;
-            position.x++;
+            position = vec3(1, b, a);
             break;
         case NEGY:
-            position.xyz = position.zyx;
+            position = vec3(b, 0, a);
             break;
         case POSY:
-            position.y++;
+            position = vec3(a, 1, b);
             break;
         case NEGZ:
-            position.xyz = position.yxz;
+            position = vec3(a, b, 0);
             break;
         case POSZ:
-            position.xyz = position.zxy;
-            position.z++;
+            position = vec3(b, a, 1);
             break;
     }
     vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
