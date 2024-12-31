@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NUM_BLOCKS 1
+#define NUM_BLOCKS 120
 #define NUM_CHUNKS 16 * 16 * 16
 
 typedef struct {
@@ -26,17 +26,21 @@ static Chunk* chunk_create(f32 x, f32 y, f32 z)
     Chunk* chunk = malloc(sizeof(Chunk));
     chunk->position = vec3_create(x, y, z);
 
-    i32 idx1, idx2;
+    i32 idx1, idx2, idx3;
     idx1 = chunk_mesh_length;
     idx2 = chunk_indirect_length;
+    idx3 = chunk_world_pos_length;
     chunk_mesh_length += NUM_BLOCKS;
     chunk_indirect_length += 5;
+    chunk_world_pos_length += 3;
     if (chunk_mesh_buffer == NULL) {
         chunk_mesh_buffer = malloc(chunk_mesh_length * sizeof(u32));
-        chunk_indirect_buffer = malloc(2 * sizeof(u32));
+        chunk_indirect_buffer = malloc(chunk_indirect_length * sizeof(u32));
+        chunk_world_pos_buffer = malloc(chunk_world_pos_length * sizeof(f32));
     } else {
         chunk_mesh_buffer = realloc(chunk_mesh_buffer, chunk_mesh_length * sizeof(u32));
         chunk_indirect_buffer = realloc(chunk_indirect_buffer, chunk_indirect_length * sizeof(u32));
+        chunk_world_pos_buffer = realloc(chunk_world_pos_buffer, chunk_world_pos_length * sizeof(f32));
     }
 
     u32 count = 36;
@@ -49,6 +53,9 @@ static Chunk* chunk_create(f32 x, f32 y, f32 z)
     chunk_indirect_buffer[idx2++] = first_idx;
     chunk_indirect_buffer[idx2++] = base_vertex;
     chunk_indirect_buffer[idx2++] = base_instance;
+    chunk_world_pos_buffer[idx3++] = x;
+    chunk_world_pos_buffer[idx3++] = y;
+    chunk_world_pos_buffer[idx3++] = z;
 
     for (i32 i = 0; i < NUM_BLOCKS; i++) {
         i32 x = rand() % 32;
@@ -87,6 +94,9 @@ void chunk_init(void)
     dibo_bind(DIBO_GAME);
     dibo_malloc(DIBO_GAME, chunk_indirect_length * sizeof(u32), GL_STATIC_DRAW);
     dibo_update(DIBO_GAME, 0, chunk_indirect_length * sizeof(u32), chunk_indirect_buffer);
+    ssbo_bind(SSBO_GAME);
+    ssbo_malloc(SSBO_GAME, chunk_world_pos_length * sizeof(f32), GL_STATIC_DRAW);
+    ssbo_update(SSBO_GAME, 0, chunk_world_pos_length * sizeof(f32), chunk_world_pos_buffer);
 }
 
 void chunk_draw(void)
@@ -94,9 +104,7 @@ void chunk_draw(void)
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, NUM_BLOCKS * NUM_CHUNKS, 0);
-    //for (i32 i = 0; i < NUM_CHUNKS; i++)
-    //    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, NUM_BLOCKS, 0, i * NUM_BLOCKS);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, NUM_CHUNKS, 0);
 }
 
 void chunk_destroy(void)
