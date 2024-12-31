@@ -20,4 +20,6 @@ f64  renderer_dt(void);
 void renderer_uniform_update_view(f32* mat);
 void renderer_uniform_update_proj(f32* mat);
 
+void renderer_toggle_line_mode(void);
+
 #endif

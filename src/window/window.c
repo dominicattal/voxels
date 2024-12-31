@@ -156,6 +156,8 @@ static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, 
         glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         window.cursor.hidden = FALSE;
     }
+    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+        renderer_toggle_line_mode();
     gui_key_callback(key, scancode, action, mods);
 }
 

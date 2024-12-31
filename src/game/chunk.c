@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NUM_BLOCKS 120
-#define NUM_CHUNKS 16 * 16 * 16
+#define NUM_CHUNKS 16 * 1 * 16
 
 typedef struct {
     Block blocks[32][32][32];
@@ -30,7 +29,7 @@ static Chunk* chunk_create(f32 x, f32 y, f32 z)
     idx1 = chunk_mesh_length;
     idx2 = chunk_indirect_length;
     idx3 = chunk_world_pos_length;
-    chunk_mesh_length += NUM_BLOCKS;
+    chunk_mesh_length += 32 * 32;
     chunk_indirect_length += 5;
     chunk_world_pos_length += 3;
     if (chunk_mesh_buffer == NULL) {
@@ -44,10 +43,10 @@ static Chunk* chunk_create(f32 x, f32 y, f32 z)
     }
 
     u32 count = 36;
-    u32 instance_count = NUM_BLOCKS;
+    u32 instance_count = 32 * 32;
     u32 first_idx = 0;
     u32 base_vertex = 0;
-    u32 base_instance = NUM_BLOCKS * (total_block_count++);
+    u32 base_instance = 32 * 32 * (total_block_count++);
     chunk_indirect_buffer[idx2++] = count;
     chunk_indirect_buffer[idx2++] = instance_count;
     chunk_indirect_buffer[idx2++] = first_idx;
@@ -57,18 +56,17 @@ static Chunk* chunk_create(f32 x, f32 y, f32 z)
     chunk_world_pos_buffer[idx3++] = y;
     chunk_world_pos_buffer[idx3++] = z;
 
-    for (i32 i = 0; i < NUM_BLOCKS; i++) {
-        i32 x = rand() % 32;
-        i32 y = rand() % 32;
-        i32 z = rand() % 32;
-        i32 id = 3 + rand() % 3;
-        chunk->blocks[x][y][z] = id;
-        u32 info = 0;
-        info |= x & 31;
-        info |= (y & 31) << 5;
-        info |= (z & 31) << 10;
-        info |= (id & 31) << 15;
-        chunk_mesh_buffer[idx1++] = info;
+    for (i32 x = 0; x < 32; x++) {
+        for (i32 z = 0; z < 32; z++) {
+            i32 id = 4;
+            chunk->blocks[x][0][z] = id;
+            u32 info = 0;
+            info |= x & 31;
+            //info |= (y & 31) << 5;
+            info |= (z & 31) << 10;
+            info |= (id & 31) << 15;
+            chunk_mesh_buffer[idx1++] = info;
+        }
     }
 
     return chunk;
@@ -86,7 +84,7 @@ void chunk_init(void)
     chunk_world_pos_buffer = NULL;
     chunks = malloc(NUM_CHUNKS * sizeof(Chunk));
     for (i32 i = 0; i < NUM_CHUNKS; i++)
-        chunks[i] = chunk_create(32 * (i & 15), 32 * ((i>>4)&15), 32 * ((i>>8)&15));
+        chunks[i] = chunk_create(32 * (i & 15), 0, 32 * ((i>>4)&15));
 
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, chunk_mesh_length * sizeof(u32), GL_STATIC_DRAW);
@@ -104,6 +102,8 @@ void chunk_draw(void)
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);
+
+    // for some reason cant use this and GL_LINE, so use for loop instead for that
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, NUM_CHUNKS, 0);
 }
 

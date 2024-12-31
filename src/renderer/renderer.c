@@ -23,7 +23,6 @@ void renderer_init(void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     shader_init();
     ssbo_init();
@@ -83,6 +82,13 @@ void renderer_uniform_update_view(f32* mat)
 void renderer_uniform_update_proj(f32* mat)
 {
     ubo_update(UBO_MATRICES, 16 * sizeof(f32), 16 * sizeof(f32), mat);
+}
+
+void renderer_toggle_line_mode(void)
+{
+    static int mode;
+    mode = 1 - mode;
+    glPolygonMode(GL_FRONT_AND_BACK, mode ? GL_LINE : GL_FILL);
 }
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
