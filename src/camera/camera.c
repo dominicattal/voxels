@@ -78,9 +78,15 @@ void camera_rotate(f32 mag, f32 dt)
     update_view_matrix();
 }
 
+#define TILT_ERROR 0.01
+
 void camera_tilt(f32 mag, f32 dt)
 {
     camera.pitch += mag * dt * camera.rotate_speed;
+    if (camera.pitch > PI / 2 - TILT_ERROR)
+        camera.pitch = PI / 2 - TILT_ERROR;
+    if (camera.pitch < -PI / 2 + TILT_ERROR)
+        camera.pitch = -PI / 2 + TILT_ERROR;
     update_orientation_vectors();
     update_view_matrix();
 }
