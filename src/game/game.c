@@ -54,8 +54,5 @@ f64 game_dt(void)
 
 void game_render(void)
 {    
-    shader_use(SHADER_GAME);
-    vao_bind(VAO_GAME);
-    ebo_bind(EBO_GAME);
     chunk_draw();
 }

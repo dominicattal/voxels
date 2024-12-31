@@ -34,6 +34,9 @@ void renderer_init(void)
     dibo_init();
     vao_init();
 
+    ssbo_bind(SSBO_GAME);
+    ssbo_bind_buffer_base(SSBO_GAME, 2);
+
     ubo_bind(UBO_MATRICES);
     ubo_malloc(UBO_MATRICES, 32 * sizeof(f32), GL_STATIC_DRAW);
     shader_bind_uniform_block(SHADER_GAME, 1, "Matrices");

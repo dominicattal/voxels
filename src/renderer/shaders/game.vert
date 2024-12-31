@@ -9,15 +9,18 @@ layout (std140) uniform Matrices
     mat4 proj;
 };
 
+layout (std430, binding = 2) readonly buffer ChunkPositions
+{
+    vec3 chunk_positions[];
+};
+
 out vec2 UV;
 out flat uint ID;
-
-uniform vec3 ChunkPos;
 
 void main() {
     vec3 position = vec3(aInfo & 1, (aInfo >> 1) & 1, (aInfo >> 2) & 1);
     vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
     UV = vec2((aInfo >> 3) & 1, (aInfo >> 4) & 1);
     ID = (aInstanceInfo >> 15);
-    gl_Position = proj * view * vec4(position + offset + ChunkPos, 1.0);
+    gl_Position = proj * view * vec4(position + offset, 1.0);
 }

@@ -3,10 +3,11 @@
 
 #include "../util/util.h"
 
-#define NUM_SSBOS 1
+#define NUM_SSBOS 2
 
 typedef enum {
-    SSBO_TEXTURE = 0
+    SSBO_TEXTURE = 0,
+    SSBO_GAME = 1
 } SSBO;
 
 void ssbo_init(void);
