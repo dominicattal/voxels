@@ -3,12 +3,12 @@
 
 void block_init(void)
 {
-    u8 tx[] = {0, 1, 1, 0};
+    u8 tx[] = {0, 1, 0, 1};
     u8 ty[] = {0, 0, 1, 1};
-    u8 windingCCW[] = {0, 1, 2, 0, 2, 3};
+    u8 windingCCW[] = {0, 1, 3, 2};
 
     u8 vbo_buffer[4];
-    u32 ebo_buffer[6];
+    u32 ebo_buffer[4];
 
     for (i32 i = 0; i < 4; i++) {
         vbo_buffer[i] = 0;
@@ -16,7 +16,7 @@ void block_init(void)
         vbo_buffer[i] |= ty[i] << 1;
     }
 
-    for (i32 i = 0; i < 6; i++)
+    for (i32 i = 0; i < 4; i++)
         ebo_buffer[i] = windingCCW[i];
 
     vbo_bind(VBO_GAME);

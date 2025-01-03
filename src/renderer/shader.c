@@ -19,9 +19,10 @@ static const char* read_file(const char *path)
         exit(1);
     }
     fseek(ptr, 0, SEEK_SET);
-    content = calloc(len, sizeof(char));
+    content = calloc(len+1, sizeof(char));
     fread(content, 1, len, ptr);
     fclose(ptr);
+    content[len] = '\0';
     return content;
 }
 
