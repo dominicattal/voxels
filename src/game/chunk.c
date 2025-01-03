@@ -41,7 +41,7 @@ static Chunk* load_chunk(i32 x, i32 y, i32 z)
     chunk->y = y;
     chunk->z = z;
 
-    for (i32 i = 0; i < 32 * 32 * 32; i++) {
+    for (i32 i = 0; i < 32 * 32; i++) {
         chunk->blocks[i] = 4;
         chunk->num_blocks++;
     }
@@ -209,6 +209,15 @@ void chunk_draw(void)
 {
     if (state.chunk_mesh_buffer == NULL)
         return;
+
+    f64 t = get_time();
+    for (i32 i = 0; i < NUM_CHUNKS; i++) {
+        i32 x, y, z;
+        x = state.chunks[i]->x;
+        y = state.chunks[i]->y;
+        z = x + y;
+    }
+    //printf("%f\n", get_time() - t);
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);

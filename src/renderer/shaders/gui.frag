@@ -12,7 +12,7 @@ struct Tex {
     int location;
 };
 
-layout (std430, binding = 1) buffer readonly Textures
+layout (std430, binding = 1) readonly buffer Textures
 {
     Tex texs[];
 };

@@ -93,7 +93,34 @@ void renderer_toggle_line_mode(void)
 
 void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
-    printf("\n%x, %x, %d, %p\n", source, id, length, userParam);
-    printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n", ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ), type, severity, message);
-    exit(1);
+    puts("======== gl message callback ========");
+    char* source_str;
+    char* type_str;
+    char* severity_str;
+    switch (source) {
+        case GL_DEBUG_SOURCE_API:
+            source_str = "GL_DEBUG_SOURCE_API"; break;
+        default:
+            source_str = ""; break;
+    }
+    switch (type) {
+        case GL_DEBUG_TYPE_OTHER:
+            type_str = "GL_DEBUG_TYPE_OTHER"; break;
+        default:
+            type_str = ""; break;
+    }
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            severity_str = "GL_DEBUG_SEVERITY_NOTIFICATION"; break;
+        default:
+            severity_str = ""; break;
+    }
+    printf("%-8s = 0x%04x %s\n", "source", source, source_str);
+    printf("%-8s = 0x%04x %s\n", "type", type, type_str);
+    printf("%-8s = 0x%04x %s\n", "severity", severity, severity_str);
+    printf("%-8s = %u\n\n", "id", id);
+    printf("%s\n\n", message);
+    
+    if (severity != GL_DEBUG_SEVERITY_NOTIFICATION)
+        exit(1);
 }
