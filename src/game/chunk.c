@@ -80,6 +80,7 @@ static bool opaque_block(Chunk* chunk, i32 idx, i32 dir)
 
 static void chunk_build_mesh(Chunk* chunk)
 {
+    f64 start = get_time();
     u32 total_faces = 0;
     u32 face_counts[6];
     for (i32 i = 0; i < 6; i++)
@@ -162,6 +163,7 @@ static void chunk_build_mesh(Chunk* chunk)
                     state.chunk_mesh_buffer[idx1+(idxs[dir]++)+prefix[dir]] = info;
         }
     }
+    printf("%f\n", get_time() - start);
 }
 
 void chunk_init(void)
