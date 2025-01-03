@@ -97,6 +97,11 @@ void camera_zoom(f32 mag, f32 dt)
     update_proj_matrix();
 }
 
+vec3 camera_position(void)
+{
+    return camera.position;
+}
+
 /* ------------------------- */
 
 #define NEAR_CLIP_DISTANCE 0.1f
