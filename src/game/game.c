@@ -16,7 +16,7 @@ typedef struct {
 
 static Game game;
 
-static void *game_update(void* vargp)
+static void* game_update(void* vargp)
 {
     f64 start;
     while (!game.kill_thread) {
