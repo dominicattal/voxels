@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 1
+#define RENDER_DISTANCE 10
 
 #define NEGX 0
 #define POSX 1
@@ -177,7 +177,6 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     if (chunk_exists(cx, cy, cz))
         return state.chunks[chunk_idx(cx, cy, cz)];
 
-    printf("Loaded chunk: (%d, %d, %d)\n", cx, cy, cz);
     Chunk* chunk = calloc(1, sizeof(Chunk));
     chunk->x = cx;
     chunk->y = cy;
@@ -200,20 +199,15 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
 
 static void unload_chunk(Chunk* chunk)
 {
-    printf("Unloaded chunk: (%d, %d, %d)\n", chunk->x, chunk->y, chunk->z);
     free(chunk);
 }
 
 static void* chunk_worker_threads(void* vargp)
 {
-    #pragma omp parallel
-    {
-        i32 num_threads = omp_get_num_threads();
-        i32 thread_num = omp_get_thread_num();
-    }
+    
 }
 
-static i32 compare_chunk_idx(void* ptr1, void* ptr2)
+static i32 compare_chunk_idx(const void* ptr1, const void* ptr2)
 {
     i32 idx1, idx2;
     i32 dx1, dy1, dz1, dx2, dy2, dz2;
@@ -276,8 +270,6 @@ void chunk_update(void)
         cy = state.center.y - state.render_distance + ((i / side) % side);
         cz = state.center.z - state.render_distance + (i / side / side);
         if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z)) {
-            if (state.chunks[i] == NULL)
-                continue;
             //printf("%d, %d, %d\n", cx, cy, cz);
             //printf("%p\n", state.chunks[i]);
             destroy_chunk_mesh(state.chunks[i]);
@@ -287,15 +279,15 @@ void chunk_update(void)
     }
 
     // fix mesh buffer
-    /* i32 mesh_length = 0;
+    i32 mesh_length = 0;
     for (i32 i = 0; i < state.chunk_order_length; i++) {
         Chunk* chunk = state.chunk_order[i];
         i32 new_mesh_idx = mesh_length;
-        for (i32 j = chunk->mesh_idx; j < chunk->num_faces; j++)
-            state.mesh_buffer[mesh_length++] = state.mesh_buffer[j];
+        for (i32 j = 0; j < chunk->num_faces; j++)
+            state.mesh_buffer[mesh_length++] = state.mesh_buffer[chunk->mesh_idx + j];
        chunk->mesh_idx = new_mesh_idx;
     }
-    state.mesh_length = mesh_length; */
+    state.mesh_length = mesh_length;
 
     // load new chunks into swap buffer
     for (i32 i = 0; i < state.num_chunks; i++) {
@@ -303,7 +295,6 @@ void chunk_update(void)
         cy = new_center_y - state.render_distance + ((i / side) % side);
         cz = new_center_z - state.render_distance + (i / side / side);
         state.chunks_swap[i] = load_chunk(cx, cy, cz);
-        build_chunk_mesh(state.chunks_swap[i]);
     }
 
     // swap chunk buffers
@@ -311,8 +302,17 @@ void chunk_update(void)
     state.chunks = state.chunks_swap;
     state.chunks_swap = tmp;
 
+    // update chunk center
+    state.center.x = new_center_x;
+    state.center.y = new_center_y;
+    state.center.z = new_center_z;
+
+    // build meshes
+    for (i32 i = 0; i < state.num_chunks; i++)
+        build_chunk_mesh(state.chunks[i]);
+
     // fix indirect and world position buffers
-    /* i32 indirect_idx, world_pos_idx;
+    i32 indirect_idx, world_pos_idx;
     indirect_idx = world_pos_idx = 0;
     for (i32 i = 0; i < state.num_chunks; i++) {
         Chunk* chunk = state.chunks[state.sorted_chunk_idx[i]];
@@ -336,12 +336,7 @@ void chunk_update(void)
         }
     }
     state.indirect_length = indirect_idx;
-    state.world_pos_length = world_pos_idx; */
-
-    // update chunk center
-    state.center.x = new_center_x;
-    state.center.y = new_center_y;
-    state.center.z = new_center_z;
+    state.world_pos_length = world_pos_idx;
 
     sem_post(&state.mutex);
 }
@@ -351,7 +346,7 @@ void chunk_draw(void)
     if (state.mesh_buffer == NULL)
         return;
 
-    /* sem_wait(&state.mutex);
+    sem_wait(&state.mutex);
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, state.mesh_length * sizeof(u32), GL_STATIC_DRAW);
     vbo_update(VBO_GAME_INSTANCE, 0, state.mesh_length * sizeof(u32), state.mesh_buffer);
@@ -359,7 +354,7 @@ void chunk_draw(void)
     dibo_update(DIBO_GAME, 0, state.indirect_length * sizeof(u32), state.indirect_buffer);
     ssbo_bind(SSBO_GAME);
     ssbo_update(SSBO_GAME, 0, state.world_pos_length * sizeof(u32), state.world_pos_buffer);
-    sem_post(&state.mutex); */
+    sem_post(&state.mutex);
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
