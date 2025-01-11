@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 10
+#define RENDER_DISTANCE 1
 
 #define NEGX 0
 #define POSX 1
@@ -37,13 +37,13 @@ typedef struct {
     Chunk** chunks;
     Chunk** chunks_swap;
     Chunk** chunk_order;
-    struct {
-        i32 x, y, z;
-    } center;
     i32 render_distance;
     i32 side;
     i32 num_chunks;
     i32* sorted_chunk_idx;
+    struct {
+        i32 x, y, z;
+    } center;
     sem_t mutex;
     pthread_t thread_id;
     bool kill_thread;
@@ -66,13 +66,13 @@ static i32 axis_dz[6] = {0, 0, 0, 0, -1, 1};
     + ((_y - state.center.y + state.render_distance) * state.side) \
     + ((_z - state.center.z + state.render_distance) * state.side * state.side))
 
-#define chunk_in_bounds(_x, _y, _z, _cx, _cy, _cz) \
-      ((_x - _cx + state.render_distance) >= 0 \
-    && (_x - _cx + state.render_distance) < state.side \
-    && (_y - _cy + state.render_distance) >= 0 \
-    && (_y - _cy + state.render_distance) < state.side \
-    && (_z - _cz + state.render_distance) >= 0 \
-    && (_z - _cz + state.render_distance) < state.side)
+#define chunk_in_bounds(_x, _y, _z, _center_x, _center_y, _center_z) \
+      ((_x - _center_x + state.render_distance) >= 0 \
+    && (_x - _center_x + state.render_distance) < state.side \
+    && (_y - _center_y + state.render_distance) >= 0 \
+    && (_y - _center_y + state.render_distance) < state.side \
+    && (_z - _center_z + state.render_distance) >= 0 \
+    && (_z - _center_z + state.render_distance) < state.side)
 
 #define chunk_exists(_x, _y, _z) \
       (chunk_in_bounds(_x, _y, _z, state.center.x, state.center.y, state.center.z) \
@@ -170,13 +170,12 @@ static void destroy_chunk_mesh(Chunk* chunk)
         state.chunk_order[i-1] = state.chunk_order[i];
     }
     --state.chunk_order_length;
+    chunk->order_idx = -1;
+    chunk->mesh_idx = -1;
 }
 
 static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
 {
-    if (chunk_exists(cx, cy, cz))
-        return state.chunks[chunk_idx(cx, cy, cz)];
-
     Chunk* chunk = calloc(1, sizeof(Chunk));
     chunk->x = cx;
     chunk->y = cy;
@@ -204,7 +203,29 @@ static void unload_chunk(Chunk* chunk)
 
 static void* chunk_worker_threads(void* vargp)
 {
-    
+    #pragma omp parallel
+    {
+        i32 num_threads = omp_get_num_threads();
+        i32 thread_num = omp_get_thread_num();
+
+        while (!state.kill_thread)
+        {
+            sleep(10);
+            // unload old meshes
+
+            // unload old chunks
+
+            // fix mesh buffer
+
+            // load new chunks
+
+            // build new chunk meshes
+
+            // fix old chunk meshes
+
+            // fix indirect and world pos buffers
+        }
+    }
 }
 
 static i32 compare_chunk_idx(const void* ptr1, const void* ptr2)
@@ -231,6 +252,7 @@ void chunk_init(void)
     state.world_pos_length = 0;
     state.mesh_buffer = NULL;
     state.render_distance = RENDER_DISTANCE;
+    state.kill_thread = FALSE;
     state.center.x = state.center.y = state.center.z = 0;
     state.side = state.render_distance * 2 + 1;
     i32 side = state.side;
@@ -270,11 +292,24 @@ void chunk_update(void)
         cy = state.center.y - state.render_distance + ((i / side) % side);
         cz = state.center.z - state.render_distance + (i / side / side);
         if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z)) {
-            //printf("%d, %d, %d\n", cx, cy, cz);
-            //printf("%p\n", state.chunks[i]);
             destroy_chunk_mesh(state.chunks[i]);
             unload_chunk(state.chunks[i]);
             state.chunks[i] = NULL;
+        }
+    }
+
+    // load new chunks into swap buffer
+    for (i32 i = 0; i < state.num_chunks; i++) {
+        cx = new_center_x - state.render_distance + (i % side);
+        cy = new_center_y - state.render_distance + ((i / side) % side);
+        cz = new_center_z - state.render_distance + (i / side / side);
+        if (!chunk_exists(cx, cy, cz)) {
+            for (i32 j = 0; j < 6; j++)
+                if (chunk_exists(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j]))
+                    destroy_chunk_mesh(state.chunks[chunk_idx(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j])]);
+            state.chunks_swap[i] = load_chunk(cx, cy, cz);
+        } else {
+            state.chunks_swap[i] = state.chunks[chunk_idx(cx, cy, cz)];
         }
     }
 
@@ -288,14 +323,6 @@ void chunk_update(void)
        chunk->mesh_idx = new_mesh_idx;
     }
     state.mesh_length = mesh_length;
-
-    // load new chunks into swap buffer
-    for (i32 i = 0; i < state.num_chunks; i++) {
-        cx = new_center_x - state.render_distance + (i % side);
-        cy = new_center_y - state.render_distance + ((i / side) % side);
-        cz = new_center_z - state.render_distance + (i / side / side);
-        state.chunks_swap[i] = load_chunk(cx, cy, cz);
-    }
 
     // swap chunk buffers
     Chunk** tmp = state.chunks;
@@ -364,6 +391,7 @@ void chunk_draw(void)
 
 void chunk_destroy(void)
 {
+    state.kill_thread = TRUE;
     for (i32 i = 0; i < state.num_chunks; i++)
         free(state.chunks[i]);
 
