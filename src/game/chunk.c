@@ -7,8 +7,8 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 8
-#define CHUNKS_PER_FRAME 50
+#define RENDER_DISTANCE 10
+#define CHUNKS_PER_UPDATE 50
 
 #define NEGX 0
 #define POSX 1
@@ -33,6 +33,7 @@ typedef struct {
     i32 world_pos_length;
     i32 chunk_order_length;
     u32* mesh_buffer;
+    u32* mesh_buffer_swap;
     u32* indirect_buffer;
     i32* world_pos_buffer;
     Chunk** chunks;
@@ -79,6 +80,14 @@ static i32 axis_dz[6] = {0, 0, 0, 0, -1, 1};
       (chunk_in_bounds(_x, _y, _z, state.center.x, state.center.y, state.center.z) \
     && state.chunks[chunk_idx(_x, _y, _z)] != NULL)
 
+#define chunk_axis_faces_center(_chunk, _axis) \
+       ((axis == NEGX && chunk->x >= state.center.x)  \
+    ||  (axis == POSX && chunk->x <= state.center.x)  \
+    ||  (axis == NEGY && chunk->y >= state.center.y)  \
+    ||  (axis == POSY && chunk->y <= state.center.y)  \
+    ||  (axis == NEGZ && chunk->z >= state.center.z)  \
+    ||  (axis == POSZ && chunk->z <= state.center.z))
+
 static bool opaque_block(Chunk* chunk, i32 idx, i32 axis)
 {
     i32 bx, by, bz, cx, cy, cz;
@@ -102,9 +111,9 @@ static bool opaque_block(Chunk* chunk, i32 idx, i32 axis)
     return FALSE;
 }
 
-static void build_chunk_mesh(Chunk* chunk)
+static void generate_faces(Chunk* chunk)
 {
-    if (chunk->mesh_idx != -1 || chunk->num_blocks == 0)
+    if (chunk->num_blocks == 0)
         return;
 
     chunk->num_faces = 0;
@@ -121,53 +130,6 @@ static void build_chunk_mesh(Chunk* chunk)
             }
         }
     }
-
-    if (chunk->num_faces == 0)
-        return;
-
-    chunk->order_idx = state.chunk_order_length;
-    state.chunk_order[state.chunk_order_length++] = chunk;
-
-    chunk->mesh_idx = state.mesh_length;
-    state.mesh_length += chunk->num_faces;
-
-    if (state.mesh_buffer == NULL)
-        state.mesh_buffer = malloc(state.mesh_length * sizeof(u32));
-    else
-        state.mesh_buffer = realloc(state.mesh_buffer, state.mesh_length * sizeof(u32));
-
-    u32 prefix[6];
-    prefix[0] = chunk->mesh_idx;
-    for (i32 i = 1; i < 6; i++)
-        prefix[i] = prefix[i-1] + chunk->face_counts[i-1];
-
-    u32 idxs[6];
-    for (i32 i = 0; i < 6; i++)
-        idxs[i] = 0;
-    
-    u32 info;
-    for (i32 i = 0; i < 32768; i++) {
-        if (chunk->blocks[i] != 0) {
-            info = 0;
-            info |=  i & 31;
-            info |= ((i>>5) & 31) << 5;
-            info |= ((i>>10) & 31) << 10;
-            info |= chunk->blocks[i] << 15;
-            for (i32 axis = 0; axis < 6; axis++)
-                if (!opaque_block(chunk, i, axis))
-                    state.mesh_buffer[(idxs[axis]++)+prefix[axis]] = info;
-        }
-    }
-}
-
-static void destroy_chunk_mesh(Chunk* chunk)
-{
-    // mesh doesnt exist
-    if (chunk->order_idx == -1)
-        return;
-
-    state.chunk_order[chunk->order_idx] = NULL;
-    chunk->mesh_idx = -1;
 }
 
 static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
@@ -197,20 +159,66 @@ static void unload_chunk(Chunk* chunk)
     free(chunk);
 }
 
+static void load_chunk_mesh(Chunk* chunk, i32 new_mesh_idx)
+{
+    // if mesh exists, then move mesh buffer data to swap buffer
+    // if it doesnt, then generate it and put it in swap buffer
+
+    if (chunk->mesh_idx != -1) {
+        for (i32 i = 0; i < chunk->num_faces; i++)
+            state.mesh_buffer_swap[new_mesh_idx++] = state.mesh_buffer[chunk->mesh_idx + i];
+        return;
+    }
+
+    u32 prefix[6];
+    prefix[0] = new_mesh_idx;
+    for (i32 i = 1; i < 6; i++)
+        prefix[i] = prefix[i-1] + chunk->face_counts[i-1];
+
+    u32 idxs[6];
+    for (i32 i = 0; i < 6; i++)
+        idxs[i] = 0;
+    
+    u32 info;
+    for (i32 i = 0; i < 32768; i++) {
+        if (chunk->blocks[i] != 0) {
+            info = 0;
+            info |=  i & 31;
+            info |= ((i>>5) & 31) << 5;
+            info |= ((i>>10) & 31) << 10;
+            info |= chunk->blocks[i] << 15;
+            for (i32 axis = 0; axis < 6; axis++)
+                if (!opaque_block(chunk, i, axis))
+                    state.mesh_buffer_swap[(idxs[axis]++)+prefix[axis]] = info;
+        }
+    }
+}
+
 static void* chunk_worker_threads(void* vargp)
 {
     vec3 position;
     i32 new_center_x, new_center_y, new_center_z;
     i32 side;
     i32 num_chunks_loaded;
+    i32 chunk_order_length;
+    i32 group_size;
+    i32* mesh_lengths;
+    i32* mesh_prefix;
+    void* tmp;
     #pragma omp parallel
     {
         i32 num_threads, thread_num;
-        i32 cx, cy, cz;
-        i32 local_num_chunks_loaded;
+        i32 i, j, axis, cx, cy, cz;
+        Chunk* chunk;
         
         num_threads = omp_get_num_threads();
         thread_num = omp_get_thread_num();
+
+        #pragma omp master
+        {
+            mesh_lengths = malloc(num_threads * sizeof(i32));
+            mesh_prefix = malloc((num_threads + 1) * sizeof(i32));
+        }
 
         while (!state.kill_thread)
         {
@@ -225,36 +233,42 @@ static void* chunk_worker_threads(void* vargp)
             }
             #pragma omp barrier
 
-            for (i32 i = thread_num; i < state.num_chunks; i += num_threads) {
+            for (i = thread_num; i < state.num_chunks; i += num_threads) {
                 cx = state.center.x - state.render_distance + (i % side);
                 cy = state.center.y - state.render_distance + ((i / side) % side);
                 cz = state.center.z - state.render_distance + (i / side / side);
-                if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z) && state.chunks[i] != NULL) {
-                    destroy_chunk_mesh(state.chunks[i]);
-                    unload_chunk(state.chunks[i]);
+                chunk = state.chunks[i];
+                if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z) && chunk != NULL) {
+                    if (chunk->order_idx != -1)
+                        state.chunk_order[chunk->order_idx] = NULL;
+                    unload_chunk(chunk);
                     state.chunks[i] = NULL;
                 }
             }
             #pragma omp barrier
 
-            for (i32 idx = thread_num; idx < state.num_chunks; idx += num_threads) {
-                i32 i = state.sorted_chunk_idx[idx];
+            for (j = thread_num; j < state.num_chunks; j += num_threads) {
+                i = state.sorted_chunk_idx[j];
                 cx = new_center_x - state.render_distance + (i % side);
                 cy = new_center_y - state.render_distance + ((i / side) % side);
                 cz = new_center_z - state.render_distance + (i / side / side);
                 if (chunk_exists(cx, cy, cz)) {
                     state.chunks_swap[i] = state.chunks[chunk_idx(cx, cy, cz)];
                 } else {
-                    #pragma omp read
-                    local_num_chunks_loaded = num_chunks_loaded;
-                    if (local_num_chunks_loaded > CHUNKS_PER_FRAME) {
+                    if (num_chunks_loaded > CHUNKS_PER_UPDATE) {
                         state.chunks_swap[i] = NULL;
                     } else {
-                        for (i32 j = 0; j < 6; j++)
-                            if (chunk_exists(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j]))
-                                destroy_chunk_mesh(state.chunks[chunk_idx(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j])]);
+                        for (axis = 0; axis < 6; axis++) {
+                            if (chunk_exists(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])) {
+                                chunk = state.chunks[chunk_idx(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])];
+                                if (chunk->order_idx != -1) {
+                                    state.chunk_order[chunk->order_idx] = NULL;
+                                    chunk->mesh_idx = -1;
+                                }
+                            }
+                        }
                         state.chunks_swap[i] = load_chunk(cx, cy, cz);
-                        #pragma omp write
+                        #pragma omp atomic update
                         num_chunks_loaded++;
                     }
                 }
@@ -263,72 +277,102 @@ static void* chunk_worker_threads(void* vargp)
 
             #pragma omp master
             {
-                sem_wait(&state.mutex);
-                i32 mesh_length = 0;
-                i32 chunk_order_length = 0;
-                for (i32 i = 0; i < state.chunk_order_length; i++) {
-                    Chunk* chunk = state.chunk_order[i];
-                    if (chunk == NULL)
-                        continue;
-                    chunk->order_idx = chunk_order_length;
-                    state.chunk_order[chunk_order_length++] = chunk;
-                    i32 new_mesh_idx = mesh_length;
-                    for (i32 j = 0; j < chunk->num_faces; j++)
-                        state.mesh_buffer[mesh_length++] = state.mesh_buffer[chunk->mesh_idx + j];
-                    chunk->mesh_idx = new_mesh_idx;
-                }
-                state.chunk_order_length = chunk_order_length;
-                state.mesh_length = mesh_length;
-
-                Chunk** tmp = state.chunks;
+                tmp = state.chunks;
                 state.chunks = state.chunks_swap;
                 state.chunks_swap = tmp;
 
                 state.center.x = new_center_x;
                 state.center.y = new_center_y;
                 state.center.z = new_center_z;
+            }
+            #pragma omp barrier
 
-                // build meshes
-                for (i32 i = 0; i < state.num_chunks; i++)
-                    if (state.chunks[i] != NULL)
-                        build_chunk_mesh(state.chunks[i]);
+            #pragma omp master
+            {
+                chunk_order_length = 0;
+                for (i = 0; i < state.chunk_order_length; i++) {
+                    if (state.chunk_order[i] != NULL) {
+                        state.chunk_order[i]->order_idx = chunk_order_length;
+                        state.chunk_order[chunk_order_length++] = state.chunk_order[i];
+                    }
+                }
+            }
+            #pragma omp barrier
+            
+            for (i = thread_num; i < state.num_chunks; i += num_threads) {
+                chunk = state.chunks_swap[i];
+                if (chunk != NULL && chunk->mesh_idx == -1) {
+                    generate_faces(chunk);
+                    #pragma omp critical
+                    {
+                        chunk->order_idx = chunk_order_length;
+                        state.chunk_order[chunk_order_length++] = chunk;
+                    }
+                }
+            }
+            #pragma omp barrier
 
-                // fix indirect and world position buffers
-                i32 indirect_idx, world_pos_idx;
+            mesh_lengths[thread_num] = 0;
+            #pragma omp barrier
+
+            for (i = thread_num; i < chunk_order_length; i += num_threads)
+                mesh_lengths[thread_num] += state.chunk_order[i]->num_faces;
+            #pragma omp barrier
+
+            #pragma omp master
+            {
+                mesh_prefix[0] = 0;
+                for (i = 0; i < num_threads; i++)
+                    mesh_prefix[i+1] = mesh_lengths[i] + mesh_prefix[i];
+                free(state.mesh_buffer_swap);
+                state.mesh_buffer_swap = malloc(mesh_prefix[num_threads] * sizeof(u32));
+            }
+            #pragma omp barrier
+
+            for (i = thread_num; i < chunk_order_length; i += num_threads) {
+                chunk = state.chunk_order[i];
+                load_chunk_mesh(chunk, mesh_prefix[thread_num]);
+                chunk->mesh_idx = mesh_prefix[thread_num];
+                mesh_prefix[thread_num] += chunk->num_faces;
+            }
+            #pragma omp barrier
+
+            #pragma omp master
+            {
+                state.chunk_order_length = chunk_order_length;
+                state.mesh_length = mesh_prefix[num_threads];
+            }
+
+            #pragma omp master
+            {
+                sem_wait(&state.mutex);
+                tmp = state.mesh_buffer;
+                state.mesh_buffer = state.mesh_buffer_swap;
+                state.mesh_buffer_swap = tmp;
+
+                i32 indirect_idx, world_pos_idx, prefix;
                 indirect_idx = world_pos_idx = 0;
-                for (i32 i = 0; i < state.num_chunks; i++) {
+                for (i = 0; i < state.num_chunks; i++) {
                     Chunk* chunk = state.chunks[state.sorted_chunk_idx[i]];
                     if (chunk == NULL)
                         continue;
-                    i32 prefix = chunk->mesh_idx;
-                    i32 prev_prefix;
+                    prefix = chunk->mesh_idx;
                     if (prefix == -1)
                         continue;
-                    for (i32 axis = 0; axis < 6; axis++) {
+                    for (axis = 0; axis < 6; axis++) {
                         if (chunk->face_counts[axis] == 0)
                             continue;
-                        prev_prefix = prefix;
+                        if (chunk_axis_faces_center(chunk, axis)) {
+                            state.indirect_buffer[indirect_idx++] = 4;
+                            state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
+                            state.indirect_buffer[indirect_idx++] = 0;
+                            state.indirect_buffer[indirect_idx++] = prefix;
+                            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->x;
+                            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->y;
+                            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->z;
+                            state.world_pos_buffer[world_pos_idx++] = axis;
+                        }
                         prefix += chunk->face_counts[axis];
-                        if (axis == NEGX && chunk->x < state.center.x)
-                            continue;
-                        if (axis == POSX && chunk->x > state.center.x)
-                            continue;
-                        if (axis == NEGY && chunk->y < state.center.y)
-                            continue;
-                        if (axis == POSY && chunk->y > state.center.y)
-                            continue;
-                        if (axis == NEGZ && chunk->z < state.center.z)
-                            continue;
-                        if (axis == POSZ && chunk->z > state.center.z)
-                            continue;
-                        state.indirect_buffer[indirect_idx++] = 4;
-                        state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
-                        state.indirect_buffer[indirect_idx++] = 0;
-                        state.indirect_buffer[indirect_idx++] = prev_prefix;
-                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->x;
-                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->y;
-                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->z;
-                        state.world_pos_buffer[world_pos_idx++] = axis;
                     }
                 }
                 state.indirect_length = indirect_idx;
@@ -336,6 +380,12 @@ static void* chunk_worker_threads(void* vargp)
                 sem_post(&state.mutex);
             }
             #pragma omp barrier
+        }
+
+        #pragma omp master
+        {
+            free(mesh_lengths);
+            free(mesh_prefix);
         }
     }
 }
