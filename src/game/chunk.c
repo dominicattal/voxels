@@ -370,11 +370,11 @@ void chunk_update(void)
     sem_post(&state.mutex);
 }
 
-void chunk_draw(void)
+void chunk_prepare_render(void)
 {
     if (state.mesh_buffer == NULL)
         return;
-
+    
     sem_wait(&state.mutex);
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, state.mesh_length * sizeof(u32), GL_STATIC_DRAW);
@@ -384,6 +384,12 @@ void chunk_draw(void)
     ssbo_bind(SSBO_GAME);
     ssbo_update(SSBO_GAME, 0, state.world_pos_length * sizeof(u32), state.world_pos_buffer);
     sem_post(&state.mutex);
+}
+
+void chunk_render(void)
+{
+    if (state.mesh_buffer == NULL)
+        return;
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);

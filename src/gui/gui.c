@@ -356,10 +356,9 @@ static void update_data(void)
     update_data_helper(gui.root);
 }
 
-void gui_render(void)
+void gui_prepare_render(void)
 {
     update_data();
-
     vbo_bind(VBO_GUI);
     vbo_malloc(VBO_GUI,  gui.data.comp_vbo_max_length * sizeof(f32), GL_STATIC_DRAW);
     vbo_update(VBO_GUI,  0, gui.data.comp_vbo_length * sizeof(f32), gui.data.comp_vbo_buffer);
@@ -372,7 +371,10 @@ void gui_render(void)
     ebo_bind(EBO_FONT);
     ebo_malloc(EBO_FONT, gui.data.font_ebo_max_length, GL_STATIC_DRAW);
     ebo_update(EBO_FONT, 0, gui.data.font_ebo_length, gui.data.font_ebo_buffer);
+}
 
+void gui_render(void)
+{
     shader_use(SHADER_GUI);
 
     vao_bind(VAO_GUI);

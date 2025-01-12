@@ -53,7 +53,12 @@ f64 game_dt(void)
     return game.dt;
 }
 
+void game_prepare_render(void)
+{
+    chunk_prepare_render();
+}
+
 void game_render(void)
 {    
-    chunk_draw();
+    chunk_render();
 }

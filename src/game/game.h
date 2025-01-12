@@ -7,6 +7,7 @@ void game_init(void);
 void game_destroy(void);
 f64  game_dt(void);
 
+void game_prepare_render(void);
 void game_render(void);
 
 #endif

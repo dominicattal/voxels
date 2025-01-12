@@ -3,7 +3,8 @@
 
 void chunk_init(void);
 void chunk_update(void);
-void chunk_draw(void);
+void chunk_prepare_render(void);
+void chunk_render(void);
 void chunk_destroy(void);
 
 #endif
