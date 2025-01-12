@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 1
+#define RENDER_DISTANCE 4
 
 #define NEGX 0
 #define POSX 1
@@ -165,11 +165,7 @@ static void destroy_chunk_mesh(Chunk* chunk)
     if (chunk->order_idx == -1)
         return;
 
-    for (i32 i = chunk->order_idx + 1; i < state.chunk_order_length; i++) {
-        --state.chunk_order[i]->order_idx;
-        state.chunk_order[i-1] = state.chunk_order[i];
-    }
-    --state.chunk_order_length;
+    state.chunk_order[chunk->order_idx] = NULL;
     chunk->order_idx = -1;
     chunk->mesh_idx = -1;
 }
@@ -313,15 +309,21 @@ void chunk_update(void)
         }
     }
 
-    // fix mesh buffer
+    // fix mesh buffer and chunk order buffer
     i32 mesh_length = 0;
+    i32 chunk_order_length = 0;
     for (i32 i = 0; i < state.chunk_order_length; i++) {
         Chunk* chunk = state.chunk_order[i];
+        if (chunk == NULL)
+            continue;
+        chunk->order_idx = chunk_order_length;
+        state.chunk_order[chunk_order_length++] = chunk;
         i32 new_mesh_idx = mesh_length;
         for (i32 j = 0; j < chunk->num_faces; j++)
             state.mesh_buffer[mesh_length++] = state.mesh_buffer[chunk->mesh_idx + j];
-       chunk->mesh_idx = new_mesh_idx;
+        chunk->mesh_idx = new_mesh_idx;
     }
+    state.chunk_order_length = chunk_order_length;
     state.mesh_length = mesh_length;
 
     // swap chunk buffers
