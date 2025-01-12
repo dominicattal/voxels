@@ -22,7 +22,6 @@ static void* game_update(void* vargp)
     while (!game.kill_thread) {
         sem_wait(&game.mutex);
         start = get_time();
-        chunk_update();
         game.dt = get_time() - start;
         sem_post(&game.mutex);
     }

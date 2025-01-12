@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 4
+#define RENDER_DISTANCE 16
 
 #define NEGX 0
 #define POSX 1
@@ -166,7 +166,6 @@ static void destroy_chunk_mesh(Chunk* chunk)
         return;
 
     state.chunk_order[chunk->order_idx] = NULL;
-    chunk->order_idx = -1;
     chunk->mesh_idx = -1;
 }
 
@@ -199,27 +198,130 @@ static void unload_chunk(Chunk* chunk)
 
 static void* chunk_worker_threads(void* vargp)
 {
+    vec3 position;
+    i32 new_center_x, new_center_y, new_center_z;
+    i32 side;
     #pragma omp parallel
     {
-        i32 num_threads = omp_get_num_threads();
-        i32 thread_num = omp_get_thread_num();
+        i32 num_threads, thread_num;
+        i32 cx, cy, cz;
+        
+        num_threads = omp_get_num_threads();
+        thread_num = omp_get_thread_num();
 
         while (!state.kill_thread)
         {
-            sleep(10);
-            // unload old meshes
+            #pragma omp master
+            {
+                sem_wait(&state.mutex);
+                position = camera_position();
+                new_center_x = position.x / 32 - (position.x < 0);
+                new_center_y = position.y / 32 - (position.y < 0);
+                new_center_z = position.z / 32 - (position.z < 0);
+                side = state.side;
+            }
+            #pragma omp barrier
 
-            // unload old chunks
+            for (i32 i = thread_num; i < state.num_chunks; i += num_threads) {
+                cx = state.center.x - state.render_distance + (i % side);
+                cy = state.center.y - state.render_distance + ((i / side) % side);
+                cz = state.center.z - state.render_distance + (i / side / side);
+                if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z)) {
+                    destroy_chunk_mesh(state.chunks[i]);
+                    unload_chunk(state.chunks[i]);
+                    state.chunks[i] = NULL;
+                }
+            }
+            #pragma omp barrier
 
-            // fix mesh buffer
+            for (i32 i = thread_num; i < state.num_chunks; i += num_threads) {
+                cx = new_center_x - state.render_distance + (i % side);
+                cy = new_center_y - state.render_distance + ((i / side) % side);
+                cz = new_center_z - state.render_distance + (i / side / side);
+                if (!chunk_exists(cx, cy, cz)) {
+                    for (i32 j = 0; j < 6; j++)
+                        if (chunk_exists(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j]))
+                            destroy_chunk_mesh(state.chunks[chunk_idx(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j])]);
+                    state.chunks_swap[i] = load_chunk(cx, cy, cz);
+                } else {
+                    state.chunks_swap[i] = state.chunks[chunk_idx(cx, cy, cz)];
+                }
+            }
+            #pragma omp barrier
 
-            // load new chunks
+            #pragma omp master
+            {
+                i32 mesh_length = 0;
+                i32 chunk_order_length = 0;
+                for (i32 i = 0; i < state.chunk_order_length; i++) {
+                    Chunk* chunk = state.chunk_order[i];
+                    if (chunk == NULL)
+                        continue;
+                    chunk->order_idx = chunk_order_length;
+                    state.chunk_order[chunk_order_length++] = chunk;
+                    i32 new_mesh_idx = mesh_length;
+                    for (i32 j = 0; j < chunk->num_faces; j++)
+                        state.mesh_buffer[mesh_length++] = state.mesh_buffer[chunk->mesh_idx + j];
+                    chunk->mesh_idx = new_mesh_idx;
+                }
+                state.chunk_order_length = chunk_order_length;
+                state.mesh_length = mesh_length;
 
-            // build new chunk meshes
+                Chunk** tmp = state.chunks;
+                state.chunks = state.chunks_swap;
+                state.chunks_swap = tmp;
 
-            // fix old chunk meshes
+                state.center.x = new_center_x;
+                state.center.y = new_center_y;
+                state.center.z = new_center_z;
 
-            // fix indirect and world pos buffers
+                // build meshes
+                for (i32 i = 0; i < state.num_chunks; i++)
+                    build_chunk_mesh(state.chunks[i]);
+
+                // fix indirect and world position buffers
+                i32 indirect_idx, world_pos_idx;
+                indirect_idx = world_pos_idx = 0;
+                for (i32 i = 0; i < state.num_chunks; i++) {
+                    Chunk* chunk = state.chunks[state.sorted_chunk_idx[i]];
+                    if (chunk == NULL)
+                        continue;
+                    i32 prefix = chunk->mesh_idx;
+                    i32 prev_prefix;
+                    if (prefix == -1)
+                        continue;
+                    for (i32 axis = 0; axis < 6; axis++) {
+                        if (chunk->face_counts[axis] == 0)
+                            continue;
+                        prev_prefix = prefix;
+                        prefix += chunk->face_counts[axis];
+                        if (axis == NEGX && chunk->x < state.center.x)
+                            continue;
+                        if (axis == POSX && chunk->x > state.center.x)
+                            continue;
+                        if (axis == NEGY && chunk->y < state.center.y)
+                            continue;
+                        if (axis == POSY && chunk->y > state.center.y)
+                            continue;
+                        if (axis == NEGZ && chunk->z < state.center.z)
+                            continue;
+                        if (axis == POSZ && chunk->z > state.center.z)
+                            continue;
+                        state.indirect_buffer[indirect_idx++] = 4;
+                        state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
+                        state.indirect_buffer[indirect_idx++] = 0;
+                        state.indirect_buffer[indirect_idx++] = prev_prefix;
+                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->x;
+                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->y;
+                        state.world_pos_buffer[world_pos_idx++] = 32 * chunk->z;
+                        state.world_pos_buffer[world_pos_idx++] = axis;
+                    }
+                }
+                state.indirect_length = indirect_idx;
+                state.world_pos_length = world_pos_idx;
+                sem_post(&state.mutex);
+            }
+            #pragma omp barrier
         }
     }
 }
@@ -271,110 +373,16 @@ void chunk_init(void)
     ssbo_malloc(SSBO_GAME, 6 * 4 * side * side * side * sizeof(i32), GL_STATIC_DRAW);
 }
 
-void chunk_update(void)
+void chunk_prepare_render(void)
 {
-    sem_wait(&state.mutex);
-
-    vec3 position = camera_position();
-    i32 new_center_x = position.x / 32 - (position.x < 0);
-    i32 new_center_y = position.y / 32 - (position.y < 0);
-    i32 new_center_z = position.z / 32 - (position.z < 0);
-    i32 cx, cy, cz;
-    i32 side = state.side;
-
-    // unload old chunks
-    for (i32 i = 0; i < state.num_chunks; i++) {
-        cx = state.center.x - state.render_distance + (i % side);
-        cy = state.center.y - state.render_distance + ((i / side) % side);
-        cz = state.center.z - state.render_distance + (i / side / side);
-        if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z)) {
-            destroy_chunk_mesh(state.chunks[i]);
-            unload_chunk(state.chunks[i]);
-            state.chunks[i] = NULL;
-        }
-    }
-
-    // load new chunks into swap buffer
-    for (i32 i = 0; i < state.num_chunks; i++) {
-        cx = new_center_x - state.render_distance + (i % side);
-        cy = new_center_y - state.render_distance + ((i / side) % side);
-        cz = new_center_z - state.render_distance + (i / side / side);
-        if (!chunk_exists(cx, cy, cz)) {
-            for (i32 j = 0; j < 6; j++)
-                if (chunk_exists(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j]))
-                    destroy_chunk_mesh(state.chunks[chunk_idx(cx + axis_dx[j], cy + axis_dy[j], cz + axis_dz[j])]);
-            state.chunks_swap[i] = load_chunk(cx, cy, cz);
-        } else {
-            state.chunks_swap[i] = state.chunks[chunk_idx(cx, cy, cz)];
-        }
-    }
-
-    // fix mesh buffer and chunk order buffer
-    i32 mesh_length = 0;
-    i32 chunk_order_length = 0;
-    for (i32 i = 0; i < state.chunk_order_length; i++) {
-        Chunk* chunk = state.chunk_order[i];
-        if (chunk == NULL)
-            continue;
-        chunk->order_idx = chunk_order_length;
-        state.chunk_order[chunk_order_length++] = chunk;
-        i32 new_mesh_idx = mesh_length;
-        for (i32 j = 0; j < chunk->num_faces; j++)
-            state.mesh_buffer[mesh_length++] = state.mesh_buffer[chunk->mesh_idx + j];
-        chunk->mesh_idx = new_mesh_idx;
-    }
-    state.chunk_order_length = chunk_order_length;
-    state.mesh_length = mesh_length;
-
-    // swap chunk buffers
-    Chunk** tmp = state.chunks;
-    state.chunks = state.chunks_swap;
-    state.chunks_swap = tmp;
-
-    // update chunk center
-    state.center.x = new_center_x;
-    state.center.y = new_center_y;
-    state.center.z = new_center_z;
-
-    // build meshes
-    for (i32 i = 0; i < state.num_chunks; i++)
-        build_chunk_mesh(state.chunks[i]);
-
-    // fix indirect and world position buffers
-    i32 indirect_idx, world_pos_idx;
-    indirect_idx = world_pos_idx = 0;
-    for (i32 i = 0; i < state.num_chunks; i++) {
-        Chunk* chunk = state.chunks[state.sorted_chunk_idx[i]];
-        if (chunk == NULL)
-            continue;
-        i32 prefix = chunk->mesh_idx;
-        if (prefix == -1)
-            continue;
-        for (i32 axis = 0; axis < 6; axis++) {
-            if (chunk->face_counts[axis] == 0)
-                continue;
-            state.indirect_buffer[indirect_idx++] = 4;
-            state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
-            state.indirect_buffer[indirect_idx++] = 0;
-            state.indirect_buffer[indirect_idx++] = prefix;
-            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->x;
-            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->y;
-            state.world_pos_buffer[world_pos_idx++] = 32 * chunk->z;
-            state.world_pos_buffer[world_pos_idx++] = axis;
-            prefix += chunk->face_counts[axis];
-        }
-    }
-    state.indirect_length = indirect_idx;
-    state.world_pos_length = world_pos_idx;
-
-    sem_post(&state.mutex);
+    
 }
 
-void chunk_prepare_render(void)
+void chunk_render(void)
 {
     if (state.mesh_buffer == NULL)
         return;
-    
+
     sem_wait(&state.mutex);
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, state.mesh_length * sizeof(u32), GL_STATIC_DRAW);
@@ -384,12 +392,6 @@ void chunk_prepare_render(void)
     ssbo_bind(SSBO_GAME);
     ssbo_update(SSBO_GAME, 0, state.world_pos_length * sizeof(u32), state.world_pos_buffer);
     sem_post(&state.mutex);
-}
-
-void chunk_render(void)
-{
-    if (state.mesh_buffer == NULL)
-        return;
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
