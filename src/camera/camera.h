@@ -10,5 +10,6 @@ void camera_tilt(f32 mag, f32);
 void camera_zoom(f32 mag, f32 dt);
 
 vec3 camera_position(void);
+bool camera_aabb_in_frustrum(f32 x, f32 y, f32 z, f32 dx, f32 dy, f32 dz);
 
 #endif

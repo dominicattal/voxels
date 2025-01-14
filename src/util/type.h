@@ -8,6 +8,13 @@
 #define FALSE 0
 #define TRUE  1
 
+#define NEGX 0
+#define POSX 1
+#define NEGY 2
+#define POSY 3
+#define NEGZ 4
+#define POSZ 5
+
 typedef GLboolean bool;
 typedef GLbyte    i8;
 typedef GLubyte   u8;

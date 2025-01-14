@@ -10,13 +10,6 @@
 #define RENDER_DISTANCE 10
 #define CHUNKS_PER_UPDATE 50
 
-#define NEGX 0
-#define POSX 1
-#define NEGY 2
-#define POSY 3
-#define NEGZ 4
-#define POSZ 5
-
 typedef struct {
     i32 x, y, z;
     Block blocks[32768];
@@ -362,7 +355,8 @@ static void* chunk_worker_threads(void* vargp)
                     for (axis = 0; axis < 6; axis++) {
                         if (chunk->face_counts[axis] == 0)
                             continue;
-                        if (chunk_axis_faces_center(chunk, axis)) {
+                        if ( chunk_axis_faces_center(chunk, axis) 
+                          && camera_aabb_in_frustrum(32 * chunk->x, 32 * chunk->y, 32 * chunk->z, 32, 32, 32)) {
                             state.indirect_buffer[indirect_idx++] = 4;
                             state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
                             state.indirect_buffer[indirect_idx++] = 0;

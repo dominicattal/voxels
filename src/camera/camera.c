@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#define NEAR_CLIP_DISTANCE  0.1f
+#define FAR_CLIP_DISTANCE   1000.0f
 #define DEFAULT_YAW         PI
 #define DEFAULT_PITCH       0
 #define DEFAULT_FOV         PI / 4
@@ -13,16 +15,27 @@
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {
+    vec3 normal;
+    f32 distance;
+} Plane;
+
+typedef struct {
+    Plane planes[6];
+    vec3 points[8];
+} Frustrum;
+
+typedef struct {
     f32 yaw, pitch, zoom, fov, move_speed, rotate_speed;
     f32 view[16], proj[16];
     vec3 position, facing, right, up;
+    Frustrum frustrum;
 } Camera;
 
 static Camera camera;
 
 static void view(f32 view[16], vec3 right, vec3 up, vec3 facing, vec3 position);
 static void orthographic(f32 proj[16], f32 aspect_ratio, f32 zoom);
-static void perspective(f32 proj[16], f32 aspect_ratio, f32 zoom);
+static void perspective(f32 proj[16], f32 aspect_ratio, f32 fov);
 
 static void update_orientation_vectors(void)
 {
@@ -33,7 +46,55 @@ static void update_orientation_vectors(void)
     camera.up = vec3_cross(camera.facing, camera.right);
 }
 
-static void update_view_matrix()
+static void update_frustrum(void)
+{
+    f32 horizontal_edge_length, vertical_edge_length;
+    vec3 plane_center, edge_center;
+
+    horizontal_edge_length = NEAR_CLIP_DISTANCE * tan(camera.fov / 2);
+    vertical_edge_length = horizontal_edge_length / window_aspect_ratio();
+    plane_center = vec3_add(camera.position, vec3_scale(camera.facing, NEAR_CLIP_DISTANCE));
+    edge_center = vec3_sub(plane_center, vec3_scale(camera.right, horizontal_edge_length));
+    camera.frustrum.points[0] = vec3_sub(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    camera.frustrum.points[1] = vec3_add(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    edge_center = vec3_add(plane_center, vec3_scale(camera.right, horizontal_edge_length));
+    camera.frustrum.points[2] = vec3_add(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    camera.frustrum.points[3] = vec3_sub(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    
+    horizontal_edge_length = FAR_CLIP_DISTANCE * tan(camera.fov / 2);
+    vertical_edge_length = horizontal_edge_length / window_aspect_ratio();
+    plane_center = vec3_add(camera.position, vec3_scale(camera.facing, FAR_CLIP_DISTANCE));
+    edge_center = vec3_sub(plane_center, vec3_scale(camera.right, horizontal_edge_length));
+    camera.frustrum.points[4] = vec3_sub(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    camera.frustrum.points[5] = vec3_add(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    edge_center = vec3_add(plane_center, vec3_scale(camera.right, horizontal_edge_length));
+    camera.frustrum.points[6] = vec3_add(edge_center, vec3_scale(camera.up, vertical_edge_length));
+    camera.frustrum.points[7] = vec3_sub(edge_center, vec3_scale(camera.up, vertical_edge_length));
+
+    vec3 vec1, vec2;
+    vec1 = vec3_add(camera.position, vec3_scale(camera.facing, NEAR_CLIP_DISTANCE));
+    camera.frustrum.planes[0].normal = camera.facing;
+    camera.frustrum.planes[0].distance = -vec3_dot(vec1, camera.frustrum.planes[0].normal);
+    vec1 = vec3_add(camera.position, vec3_scale(camera.facing, FAR_CLIP_DISTANCE));
+    camera.frustrum.planes[1].normal = vec3_scale(camera.facing, -1);
+    camera.frustrum.planes[1].distance = -vec3_dot(vec1, camera.frustrum.planes[1].normal);
+    vec1 = vec3_sub(camera.frustrum.points[1], camera.position);
+    vec2 = vec3_sub(camera.frustrum.points[0], camera.position);
+    camera.frustrum.planes[2].normal = vec3_normalize(vec3_cross(vec1, vec2));
+    vec1 = vec3_sub(camera.frustrum.points[3], camera.position);
+    vec2 = vec3_sub(camera.frustrum.points[2], camera.position);
+    camera.frustrum.planes[3].normal = vec3_normalize(vec3_cross(vec1, vec2));
+    vec1 = vec3_sub(camera.frustrum.points[0], camera.position);
+    vec2 = vec3_sub(camera.frustrum.points[3], camera.position);
+    camera.frustrum.planes[4].normal = vec3_normalize(vec3_cross(vec1, vec2));
+    vec1 = vec3_sub(camera.frustrum.points[2], camera.position);
+    vec2 = vec3_sub(camera.frustrum.points[1], camera.position);
+    camera.frustrum.planes[5].normal = vec3_normalize(vec3_cross(vec1, vec2));
+    for (i32 i = 2; i < 6; i++)
+        camera.frustrum.planes[i].distance = -vec3_dot(camera.position, camera.frustrum.planes[i].normal);
+}
+
+static void update_view_matrix(void)
 {
     view(camera.view, camera.right, camera.up, camera.facing, camera.position);
     renderer_uniform_update_view(camera.view);
@@ -56,6 +117,7 @@ void camera_init(void)
     camera.rotate_speed = DEFAULT_ROTSPEED;
     camera.position = vec3_create(5, 5, 5);
     update_orientation_vectors();
+    update_frustrum();
     update_view_matrix();
     update_proj_matrix();
 }
@@ -69,12 +131,14 @@ void camera_move(vec3 mag, f32 dt)
     direction = vec3_scale(vec3_normalize(direction), camera.move_speed * dt);
     camera.position = vec3_add(camera.position, direction);
     update_view_matrix();
+    update_frustrum();
 }
 
 void camera_rotate(f32 mag, f32 dt)
 {
     camera.yaw += mag * dt * camera.rotate_speed;
     update_orientation_vectors();
+    update_frustrum();
     update_view_matrix();
 }
 
@@ -89,6 +153,7 @@ void camera_tilt(f32 mag, f32 dt)
         camera.pitch = -PI / 2 + TILT_ERROR;
     update_orientation_vectors();
     update_view_matrix();
+    update_frustrum();
 }
 
 void camera_zoom(f32 mag, f32 dt)
@@ -102,10 +167,37 @@ vec3 camera_position(void)
     return camera.position;
 }
 
-/* ------------------------- */
+bool camera_aabb_in_frustrum(f32 x, f32 y, f32 z, f32 dx, f32 dy, f32 dz)
+{
+    vec3 points[8];
+    vec3 normal;
+    f32 distance;
+    i32 i, j;
+    points[0] = vec3_create(x     , y     , z     );
+    points[1] = vec3_create(x + dy, y     , z     );
+    points[2] = vec3_create(x     , y + dy, z     );
+    points[3] = vec3_create(x + dx, y + dy, z     );
+    points[4] = vec3_create(x     , y     , z + dz);
+    points[5] = vec3_create(x + dx, y     , z + dz);
+    points[6] = vec3_create(x     , y + dy, z + dz);
+    points[7] = vec3_create(x + dx, y + dy, z + dz);
+    
+    // test if aabb in frustrum
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 6; j++) {
+            normal = camera.frustrum.planes[j].normal;
+            distance = camera.frustrum.planes[j].distance;
+            if ((vec3_dot(normal, points[i]) + distance) < 0)
+                goto next_point1;
+        }
+        return TRUE;
+        next_point1:
+    }
+    
+    return FALSE;
+}
 
-#define NEAR_CLIP_DISTANCE 0.1f
-#define FAR_CLIP_DISTANCE 1000.0f
+/* ------------------------- */
 
 static void view(f32 m[16], vec3 r, vec3 u, vec3 f, vec3 p)
 {

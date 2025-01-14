@@ -2,7 +2,7 @@ export TEMP := ./build
 export TMP := ./build
 
 CC = gcc
-CFLAGS = -MMD -Wall -Wextra -O3 -g -fopenmp
+CFLAGS = -MMD -Wall -Wextra -g -fopenmp
 LINKER = -lglfw3dll -lm -lOpenAL32 -lsndfile
 LIB_DIR = lib
 SRC_DIR = src
