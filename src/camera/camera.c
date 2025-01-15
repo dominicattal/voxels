@@ -15,15 +15,10 @@
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {
-    Plane planes[6];
-    vec3 points[8];
-} Frustrum;
-
-typedef struct {
     f32 yaw, pitch, zoom, fov, move_speed, rotate_speed;
     f32 view[16], proj[16];
     vec3 position, facing, right, up;
-    Frustrum frustrum;
+    Hexahedron frustrum;
 } Camera;
 
 static Camera camera;
@@ -98,7 +93,6 @@ static void update_view_matrix(void)
 static void update_proj_matrix()
 {
     perspective(camera.proj, window_aspect_ratio(), camera.fov);
-    //orthographic(camera.proj, window_aspect_ratio(), camera.zoom);
     renderer_uniform_update_proj(camera.proj);
 }
 
@@ -160,57 +154,9 @@ vec3 camera_position(void)
     return camera.position;
 }
 
-bool camera_aabb_in_frustrum(f32 x, f32 y, f32 z, f32 dx, f32 dy, f32 dz)
+bool camera_aabb_in_frustrum(AABB aabb)
 {
-    vec3 points[8];
-    vec3 normal;
-    f32 distance;
-    i32 i, j;
-    points[0] = vec3_create(x     , y     , z     );
-    points[1] = vec3_create(x + dx, y     , z     );
-    points[2] = vec3_create(x + dx, y + dy, z     );
-    points[3] = vec3_create(x     , y + dy, z     );
-    points[4] = vec3_create(x     , y     , z + dz);
-    points[5] = vec3_create(x + dx, y     , z + dz);
-    points[6] = vec3_create(x + dx, y + dy, z + dz);
-    points[7] = vec3_create(x     , y + dy, z + dz);
-    
-    // test if a point is in frustrum
-    for (i = 0; i < 8; i++) {
-        for (j = 0; j < 6; j++) {
-            normal = camera.frustrum.planes[j].normal;
-            distance = camera.frustrum.planes[j].distance;
-            if ((vec3_dot(normal, points[i]) + distance) < 0)
-                goto next_point1;
-        }
-        return TRUE;
-        next_point1:
-    }
-
-    static u8 triangles[] = {
-        0, 1, 2, 0, 2, 3,
-        4, 5, 6, 4, 6, 7,
-        0, 1, 5, 0, 4, 5,
-        2, 3, 6, 2, 6, 7,
-        1, 2, 5, 1, 5, 6,
-        0, 3, 4, 0, 4, 7
-    };
-
-    Triangle triangle1, triangle2;
-    for (i = 0; i < 12; i++) {
-        triangle1.a = camera.frustrum.points[triangles[3*i]];
-        triangle1.b = camera.frustrum.points[triangles[3*i+1]];
-        triangle1.c = camera.frustrum.points[triangles[3*i+2]];
-        for (j = 0; j < 12; j++) {
-            triangle2.a = points[triangles[3*j]];
-            triangle2.b = points[triangles[3*j+1]];
-            triangle2.c = points[triangles[3*j+2]];
-            if (triangle_intersects_triangle(triangle1, triangle2))
-                return TRUE;
-        }
-    }
-
-    return FALSE;
+    return intersect_aabb_hexahedron(aabb, camera.frustrum);
 }
 
 /* ------------------------- */

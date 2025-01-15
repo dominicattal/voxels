@@ -69,7 +69,17 @@ Triangle triangle_create(vec3 a, vec3 b, vec3 c)
     return (Triangle) { a, b, c };
 }
 
-f32 ray_intersects_triangle(Ray ray, Triangle triangle)
+AABB aabb_create(vec3 origin, vec3 offset)
+{
+    return (AABB) { origin, offset };
+}
+
+OBB obb_create(vec3 origin, vec3 offset, vec3 orientation)
+{
+    return (OBB) { origin, offset, orientation };
+}
+
+f32 intersect_ray_triangle(Ray ray, Triangle triangle)
 {
     // Möller–Trumbore
     vec3 edge1 = vec3_sub(triangle.b, triangle.a);
@@ -96,7 +106,7 @@ f32 ray_intersects_triangle(Ray ray, Triangle triangle)
     return inv_det * vec3_dot(edge2, s_cross_e1);
 }
 
-bool segment_intersects_triangle(Segment segment, Triangle triangle)
+bool intersect_segment_triangle(Segment segment, Triangle triangle)
 {
     // modified Möller–Trumbore
     vec3 ray_origin = segment.a;
@@ -126,12 +136,68 @@ bool segment_intersects_triangle(Segment segment, Triangle triangle)
     return t > -EPSILON && t < 1 + EPSILON;
 }
 
-bool triangle_intersects_triangle(Triangle triangle1, Triangle triangle2)
+bool intersect_triangle_triangle(Triangle triangle1, Triangle triangle2)
 {
-    return !(!segment_intersects_triangle(segment_create(triangle1.a, triangle1.b), triangle2)
-          && !segment_intersects_triangle(segment_create(triangle1.b, triangle1.c), triangle2)
-          && !segment_intersects_triangle(segment_create(triangle1.c, triangle1.a), triangle2)
-          && !segment_intersects_triangle(segment_create(triangle2.a, triangle2.b), triangle1)
-          && !segment_intersects_triangle(segment_create(triangle2.b, triangle2.c), triangle1)
-          && !segment_intersects_triangle(segment_create(triangle2.c, triangle2.a), triangle1));
+    return !(!intersect_segment_triangle(segment_create(triangle1.a, triangle1.b), triangle2)
+          && !intersect_segment_triangle(segment_create(triangle1.b, triangle1.c), triangle2)
+          && !intersect_segment_triangle(segment_create(triangle1.c, triangle1.a), triangle2)
+          && !intersect_segment_triangle(segment_create(triangle2.a, triangle2.b), triangle1)
+          && !intersect_segment_triangle(segment_create(triangle2.b, triangle2.c), triangle1)
+          && !intersect_segment_triangle(segment_create(triangle2.c, triangle2.a), triangle1));
+}
+
+bool intersect_aabb_hexahedron(AABB aabb, Hexahedron hexahedron)
+{
+    vec3 points[8];
+    vec3 normal;
+    f32 distance;
+    i32 i, j;
+    f32 x, y, z, dx, dy, dz;
+    x = aabb.origin.x; y = aabb.origin.y; z = aabb.origin.z;
+    dx = aabb.offset.x; dy = aabb.offset.y; dz = aabb.offset.z;
+    points[0] = vec3_create(x     , y     , z     );
+    points[1] = vec3_create(x + dx, y     , z     );
+    points[2] = vec3_create(x + dx, y + dy, z     );
+    points[3] = vec3_create(x     , y + dy, z     );
+    points[4] = vec3_create(x     , y     , z + dz);
+    points[5] = vec3_create(x + dx, y     , z + dz);
+    points[6] = vec3_create(x + dx, y + dy, z + dz);
+    points[7] = vec3_create(x     , y + dy, z + dz);
+    
+    // test if a point is in frustrum
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 6; j++) {
+            normal = hexahedron.planes[j].normal;
+            distance = hexahedron.planes[j].distance;
+            if ((vec3_dot(normal, points[i]) + distance) < 0)
+                goto next_point1;
+        }
+        return TRUE;
+        next_point1:
+    }
+
+    static u8 triangles[] = {
+        0, 1, 2, 0, 2, 3,
+        4, 5, 6, 4, 6, 7,
+        0, 1, 5, 0, 4, 5,
+        2, 3, 6, 2, 6, 7,
+        1, 2, 5, 1, 5, 6,
+        0, 3, 4, 0, 4, 7
+    };
+
+    Triangle triangle1, triangle2;
+    for (i = 0; i < 12; i++) {
+        triangle1.a = hexahedron.points[triangles[3*i]];
+        triangle1.b = hexahedron.points[triangles[3*i+1]];
+        triangle1.c = hexahedron.points[triangles[3*i+2]];
+        for (j = 0; j < 12; j++) {
+            triangle2.a = points[triangles[3*j]];
+            triangle2.b = points[triangles[3*j+1]];
+            triangle2.c = points[triangles[3*j+2]];
+            if (intersect_triangle_triangle(triangle1, triangle2))
+                return TRUE;
+        }
+    }
+
+    return FALSE;
 }

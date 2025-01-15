@@ -353,10 +353,12 @@ static void* chunk_worker_threads(void* vargp)
                     if (prefix == -1)
                         continue;
                     for (axis = 0; axis < 6; axis++) {
-                        if (chunk->face_counts[axis] == 0)
-                            continue;
-                        if ( chunk_axis_faces_center(chunk, axis) 
-                          && camera_aabb_in_frustrum(32 * chunk->x, 32 * chunk->y, 32 * chunk->z, 32, 32, 32)) {
+                        if ( chunk->face_counts[axis] != 0
+                          && chunk_axis_faces_center(chunk, axis) 
+                          && camera_aabb_in_frustrum(aabb_create(
+                                vec3_create(32 * chunk->x, 32 * chunk->y, 32 * chunk->z), 
+                                vec3_create(32, 32, 32)))) 
+                        {
                             state.indirect_buffer[indirect_idx++] = 4;
                             state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
                             state.indirect_buffer[indirect_idx++] = 0;
