@@ -7,7 +7,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 10
+#define RENDER_DISTANCE 5
 #define CHUNKS_PER_UPDATE 50
 
 typedef struct {

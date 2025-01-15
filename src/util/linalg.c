@@ -1,0 +1,137 @@
+#include "linalg.h"
+#include <math.h>
+#include <stdio.h>
+
+vec3 vec3_create(f32 x, f32 y, f32 z)
+{
+    return (vec3) { x, y, z };
+}
+
+vec3 vec3_add(vec3 vec1, vec3 vec2)
+{
+    return (vec3) { vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z };
+}
+
+vec3 vec3_sub(vec3 vec1, vec3 vec2)
+{
+    return (vec3) { vec1.x - vec2.x, vec1.y - vec2.y, vec1.z - vec2.z };
+}
+
+vec3 vec3_normalize(vec3 vec)
+{
+    f32 mag = vec3_mag(vec);
+    if (mag == 0)
+        return vec;
+    return (vec3) { vec.x / mag, vec.y / mag, vec.z / mag };
+}
+
+vec3 vec3_scale(vec3 vec, f32 scale)
+{
+    return (vec3) { vec.x * scale, vec.y * scale, vec.z * scale };
+}
+
+vec3 vec3_cross(vec3 vec1, vec3 vec2)
+{
+    return (vec3) {
+        vec1.y * vec2.z - vec1.z * vec2.y,
+        vec1.z * vec2.x - vec1.x * vec2.z,
+        vec1.x * vec2.y - vec1.y * vec2.x
+    };
+}
+
+f32 vec3_dot(vec3 vec1, vec3 vec2)
+{
+    return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
+}
+
+f32  vec3_mag(vec3 vec)
+{
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+void vec3_print(vec3 vec)
+{
+    printf("(%.5f,%.5f,%.5f)\n", vec.x, vec.y, vec.z);
+}
+
+Ray ray_create(vec3 origin, vec3 direction)
+{
+    return (Ray) { origin, direction };
+}
+
+Segment segment_create(vec3 a, vec3 b)
+{
+    return (Segment) { a, b };
+}
+
+Triangle triangle_create(vec3 a, vec3 b, vec3 c)
+{
+    return (Triangle) { a, b, c };
+}
+
+f32 ray_intersects_triangle(Ray ray, Triangle triangle)
+{
+    // Möller–Trumbore
+    vec3 edge1 = vec3_sub(triangle.b, triangle.a);
+    vec3 edge2 = vec3_sub(triangle.c, triangle.a);
+    vec3 ray_cross_e2 = vec3_cross(ray.direction, edge2);
+    f32 det = vec3_dot(edge1, ray_cross_e2);
+
+    if (det > -EPSILON && det < EPSILON)
+        return -INF;
+
+    f32 inv_det = 1 / det;
+    vec3 s = vec3_sub(ray.origin, triangle.a);
+    f32 u = inv_det * vec3_dot(s, ray_cross_e2);
+
+    if ((u < 0 && fabs(u) > EPSILON) || (u > 1 && fabs(u - 1) > EPSILON))
+        return -INF;
+
+    vec3 s_cross_e1 = vec3_cross(s, edge1);
+    f32 v = inv_det * vec3_dot(ray.direction, s_cross_e1);
+
+    if ((v < 0 && fabs(v) > EPSILON) || (u + v > 1 && fabs(u + v - 1) > EPSILON))
+        return -INF;
+    
+    return inv_det * vec3_dot(edge2, s_cross_e1);
+}
+
+bool segment_intersects_triangle(Segment segment, Triangle triangle)
+{
+    // modified Möller–Trumbore
+    vec3 ray_origin = segment.a;
+    vec3 ray_direction = vec3_sub(segment.b, segment.a);
+    vec3 edge1 = vec3_sub(triangle.b, triangle.a);
+    vec3 edge2 = vec3_sub(triangle.c, triangle.a);
+    vec3 ray_cross_e2 = vec3_cross(ray_direction, edge2);
+    f32 det = vec3_dot(edge1, ray_cross_e2);
+
+    if (det > -EPSILON && det < EPSILON)
+        return FALSE;
+
+    f32 inv_det = 1 / det;
+    vec3 s = vec3_sub(ray_origin, triangle.a);
+    f32 u = inv_det * vec3_dot(s, ray_cross_e2);
+
+    if ((u < 0 && fabs(u) > EPSILON) || (u > 1 && fabs(u - 1) > EPSILON))
+        return FALSE;
+
+    vec3 s_cross_e1 = vec3_cross(s, edge1);
+    f32 v = inv_det * vec3_dot(ray_direction, s_cross_e1);
+
+    if ((v < 0 && fabs(v) > EPSILON) || (u + v > 1 && fabs(u + v - 1) > EPSILON))
+        return FALSE;
+    
+    f32 t = inv_det * vec3_dot(edge2, s_cross_e1);
+    return t > -EPSILON && t < 1 + EPSILON;
+}
+
+bool triangle_intersects_triangle(Triangle triangle1, Triangle triangle2)
+{
+    return !(!segment_intersects_triangle(segment_create(triangle1.a, triangle1.b), triangle2)
+          && !segment_intersects_triangle(segment_create(triangle1.b, triangle1.c), triangle2)
+          && !segment_intersects_triangle(segment_create(triangle1.c, triangle1.a), triangle2)
+          && !segment_intersects_triangle(segment_create(triangle2.a, triangle2.b), triangle1)
+          && !segment_intersects_triangle(segment_create(triangle2.b, triangle2.c), triangle1)
+          && !segment_intersects_triangle(segment_create(triangle2.c, triangle2.a), triangle1));
+}

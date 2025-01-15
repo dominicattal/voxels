@@ -2,7 +2,7 @@
 #define UTIL_H
 
 #include "type.h"
-#include "vec.h"
+#include "linalg.h"
 #include "list.h"
 #include "env.h"
 

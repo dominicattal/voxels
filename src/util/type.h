@@ -4,6 +4,8 @@
 #include <glad.h>
 
 #define PI 3.141592653589
+#define EPSILON 0.00001
+#define INF 1e10
 
 #define FALSE 0
 #define TRUE  1
