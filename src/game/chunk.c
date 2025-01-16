@@ -54,34 +54,34 @@ static i32 axis_dz[6] = {0, 0, 0, 0, -1, 1};
 #define block_in_bounds(_x, _y, _z) \
     (_x >= 0 && _x < 32 && _y >= 0 && _y < 32 && _z >= 0 && _z < 32)
 
-#define chunk_idx(_x, _y, _z) \
-      ((_x - state.center.x + state.render_distance) \
-    + ((_y - state.center.y + state.render_distance) * state.side) \
-    + ((_z - state.center.z + state.render_distance) * state.side * state.side))
+#define chunk_idx(_x, _y, _z, _cx, _cy, _cz) \
+      ((_x - _cx + state.render_distance) \
+    + ((_y - _cy + state.render_distance) * state.side) \
+    + ((_z - _cz + state.render_distance) * state.side * state.side))
 
-#define chunk_in_bounds(_x, _y, _z, _center_x, _center_y, _center_z) \
-      ((_x - _center_x + state.render_distance) >= 0 \
-    && (_x - _center_x + state.render_distance) < state.side \
-    && (_y - _center_y + state.render_distance) >= 0 \
-    && (_y - _center_y + state.render_distance) < state.side \
-    && (_z - _center_z + state.render_distance) >= 0 \
-    && (_z - _center_z + state.render_distance) < state.side)
+#define chunk_in_bounds(_x, _y, _z, _cx, _cy, _cz) \
+      ((_x - _cx + state.render_distance) >= 0 \
+    && (_x - _cx + state.render_distance) < state.side \
+    && (_y - _cy + state.render_distance) >= 0 \
+    && (_y - _cy + state.render_distance) < state.side \
+    && (_z - _cz + state.render_distance) >= 0 \
+    && (_z - _cz + state.render_distance) < state.side)
 
-#define chunk_exists(_x, _y, _z) \
-      (chunk_in_bounds(_x, _y, _z, state.center.x, state.center.y, state.center.z) \
-    && state.chunks[chunk_idx(_x, _y, _z)] != NULL)
+#define chunk_exists(_x, _y, _z, _cx, _cy, _cz, _chunks) \
+      (chunk_in_bounds(_x, _y, _z, _cx, _cy, _cz) \
+    && _chunks[chunk_idx(_x, _y, _z, _cx, _cy, _cz)] != NULL)
 
-#define chunk_axis_faces_center(_chunk, _axis) \
-       ((axis == NEGX && chunk->x >= state.center.x)  \
-    ||  (axis == POSX && chunk->x <= state.center.x)  \
-    ||  (axis == NEGY && chunk->y >= state.center.y)  \
-    ||  (axis == POSY && chunk->y <= state.center.y)  \
-    ||  (axis == NEGZ && chunk->z >= state.center.z)  \
-    ||  (axis == POSZ && chunk->z <= state.center.z))
+#define chunk_axis_faces_center(_chunk, _axis, _cx, _cy, _cz) \
+       ((axis == NEGX && chunk->x >= _cx)  \
+    ||  (axis == POSX && chunk->x <= _cx)  \
+    ||  (axis == NEGY && chunk->y >= _cy)  \
+    ||  (axis == POSY && chunk->y <= _cy)  \
+    ||  (axis == NEGZ && chunk->z >= _cz)  \
+    ||  (axis == POSZ && chunk->z <= _cz))
 
 static bool opaque_block(Chunk* chunk, i32 idx, i32 axis)
 {
-    i32 bx, by, bz, cx, cy, cz;
+    i32 bx, by, bz, x, y, z, cx, cy, cz;
     bx = axis_dx[axis] + (idx & 31);
     by = axis_dy[axis] + ((idx >> 5) & 31);
     bz = axis_dz[axis] + ((idx >> 10) & 31);
@@ -92,12 +92,15 @@ static bool opaque_block(Chunk* chunk, i32 idx, i32 axis)
     bx &= 31;
     by &= 31;
     bz &= 31;
-    cx = axis_dx[axis] + chunk->x;
-    cy = axis_dy[axis] + chunk->y;
-    cz = axis_dz[axis] + chunk->z;
+    x = axis_dx[axis] + chunk->x;
+    y = axis_dy[axis] + chunk->y;
+    z = axis_dz[axis] + chunk->z;
+    cx = state.center.x;
+    cy = state.center.y;
+    cz = state.center.z;
     
-    if (chunk_exists(cx, cy, cz))
-        return state.chunks[chunk_idx(cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
+    if (chunk_exists(x, y, z, cx, cy, cz, state.chunks))
+        return state.chunks[chunk_idx(x, y, z, cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
     
     return FALSE;
 }
@@ -191,7 +194,7 @@ static void destroy_chunk_mesh(Chunk* chunk)
 static void* chunk_worker_threads(void* vargp)
 {
     vec3 position;
-    i32 new_center_x, new_center_y, new_center_z;
+    i32 cx, cy, cz;
     i32 side;
     i32 num_chunks_loaded;
     i32* mesh_lengths;
@@ -202,7 +205,7 @@ static void* chunk_worker_threads(void* vargp)
     #pragma omp parallel
     {
         i32 num_threads, thread_num;
-        i32 i, j, axis, cx, cy, cz;
+        i32 i, j, axis, x, y, z;
         Chunk* chunk;
         
         num_threads = omp_get_num_threads();
@@ -221,20 +224,20 @@ static void* chunk_worker_threads(void* vargp)
             #pragma omp master
             {
                 position = camera_position();
-                new_center_x = position.x / 32 - (position.x < 0);
-                new_center_y = position.y / 32 - (position.y < 0);
-                new_center_z = position.z / 32 - (position.z < 0);
+                cx = position.x / 32 - (position.x < 0);
+                cy = position.y / 32 - (position.y < 0);
+                cz = position.z / 32 - (position.z < 0);
                 side = state.side;
                 num_chunks_loaded = 0;
             }
             #pragma omp barrier
 
             for (i = thread_num; i < state.num_chunks; i += num_threads) {
-                cx = state.center.x - state.render_distance + (i % side);
-                cy = state.center.y - state.render_distance + ((i / side) % side);
-                cz = state.center.z - state.render_distance + (i / side / side);
+                x = state.center.x - state.render_distance + (i % side);
+                y = state.center.y - state.render_distance + ((i / side) % side);
+                z = state.center.z - state.render_distance + (i / side / side);
                 chunk = state.chunks[i];
-                if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z) && chunk != NULL) {
+                if (!chunk_in_bounds(x, y, z, cx, cy, cz) && chunk != NULL) {
                     unload_chunk(chunk);
                     state.chunks[i] = NULL;
                 }
@@ -243,22 +246,22 @@ static void* chunk_worker_threads(void* vargp)
 
             for (j = thread_num; j < state.num_chunks; j += num_threads) {
                 i = state.sorted_chunk_idx[j];
-                cx = new_center_x - state.render_distance + (i % side);
-                cy = new_center_y - state.render_distance + ((i / side) % side);
-                cz = new_center_z - state.render_distance + (i / side / side);
-                if (chunk_exists(cx, cy, cz)) {
-                    chunks_swap[i] = state.chunks[chunk_idx(cx, cy, cz)];
+                x = cx - state.render_distance + (i % side);
+                y = cy - state.render_distance + ((i / side) % side);
+                z = cz - state.render_distance + (i / side / side);
+                if (chunk_exists(x, y, z, state.center.x, state.center.y, state.center.z, state.chunks)) {
+                    chunks_swap[i] = state.chunks[chunk_idx(x, y, z, state.center.x, state.center.y, state.center.z)];
                 } else {
                     if (num_chunks_loaded > CHUNKS_PER_UPDATE) {
                         chunks_swap[i] = NULL;
                     } else {
                         for (axis = 0; axis < 6; axis++) {
-                            if (chunk_exists(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])) {
-                                chunk = state.chunks[chunk_idx(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])];
+                            if (chunk_exists(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], state.center.x, state.center.y, state.center.z, state.chunks)) {
+                                chunk = state.chunks[chunk_idx(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], state.center.x, state.center.y, state.center.z)];
                                 chunk->mesh_length = -1; // defer destroying mesh
                             }
                         }
-                        chunks_swap[i] = load_chunk(cx, cy, cz);
+                        chunks_swap[i] = load_chunk(x, y, z);
                         #pragma omp atomic update
                         num_chunks_loaded++;
                     }
@@ -272,9 +275,9 @@ static void* chunk_worker_threads(void* vargp)
                 state.chunks = chunks_swap;
                 chunks_swap = tmp;
 
-                state.center.x = new_center_x;
-                state.center.y = new_center_y;
-                state.center.z = new_center_z;
+                state.center.x = cx;
+                state.center.y = cy;
+                state.center.z = cz;
             }
             #pragma omp barrier
             
@@ -334,7 +337,7 @@ static void* chunk_worker_threads(void* vargp)
                     if (prefix == -1)
                         continue;
                     for (axis = 0; axis < 6; axis++) {
-                        if (chunk->face_counts[axis] != 0 && chunk_axis_faces_center(chunk, axis)) 
+                        if (chunk->face_counts[axis] != 0 && chunk_axis_faces_center(chunk, axis, cx, cy, cz)) 
                         {
                             state.indirect_buffer[indirect_idx++] = 4;
                             state.indirect_buffer[indirect_idx++] = chunk->face_counts[axis];
