@@ -7,14 +7,15 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 15
+#define RENDER_DISTANCE 10
 #define CHUNKS_PER_UPDATE 50
 
 typedef struct {
     i32 x, y, z;
     Block blocks[32768];
     u16 num_blocks;
-    i32 order_idx;
+    u32* mesh;
+    i32 mesh_length;
     i32 mesh_idx;
     i32 num_faces;
     i32 face_counts[6];
@@ -29,7 +30,6 @@ typedef struct {
     u32* indirect_buffer;
     i32* world_pos_buffer;
     Chunk** chunks;
-    Chunk** chunk_order;
     i32 render_distance;
     i32 side;
     i32 num_chunks;
@@ -104,10 +104,10 @@ static bool opaque_block(Chunk* chunk, i32 idx, i32 axis)
 
 static void generate_faces(Chunk* chunk)
 {
+    chunk->num_faces = 0;
     if (chunk->num_blocks == 0)
         return;
 
-    chunk->num_faces = 0;
     for (i32 axis = 0; axis < 6; axis++)
         chunk->face_counts[axis] = 0;
 
@@ -129,8 +129,9 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->x = cx;
     chunk->y = cy;
     chunk->z = cz;
-    chunk->mesh_idx = -1;
-    chunk->order_idx = -1;
+    chunk->mesh = NULL;
+    chunk->mesh_length = -1;
+    chunk->num_faces = -1;
 
     if (cy != 0)
         return chunk;
@@ -147,24 +148,19 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
 
 static void unload_chunk(Chunk* chunk)
 {
+    free(chunk->mesh);
     free(chunk);
 }
 
-static void load_chunk_mesh(Chunk* chunk, i32 new_mesh_idx, u32* mesh_buffer)
+static void build_chunk_mesh(Chunk* chunk)
 {
-    // if mesh exists, then move mesh buffer data to swap buffer
-    // if it doesnt, then generate it and put it in swap buffer
+    chunk->mesh = malloc(chunk->num_faces * sizeof(u32));
 
-    if (chunk->mesh_idx != -1) {
-        for (i32 i = 0; i < chunk->num_faces; i++)
-            mesh_buffer[new_mesh_idx++] = state.mesh_buffer[chunk->mesh_idx + i];
-        return;
-    }
-
-    u32 prefix[6];
-    prefix[0] = new_mesh_idx;
-    for (i32 i = 1; i < 6; i++)
+    u32 prefix[7];
+    prefix[0] = 0;
+    for (i32 i = 1; i < 7; i++)
         prefix[i] = prefix[i-1] + chunk->face_counts[i-1];
+    chunk->mesh_length = prefix[6];
 
     u32 idxs[6];
     for (i32 i = 0; i < 6; i++)
@@ -180,9 +176,16 @@ static void load_chunk_mesh(Chunk* chunk, i32 new_mesh_idx, u32* mesh_buffer)
             info |= chunk->blocks[i] << 15;
             for (i32 axis = 0; axis < 6; axis++)
                 if (!opaque_block(chunk, i, axis))
-                    mesh_buffer[(idxs[axis]++)+prefix[axis]] = info;
+                    chunk->mesh[(idxs[axis]++)+prefix[axis]] = info;
         }
     }
+}
+
+static void destroy_chunk_mesh(Chunk* chunk)
+{
+    free(chunk->mesh);
+    chunk->mesh = NULL;
+    chunk->mesh_length = 0;
 }
 
 static void* chunk_worker_threads(void* vargp)
@@ -191,8 +194,6 @@ static void* chunk_worker_threads(void* vargp)
     i32 new_center_x, new_center_y, new_center_z;
     i32 side;
     i32 num_chunks_loaded;
-    i32 chunk_order_length;
-    i32 group_size;
     i32* mesh_lengths;
     i32* mesh_prefix;
     u32* mesh_buffer_swap;
@@ -234,8 +235,6 @@ static void* chunk_worker_threads(void* vargp)
                 cz = state.center.z - state.render_distance + (i / side / side);
                 chunk = state.chunks[i];
                 if (!chunk_in_bounds(cx, cy, cz, new_center_x, new_center_y, new_center_z) && chunk != NULL) {
-                    if (chunk->order_idx != -1)
-                        state.chunk_order[chunk->order_idx] = NULL;
                     unload_chunk(chunk);
                     state.chunks[i] = NULL;
                 }
@@ -256,10 +255,7 @@ static void* chunk_worker_threads(void* vargp)
                         for (axis = 0; axis < 6; axis++) {
                             if (chunk_exists(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])) {
                                 chunk = state.chunks[chunk_idx(cx + axis_dx[axis], cy + axis_dy[axis], cz + axis_dz[axis])];
-                                if (chunk->order_idx != -1) {
-                                    state.chunk_order[chunk->order_idx] = NULL;
-                                    chunk->mesh_idx = -1;
-                                }
+                                chunk->mesh_length = -1; // defer destroying mesh
                             }
                         }
                         chunks_swap[i] = load_chunk(cx, cy, cz);
@@ -281,37 +277,22 @@ static void* chunk_worker_threads(void* vargp)
                 state.center.z = new_center_z;
             }
             #pragma omp barrier
-
-            #pragma omp master
-            {
-                chunk_order_length = 0;
-                for (i = 0; i < state.chunk_order_length; i++) {
-                    if (state.chunk_order[i] != NULL) {
-                        state.chunk_order[i]->order_idx = chunk_order_length;
-                        state.chunk_order[chunk_order_length++] = state.chunk_order[i];
-                    }
-                }
-            }
-            #pragma omp barrier
             
+            mesh_lengths[thread_num] = 0;
             for (i = thread_num; i < state.num_chunks; i += num_threads) {
                 chunk = state.chunks[i];
-                if (chunk != NULL && chunk->mesh_idx == -1) {
-                    generate_faces(chunk);
-                    #pragma omp critical
-                    {
-                        chunk->order_idx = chunk_order_length;
-                        state.chunk_order[chunk_order_length++] = chunk;
-                    }
+                if (chunk == NULL)
+                    continue;
+                if (chunk->mesh_length == -1) {
+                    destroy_chunk_mesh(chunk);
+                    chunk->num_faces = -1;
                 }
+                if (chunk->num_faces == -1)
+                    generate_faces(chunk);
+                if (chunk->num_faces != 0 && chunk->mesh == NULL)
+                    build_chunk_mesh(chunk);
+                mesh_lengths[thread_num] += chunk->mesh_length;
             }
-            #pragma omp barrier
-
-            mesh_lengths[thread_num] = 0;
-            #pragma omp barrier
-
-            for (i = thread_num; i < chunk_order_length; i += num_threads)
-                mesh_lengths[thread_num] += state.chunk_order[i]->num_faces;
             #pragma omp barrier
 
             #pragma omp master
@@ -324,11 +305,13 @@ static void* chunk_worker_threads(void* vargp)
             }
             #pragma omp barrier
 
-            for (i = thread_num; i < chunk_order_length; i += num_threads) {
-                chunk = state.chunk_order[i];
-                load_chunk_mesh(chunk, mesh_prefix[thread_num], mesh_buffer_swap);
+            for (i = thread_num; i < state.num_chunks; i += num_threads) {
+                chunk = state.chunks[i];
+                if (chunk == NULL)
+                    continue;
                 chunk->mesh_idx = mesh_prefix[thread_num];
-                mesh_prefix[thread_num] += chunk->num_faces;
+                for (j = 0; j < chunk->mesh_length; j++)
+                    mesh_buffer_swap[mesh_prefix[thread_num]++] = chunk->mesh[j];
             }
             #pragma omp barrier
 
@@ -338,8 +321,7 @@ static void* chunk_worker_threads(void* vargp)
                 tmp = state.mesh_buffer;
                 state.mesh_buffer = mesh_buffer_swap;
                 mesh_buffer_swap = tmp;
-                
-                state.chunk_order_length = chunk_order_length;
+
                 state.mesh_length = mesh_prefix[num_threads];
 
                 i32 indirect_idx, world_pos_idx, prefix;
@@ -415,7 +397,6 @@ void chunk_init(void)
     state.indirect_buffer = malloc(6 * 4 * state.num_chunks * sizeof(u32));
     state.world_pos_buffer = malloc(6 * 4 * state.num_chunks * sizeof(i32));
     state.chunks = calloc(state.num_chunks, sizeof(Chunk*));
-    state.chunk_order = calloc(state.num_chunks, sizeof(Chunk*));
 
     state.sorted_chunk_idx = malloc(state.num_chunks * sizeof(i32));
     for (i32 i = 0; i < state.num_chunks; i++)
@@ -462,7 +443,6 @@ void chunk_destroy(void)
         free(state.chunks[i]);
 
     free(state.chunks);
-    free(state.chunk_order);
     free(state.mesh_buffer);
     free(state.indirect_buffer);
     free(state.world_pos_buffer);
