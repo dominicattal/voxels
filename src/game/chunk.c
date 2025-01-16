@@ -35,6 +35,7 @@ typedef struct {
     i32 side;
     i32 num_chunks;
     i32* sorted_chunk_idx;
+    u64 seed;
     struct {
         i32 x, y, z;
     } center;
@@ -104,6 +105,11 @@ static bool opaque_block(Chunk* chunk, Chunk** chunks, i32 idx, i32 axis, i32 cx
     return FALSE;
 }
 
+static f32 smoothstep(f32 x)
+{
+    return 3 * x * x - 2 * x * x * x;
+}
+
 static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
 {
     Chunk* chunk = calloc(1, sizeof(Chunk));
@@ -113,13 +119,43 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->mesh = NULL;
     chunk->update = TRUE;
 
-    if (cy != 0)
+    if (cy < 0 || cy > 1)
         return chunk;
 
-    for (i32 bz = 0; bz < 32; bz++) {
-        for (i32 bx = 0; bx < 32; bx++) {
-            chunk->blocks[block_idx(bx, 0, bz)] = 3;
-            chunk->num_blocks++;
+    vec2 v1, v2, v3, v4, offset;
+
+    v1 = vec2_direction(randf((cx << 32) + cz));
+    v2 = vec2_direction(randf(((cx + 1) << 32) + cz));
+    v3 = vec2_direction(randf((cx << 32) + cz + 1));
+    v4 = vec2_direction(randf(((cx + 1) << 32) + cz + 1));
+
+    i32 x, y, z;
+    f32 dot;
+    for (x = 0; x < 32; x++) {
+        for (z = 0; z < 32; z++) {
+            if (x < 16 && z < 16) {
+                offset = vec2_normalize(vec2_create(x + 0.5, z + 0.5));
+                dot = vec2_dot(v1, offset);
+            }
+            else if (x >= 16 && z < 16) {
+                offset = vec2_normalize(vec2_create(32 - x - 0.5, z + 0.5));
+                dot = vec2_dot(v2, offset);
+            }
+            else if (x < 16 && z >= 16) {
+                offset = vec2_normalize(vec2_create(x + 0.5, 32 - z - 0.5));
+                dot = vec2_dot(v3, offset);
+            }
+            else {
+                offset = vec2_normalize(vec2_create(32 - x - 0.5, 32 - z - 0.5));
+                dot = vec2_dot(v4, offset);
+            }
+            dot = 1 - smoothstep((dot + 1) / 2);
+            for (y = 0; y < 32; y++) {
+                if ((cy * 32 + y) > (1 + dot * 64))
+                    break;
+                chunk->blocks[block_idx(x, y, z)] = 3;
+                chunk->num_blocks++;
+            }
         }
     }
 

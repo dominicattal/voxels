@@ -2,19 +2,61 @@
 #include <math.h>
 #include <stdio.h>
 
+vec2 vec2_create(f32 x, f32 y)
+{
+    return (vec2) { x, y };
+}
+
+vec2 vec2_normalize(vec2 vec)
+{
+    f32 mag = vec2_mag(vec);
+    if (mag == 0)
+        return vec;
+    return (vec2) { vec.x / mag, vec.y / mag };
+
+}
+
+vec2 vec2_direction(f32 rad)
+{
+    return (vec2) { cos(rad), sin(rad) };
+}
+
+vec2 vec2_rotate(vec2 vec, f32 rad)
+{
+    return (vec2) { 
+        vec.x * cos(rad) - vec.y * sin(rad),
+        vec.x * sin(rad) + vec.y * cos(rad)
+    };
+}
+
+f32 vec2_radians(vec2 vec)
+{
+    return atan(vec.y / vec.x) + (vec.x < 0) ? PI : 0;
+}
+
+f32 vec2_mag(vec2 vec)
+{
+    return sqrt(vec.x * vec.x + vec.y * vec.y);
+}
+
+f32 vec2_dot(vec2 v1, vec2 v2)
+{
+    return v1.x * v2.x + v1.y * v2.y;
+}
+
 vec3 vec3_create(f32 x, f32 y, f32 z)
 {
     return (vec3) { x, y, z };
 }
 
-vec3 vec3_add(vec3 vec1, vec3 vec2)
+vec3 vec3_add(vec3 v1, vec3 v2)
 {
-    return (vec3) { vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z };
+    return (vec3) { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 }
 
-vec3 vec3_sub(vec3 vec1, vec3 vec2)
+vec3 vec3_sub(vec3 v1, vec3 v2)
 {
-    return (vec3) { vec1.x - vec2.x, vec1.y - vec2.y, vec1.z - vec2.z };
+    return (vec3) { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 }
 
 vec3 vec3_normalize(vec3 vec)
@@ -30,21 +72,21 @@ vec3 vec3_scale(vec3 vec, f32 scale)
     return (vec3) { vec.x * scale, vec.y * scale, vec.z * scale };
 }
 
-vec3 vec3_cross(vec3 vec1, vec3 vec2)
+vec3 vec3_cross(vec3 v1, vec3 v2)
 {
     return (vec3) {
-        vec1.y * vec2.z - vec1.z * vec2.y,
-        vec1.z * vec2.x - vec1.x * vec2.z,
-        vec1.x * vec2.y - vec1.y * vec2.x
+        v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x
     };
 }
 
-f32 vec3_dot(vec3 vec1, vec3 vec2)
+f32 vec3_dot(vec3 v1, vec3 v2)
 {
-    return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
-f32  vec3_mag(vec3 vec)
+f32 vec3_mag(vec3 vec)
 {
     return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }

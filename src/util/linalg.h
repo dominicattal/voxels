@@ -4,6 +4,10 @@
 #include "type.h"
 
 typedef struct {
+    f32 x, y;
+} vec2;
+
+typedef struct {
     f32 x, y, z;
 } vec3;
 
@@ -46,13 +50,21 @@ typedef struct {
     Plane planes[6];
 } Hexahedron;
 
+vec2 vec2_create(f32 x, f32 y);
+vec2 vec2_normalize(vec2 vec);
+vec2 vec2_direction(f32 rad);
+vec2 vec2_rotate(vec2 vec, f32 rad);
+f32  vec2_radians(vec2 vec);
+f32  vec2_mag(vec2 vec);
+f32  vec2_dot(vec2 v1, vec2 v2);
+
 vec3 vec3_create(f32 x, f32 y, f32 z);
-vec3 vec3_add(vec3 vec1, vec3 vec2);
-vec3 vec3_sub(vec3 vec1, vec3 vec2);
+vec3 vec3_add(vec3 v1, vec3 v2);
+vec3 vec3_sub(vec3 v1, vec3 v2);
 vec3 vec3_normalize(vec3 vec);
 vec3 vec3_scale(vec3 vec, f32 scale);
-vec3 vec3_cross(vec3 vec1, vec3 vec2);
-f32  vec3_dot(vec3 vec1, vec3 vec2);
+vec3 vec3_cross(vec3 v1, vec3 v2);
+f32  vec3_dot(vec3 v1, vec3 v2);
 f32  vec3_mag(vec3 vec);
 void vec3_print(vec3 vec);
 

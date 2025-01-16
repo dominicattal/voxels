@@ -11,7 +11,7 @@
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
 #define DEFAULT_ROTSPEED    1
-#define DEFAULT_MOVESPEED   25
+#define DEFAULT_MOVESPEED   100
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {
@@ -61,25 +61,25 @@ static void update_frustrum(void)
     camera.frustrum.points[6] = vec3_add(edge_center, vec3_scale(camera.up, vertical_edge_length));
     camera.frustrum.points[7] = vec3_sub(edge_center, vec3_scale(camera.up, vertical_edge_length));
 
-    vec3 vec1, vec2;
-    vec1 = vec3_add(camera.position, vec3_scale(camera.facing, NEAR_CLIP_DISTANCE));
+    vec3 v1, v2;
+    v1 = vec3_add(camera.position, vec3_scale(camera.facing, NEAR_CLIP_DISTANCE));
     camera.frustrum.planes[0].normal = camera.facing;
-    camera.frustrum.planes[0].distance = -vec3_dot(vec1, camera.frustrum.planes[0].normal);
-    vec1 = vec3_add(camera.position, vec3_scale(camera.facing, FAR_CLIP_DISTANCE));
+    camera.frustrum.planes[0].distance = -vec3_dot(v1, camera.frustrum.planes[0].normal);
+    v1 = vec3_add(camera.position, vec3_scale(camera.facing, FAR_CLIP_DISTANCE));
     camera.frustrum.planes[1].normal = vec3_scale(camera.facing, -1);
-    camera.frustrum.planes[1].distance = -vec3_dot(vec1, camera.frustrum.planes[1].normal);
-    vec1 = vec3_sub(camera.frustrum.points[1], camera.position);
-    vec2 = vec3_sub(camera.frustrum.points[0], camera.position);
-    camera.frustrum.planes[2].normal = vec3_normalize(vec3_cross(vec1, vec2));
-    vec1 = vec3_sub(camera.frustrum.points[3], camera.position);
-    vec2 = vec3_sub(camera.frustrum.points[2], camera.position);
-    camera.frustrum.planes[3].normal = vec3_normalize(vec3_cross(vec1, vec2));
-    vec1 = vec3_sub(camera.frustrum.points[0], camera.position);
-    vec2 = vec3_sub(camera.frustrum.points[3], camera.position);
-    camera.frustrum.planes[4].normal = vec3_normalize(vec3_cross(vec1, vec2));
-    vec1 = vec3_sub(camera.frustrum.points[2], camera.position);
-    vec2 = vec3_sub(camera.frustrum.points[1], camera.position);
-    camera.frustrum.planes[5].normal = vec3_normalize(vec3_cross(vec1, vec2));
+    camera.frustrum.planes[1].distance = -vec3_dot(v1, camera.frustrum.planes[1].normal);
+    v1 = vec3_sub(camera.frustrum.points[1], camera.position);
+    v2 = vec3_sub(camera.frustrum.points[0], camera.position);
+    camera.frustrum.planes[2].normal = vec3_normalize(vec3_cross(v1, v2));
+    v1 = vec3_sub(camera.frustrum.points[3], camera.position);
+    v2 = vec3_sub(camera.frustrum.points[2], camera.position);
+    camera.frustrum.planes[3].normal = vec3_normalize(vec3_cross(v1, v2));
+    v1 = vec3_sub(camera.frustrum.points[0], camera.position);
+    v2 = vec3_sub(camera.frustrum.points[3], camera.position);
+    camera.frustrum.planes[4].normal = vec3_normalize(vec3_cross(v1, v2));
+    v1 = vec3_sub(camera.frustrum.points[2], camera.position);
+    v2 = vec3_sub(camera.frustrum.points[1], camera.position);
+    camera.frustrum.planes[5].normal = vec3_normalize(vec3_cross(v1, v2));
     for (i32 i = 2; i < 6; i++)
         camera.frustrum.planes[i].distance = -vec3_dot(camera.position, camera.frustrum.planes[i].normal);
 }
@@ -106,7 +106,6 @@ void camera_init(void)
     camera.rotate_speed = DEFAULT_ROTSPEED;
     camera.position = vec3_create(5, 5, 5);
     update_orientation_vectors();
-    update_frustrum();
     update_view_matrix();
     update_proj_matrix();
 }
@@ -120,14 +119,12 @@ void camera_move(vec3 mag, f32 dt)
     direction = vec3_scale(vec3_normalize(direction), camera.move_speed * dt);
     camera.position = vec3_add(camera.position, direction);
     update_view_matrix();
-    update_frustrum();
 }
 
 void camera_rotate(f32 mag, f32 dt)
 {
     camera.yaw += mag * dt * camera.rotate_speed;
     update_orientation_vectors();
-    update_frustrum();
     update_view_matrix();
 }
 
@@ -140,7 +137,6 @@ void camera_tilt(f32 mag, f32 dt)
         camera.pitch = -PI / 2 + EPSILON;
     update_orientation_vectors();
     update_view_matrix();
-    update_frustrum();
 }
 
 void camera_zoom(f32 mag, f32 dt)
