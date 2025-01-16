@@ -26,3 +26,14 @@ void block_init(void)
     ebo_malloc(EBO_GAME, sizeof(ebo_buffer), GL_STATIC_DRAW);
     ebo_update(EBO_GAME, 0, sizeof(ebo_buffer), ebo_buffer);
 }
+
+static u8 faces[6 * NUM_BLOCKS] = {
+    0, 0, 0, 0, 0, 0,
+    TEX_GRASS_SIDE, TEX_GRASS_SIDE, TEX_GRASS_BOTTOM, TEX_GRASS_TOP, TEX_GRASS_SIDE, TEX_GRASS_SIDE, 
+    TEX_STONE, TEX_STONE, TEX_STONE, TEX_STONE, TEX_STONE, TEX_STONE
+};
+
+u8 block_face(Block block, u8 axis)
+{
+    return faces[6*block+axis];
+}

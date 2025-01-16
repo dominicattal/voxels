@@ -49,7 +49,7 @@ void renderer_render(void)
     game_prepare_render();
     gui_prepare_render();
 
-    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+    glClearColor(0.2f, 0.8f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glEnable(GL_DEPTH_TEST);
@@ -112,12 +112,16 @@ void GLAPIENTRY message_callback(GLenum source, GLenum type, GLuint id, GLenum s
     switch (type) {
         case GL_DEBUG_TYPE_OTHER:
             type_str = "GL_DEBUG_TYPE_OTHER"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            type_str = "GL_DEBUG_TYPE_PERFORMANCE"; break;
         default:
             type_str = ""; break;
     }
     switch (severity) {
         case GL_DEBUG_SEVERITY_NOTIFICATION:
             severity_str = "GL_DEBUG_SEVERITY_NOTIFICATION"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            severity_str = "GL_DEBUG_SEVERITY_MEDIUM"; break;
         default:
             severity_str = ""; break;
     }

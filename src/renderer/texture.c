@@ -46,10 +46,10 @@ typedef struct {
 #define NUM_IMAGES_TO_PACK 5
 static Image images[NUM_IMAGES_TO_PACK] = {
     (Image) { TEX_COLOR, "assets/textures/color.png" },
-    (Image) { TEX_BLOCK1, "assets/textures/blocks/block1.png" },
-    (Image) { TEX_BLOCK2, "assets/textures/blocks/block2.png" },
-    (Image) { TEX_BLOCK3, "assets/textures/blocks/block3.png" },
-    (Image) { TEX_BLOCK4, "assets/textures/blocks/block4.png" }
+    (Image) { TEX_GRASS_TOP, "assets/textures/blocks/grass_top.png" },
+    (Image) { TEX_GRASS_SIDE, "assets/textures/blocks/grass_side.png" },
+    (Image) { TEX_GRASS_BOTTOM, "assets/textures/blocks/grass_bottom.png" },
+    (Image) { TEX_STONE, "assets/textures/blocks/stone.png" }
 };
 
 static u32 texture_units[NUM_TEXTURE_UNITS];
@@ -205,6 +205,7 @@ static void initialize_rects(TEX* textures, stbrp_rect* rects_rgb, stbrp_rect* r
     for (i = 0; i < NUM_IMAGES_TO_PACK; i++) {
         image_data[i] = stbi_load(images[i].path, &width, &height, &num_channels, 0);
         if (num_channels == 3) {
+            load_rgb:
             rects_rgb[num_rects_rgb].id = images[i].tex;
             rects_rgb[num_rects_rgb].w  = PADDING + width;
             rects_rgb[num_rects_rgb].h  = PADDING + height;
@@ -218,6 +219,10 @@ static void initialize_rects(TEX* textures, stbrp_rect* rects_rgb, stbrp_rect* r
             ++num_rects_rgba;
         } else {
             printf("Unsupported number of channels (%d) for image %d: %s\n", num_channels, images[i].tex, images[i].path);
+            printf("Defaulting to 3 channels\n");
+            stbi_image_free(image_data[i]);
+            image_data[i] = stbi_load(images[i].path, &width, &height, &num_channels, 3);
+            goto load_rgb;
         }
     }
     *num_rects_rgb_out  = num_rects_rgb;

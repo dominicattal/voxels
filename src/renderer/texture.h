@@ -8,11 +8,11 @@
 typedef enum {
     TEX_NONE = 0,
     TEX_COLOR = 1,
-    TEX_BITMAP = 2,
-    TEX_BLOCK1 = 3,
-    TEX_BLOCK2 = 4,
-    TEX_BLOCK3 = 5,
-    TEX_BLOCK4 = 6
+    TEX_BITMAP,
+    TEX_GRASS_TOP,
+    TEX_GRASS_SIDE,
+    TEX_GRASS_BOTTOM,
+    TEX_STONE
 } Texture;
 
 #define NUM_FONTS   3

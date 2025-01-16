@@ -11,7 +11,7 @@
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
 #define DEFAULT_ROTSPEED    1
-#define DEFAULT_MOVESPEED   100
+#define DEFAULT_MOVESPEED   150
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {
@@ -92,7 +92,7 @@ static void update_view_matrix(void)
 
 static void update_proj_matrix()
 {
-    perspective(camera.proj, window_aspect_ratio(), camera.fov);
+    perspective(camera.proj, 1 / window_aspect_ratio(), camera.fov);
     renderer_uniform_update_proj(camera.proj);
 }
 

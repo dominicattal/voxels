@@ -23,12 +23,24 @@ layout (std430, binding = 2) readonly buffer ChunkPositions
 
 out vec2 UV;
 out flat uint ID;
+out flat vec3 normal;
+
+vec3 normals[6] = {
+    vec3(-1, 0, 0),
+    vec3(1, 0, 0),
+    vec3(0, -1, 0),
+    vec3(0, 1, 0),
+    vec3(0, 0, -1),
+    vec3(0, 0, 1)
+};
 
 void main() {
     uint a = aInfo & 1;
     uint b = (aInfo >> 1) & 1;
+    int face = chunk_positions[4*gl_DrawID+3];
+    normal = normals[face];
     vec3 position;
-    switch (chunk_positions[4*gl_DrawID+3]) {
+    switch (face) {
         case NEGX:
             position = vec3(0, a, b);
             break;

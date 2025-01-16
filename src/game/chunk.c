@@ -7,8 +7,8 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 10
-#define CHUNKS_PER_UPDATE 50
+#define RENDER_DISTANCE 8
+#define CHUNKS_PER_UPDATE 100
 
 typedef struct {
     i32 x, y, z;
@@ -75,12 +75,12 @@ static i32 axis_dz[6] = {0, 0, 0, 0, -1, 1};
     && _chunks[chunk_idx(_x, _y, _z, _cx, _cy, _cz)] != NULL)
 
 #define chunk_axis_faces_center(_chunk, _axis, _cx, _cy, _cz) \
-       ((axis == NEGX && chunk->x >= _cx)  \
-    ||  (axis == POSX && chunk->x <= _cx)  \
-    ||  (axis == NEGY && chunk->y >= _cy)  \
-    ||  (axis == POSY && chunk->y <= _cy)  \
-    ||  (axis == NEGZ && chunk->z >= _cz)  \
-    ||  (axis == POSZ && chunk->z <= _cz))
+       ((axis == NEGX && chunk->x >= _cx - 1)  \
+    ||  (axis == POSX && chunk->x <= _cx + 1)  \
+    ||  (axis == NEGY && chunk->y >= _cy - 1)  \
+    ||  (axis == POSY && chunk->y <= _cy + 1)  \
+    ||  (axis == NEGZ && chunk->z >= _cz - 1)  \
+    ||  (axis == POSZ && chunk->z <= _cz + 1))
 
 static bool opaque_block(Chunk* chunk, Chunk** chunks, i32 idx, i32 axis, i32 cx, i32 cy, i32 cz)
 {
@@ -153,7 +153,7 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
             for (y = 0; y < 32; y++) {
                 if ((cy * 32 + y) > (1 + dot * 64))
                     break;
-                chunk->blocks[block_idx(x, y, z)] = 3;
+                chunk->blocks[block_idx(x, y, z)] = (y > 15) ? GRASS : STONE;
                 chunk->num_blocks++;
             }
         }
@@ -199,17 +199,19 @@ static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 c
     for (i32 i = 0; i < 6; i++)
         idxs[i] = 0;
     
-    u32 info;
+    u32 info1, info2;
     for (i32 i = 0; i < 32768; i++) {
         if (chunk->blocks[i] != 0) {
-            info = 0;
-            info |=  i & 31;
-            info |= ((i>>5) & 31) << 5;
-            info |= ((i>>10) & 31) << 10;
-            info |= chunk->blocks[i] << 15;
-            for (i32 axis = 0; axis < 6; axis++)
-                if (!opaque_block(chunk, chunks, i, axis, cx, cy, cz))
-                    chunk->mesh[(idxs[axis]++)+prefix[axis]] = info;
+            info1 = 0;
+            info1 |=  i & 31;
+            info1 |= ((i>>5) & 31) << 5;
+            info1 |= ((i>>10) & 31) << 10;
+            for (i32 axis = 0; axis < 6; axis++) {
+                if (!opaque_block(chunk, chunks, i, axis, cx, cy, cz)) {
+                    info2 = info1 | (block_face(chunk->blocks[i], axis) << 15);
+                    chunk->mesh[(idxs[axis]++)+prefix[axis]] = info2;
+                }
+            }
         }
     }
 }
