@@ -148,9 +148,8 @@ static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
 
 static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         window_close();
-    }
     if (key == GLFW_KEY_G && action == GLFW_PRESS) {
         glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         window.cursor.hidden = TRUE;

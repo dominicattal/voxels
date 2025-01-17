@@ -43,26 +43,31 @@ void main() {
     switch (face) {
         case NEGX:
             position = vec3(0, a, b);
+            UV = vec2(b, 1-a);
             break;
         case POSX:
             position = vec3(1, b, a);
+            UV = vec2(a, 1-b);
             break;
         case NEGY:
             position = vec3(b, 0, a);
+            UV = vec2(a, b);
             break;
         case POSY:
             position = vec3(a, 1, b);
+            UV = vec2(a, b);
             break;
         case NEGZ:
             position = vec3(a, b, 0);
+            UV = vec2(a, 1-b);
             break;
         case POSZ:
             position = vec3(b, a, 1);
+            UV = vec2(b, 1-a);
             break;
     }
     vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
     vec3 chunk_offset = vec3(chunk_positions[4*gl_DrawID], chunk_positions[4*gl_DrawID+1], chunk_positions[4*gl_DrawID+2]);
-    UV = vec2(aInfo & 1, (aInfo >> 1) & 1);
     ID = (aInstanceInfo >> 15);
     gl_Position = proj * view * vec4(position + offset + chunk_offset, 1.0);
 }

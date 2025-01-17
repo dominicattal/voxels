@@ -28,7 +28,7 @@ void main() {
     TexCoord.y = tex.v + UV.y * tex.h;
 
     float ambient_strength = 0.6;
-    vec3 light_dir = normalize(vec3(-1,-2,-3));
+    vec3 light_dir = normalize(vec3(1,2,3));
     vec3 light_color = vec3(1.0f, 1.0f, 1.0f);
     vec3 ambient = ambient_strength * light_color;
     float diff = max(dot(normal, light_dir), 0);
