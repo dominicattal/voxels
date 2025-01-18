@@ -31,7 +31,7 @@ void comp_debug_init(Component* comp)
     comp_set_halign(comp, ALIGN_LEFT);
     comp_set_valign(comp, ALIGN_TOP);
     comp_set_font_size(comp, 16);
-    comp_set_color(comp, 255, 255, 255, 100);
+    comp_set_color(comp, 255, 255, 255, 0);
     comp->data = data_create();
 }
 
@@ -50,9 +50,11 @@ void comp_debug_update(Component* comp, f64 dt)
     
     char str[150];
     vec3 position = camera_position();
-    sprintf(str, "Window: %5.3f\nRender: %5.3f\nGame:   %5.3f\nx: %5.3f\ny: %5.3f\nz: %5.3f\n", 
+    f32 pitch = camera_pitch();
+    f32 yaw = camera_yaw();
+    sprintf(str, "Window: %5.3f\nRender: %5.3f\nGame:   %5.3f\npitch: %5.3f\nyaw: %5.3f\nx: %5.3f\ny: %5.3f\nz: %5.3f\n", 
             1000 * window_dt(), 1000 * renderer_dt(), 1000 * game_dt(),
-            position.x, position.y, position.z);
+            pitch, yaw, position.x, position.y, position.z);
     comp_set_text(comp, str);
     data->timer += 0.2;
 }

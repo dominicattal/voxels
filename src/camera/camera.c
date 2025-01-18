@@ -124,6 +124,10 @@ void camera_move(vec3 mag, f32 dt)
 void camera_rotate(f32 mag, f32 dt)
 {
     camera.yaw += mag * dt * camera.rotate_speed;
+    if (camera.yaw > 2 * PI)
+        camera.yaw -= 2 * PI;
+    else if (camera.yaw < 0)
+        camera.yaw += 2 * PI;
     update_orientation_vectors();
     update_view_matrix();
 }
@@ -133,7 +137,7 @@ void camera_tilt(f32 mag, f32 dt)
     camera.pitch += mag * dt * camera.rotate_speed;
     if (camera.pitch > PI / 2 - EPSILON)
         camera.pitch = PI / 2 - EPSILON;
-    if (camera.pitch < -PI / 2 + EPSILON)
+    else if (camera.pitch < -PI / 2 + EPSILON)
         camera.pitch = -PI / 2 + EPSILON;
     update_orientation_vectors();
     update_view_matrix();
@@ -148,6 +152,16 @@ void camera_zoom(f32 mag, f32 dt)
 vec3 camera_position(void)
 {
     return camera.position;
+}
+
+f32 camera_pitch(void)
+{
+    return camera.pitch;
+}
+
+f32 camera_yaw(void)
+{
+    return camera.yaw;
 }
 
 bool camera_aabb_in_frustrum(AABB aabb)

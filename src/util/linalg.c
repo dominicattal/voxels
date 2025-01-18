@@ -7,6 +7,16 @@ vec2 vec2_create(f32 x, f32 y)
     return (vec2) { x, y };
 }
 
+vec2 vec2_add(vec2 v1, vec2 v2)
+{
+    return (vec2) { v1.x + v2.x, v1.y + v2.y };
+}
+
+vec2 vec2_sub(vec2 v1, vec2 v2)
+{
+    return (vec2) { v1.x - v2.x, v1.y - v2.y };
+}
+
 vec2 vec2_normalize(vec2 vec)
 {
     f32 mag = vec2_mag(vec);

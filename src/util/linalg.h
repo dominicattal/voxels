@@ -51,6 +51,8 @@ typedef struct {
 } Hexahedron;
 
 vec2 vec2_create(f32 x, f32 y);
+vec2 vec2_add(vec2 v1, vec2 v2);
+vec2 vec2_sub(vec2 v1, vec2 v2);
 vec2 vec2_normalize(vec2 vec);
 vec2 vec2_direction(f32 rad);
 vec2 vec2_rotate(vec2 vec, f32 rad);

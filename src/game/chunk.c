@@ -7,13 +7,12 @@
 #include <semaphore.h>
 #include <pthread.h>
 
-#define RENDER_DISTANCE 8
-#define CHUNKS_PER_UPDATE 100
+#define RENDER_DISTANCE 5
+#define CHUNKS_PER_UPDATE 50
 
 typedef struct {
     i32 x, y, z;
     Block blocks[32768];
-    u16 num_blocks;
     u32* mesh;
     i32 mesh_length;
     i32 mesh_idx;
@@ -42,7 +41,6 @@ typedef struct {
     sem_t mutex;
     pthread_t thread_id;
     bool kill_thread;
-    bool render_ready;
 } Chunkctx;
 
 static Chunkctx ctx;
@@ -102,12 +100,54 @@ static bool opaque_block(Chunk* chunk, Chunk** chunks, i32 idx, i32 axis, i32 cx
     if (chunk_exists(x, y, z, cx, cy, cz, chunks))
         return chunks[chunk_idx(x, y, z, cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
     
-    return FALSE;
+    return TRUE;
 }
 
-static f32 smoothstep(f32 x)
+static f32 interpolate(f32 a0, f32 a1, f32 w)
 {
-    return 3 * x * x - 2 * x * x * x;
+    return (1.0 - w) * a0 + w * a1;
+}
+
+static vec2 grid_gradient(i32 grid_x, i32 grid_z)
+{
+    u8 tag = ((grid_x & 3) << 2) + (grid_z & 3);
+    u64 seed = ((u64)grid_x<<32) + grid_z;
+    return vec2_direction(randf(seed) * 2 * PI);
+}
+
+static f32 fill_chunk_y(Chunk* chunk, i32 x, i32 y, i32 z)
+{
+    f32 dot1, dot2, ix0, ix1, res;
+    vec2 point, offset, weight;
+    i32 grid_x, grid_z;
+
+    grid_x = x >> 5;
+    grid_z = z >> 5;
+
+    point = vec2_create(x / 32.0, z / 32.0);
+    weight = vec2_sub(point, vec2_create(grid_x, grid_z));
+
+    offset = vec2_sub(point, vec2_create(grid_x, grid_z));
+    dot1 = vec2_dot(offset, grid_gradient(grid_x, grid_z));
+    offset = vec2_sub(point, vec2_create(grid_x+1, grid_z));
+    dot2 = vec2_dot(offset, grid_gradient(grid_x+1, grid_z));
+    ix0  = interpolate(dot1, dot2, weight.x);
+    offset = vec2_sub(point, vec2_create(grid_x, grid_z+1));
+    dot1 = vec2_dot(offset, grid_gradient(grid_x, grid_z+1));
+    offset = vec2_sub(point, vec2_create(grid_x+1, grid_z+1));
+    dot2 = vec2_dot(offset, grid_gradient(grid_x+1, grid_z+1));
+    ix1  = interpolate(dot1, dot2, weight.x);
+    res  = interpolate(ix0, ix1, weight.y);
+
+    res *= 64;
+
+    for (i32 i = 0; i < 32; i++) {
+        if (y + i > res)
+            break;
+        chunk->blocks[block_idx(x & 31, i, z & 31)] = STONE;
+    }
+
+    return res;
 }
 
 static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
@@ -118,47 +158,16 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->z = cz;
     chunk->mesh = NULL;
     chunk->update = TRUE;
-
-    if (cy < 0 || cy > 1)
+    
+    if (cy < -2)
         return chunk;
 
-    vec2 v1, v2, v3, v4, offset;
-
-    v1 = vec2_direction(randf((cx << 32) + cz));
-    v2 = vec2_direction(randf(((cx + 1) << 32) + cz));
-    v3 = vec2_direction(randf((cx << 32) + cz + 1));
-    v4 = vec2_direction(randf(((cx + 1) << 32) + cz + 1));
-
+    f32 map[32][32];
     i32 x, y, z;
-    f32 dot;
-    for (x = 0; x < 32; x++) {
-        for (z = 0; z < 32; z++) {
-            if (x < 16 && z < 16) {
-                offset = vec2_normalize(vec2_create(x + 0.5, z + 0.5));
-                dot = vec2_dot(v1, offset);
-            }
-            else if (x >= 16 && z < 16) {
-                offset = vec2_normalize(vec2_create(32 - x - 0.5, z + 0.5));
-                dot = vec2_dot(v2, offset);
-            }
-            else if (x < 16 && z >= 16) {
-                offset = vec2_normalize(vec2_create(x + 0.5, 32 - z - 0.5));
-                dot = vec2_dot(v3, offset);
-            }
-            else {
-                offset = vec2_normalize(vec2_create(32 - x - 0.5, 32 - z - 0.5));
-                dot = vec2_dot(v4, offset);
-            }
-            dot = 1 - smoothstep((dot + 1) / 2);
-            for (y = 0; y < 32; y++) {
-                if ((cy * 32 + y) > (1 + dot * 64))
-                    break;
-                chunk->blocks[block_idx(x, y, z)] = (y > 15) ? GRASS : STONE;
-                chunk->num_blocks++;
-            }
-        }
-    }
-
+    for (x = 0; x < 32; x++)
+        for (z = 0; z < 32; z++)
+            map[x][z] = fill_chunk_y(chunk, (cx << 5) + x, cy << 5, (cz << 5) + z);
+    
     return chunk;
 }
 
@@ -166,9 +175,6 @@ static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 c
 {
     chunk->num_faces = 0;
     chunk->mesh_length = 0;
-
-    if (chunk->num_blocks == 0)
-        return;
 
     for (i32 axis = 0; axis < 6; axis++)
         chunk->face_counts[axis] = 0;
@@ -225,6 +231,8 @@ static void unload_chunk(Chunk* chunk)
 static void destroy_chunk_mesh(Chunk* chunk)
 {
     free(chunk->mesh);
+    chunk->mesh_length = 0;
+    chunk->mesh = NULL;
 }
 
 static void* chunk_update(void* vargp)
@@ -300,6 +308,8 @@ static void* chunk_update(void* vargp)
                     if (num_chunks_loaded > CHUNKS_PER_UPDATE) {
                         chunks_swap[i] = NULL;
                     } else {
+                        #pragma omp atomic update
+                        num_chunks_loaded++;
                         for (axis = 0; axis < 6; axis++) {
                             if (chunk_exists(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], ctx.center.x, ctx.center.y, ctx.center.z, ctx.chunks)) {
                                 chunk = ctx.chunks[chunk_idx(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], ctx.center.x, ctx.center.y, ctx.center.z)];
@@ -307,8 +317,6 @@ static void* chunk_update(void* vargp)
                             }
                         }
                         chunks_swap[i] = load_chunk(x, y, z);
-                        #pragma omp atomic update
-                        num_chunks_loaded++;
                     }
                 }
             }
@@ -485,10 +493,17 @@ void chunk_init(void)
 
 void chunk_prepare_render(void)
 {
+    
+}
+
+void chunk_render(void)
+{
     if (ctx.mesh_buffer == NULL)
         return;
     
+    i32 indirect_length;
     sem_wait(&ctx.mutex);
+    indirect_length = ctx.indirect_length;
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, ctx.mesh_length * sizeof(u32), GL_STATIC_DRAW);
     vbo_update(VBO_GAME_INSTANCE, 0, ctx.mesh_length * sizeof(u32), ctx.mesh_buffer);
@@ -497,19 +512,11 @@ void chunk_prepare_render(void)
     ssbo_bind(SSBO_GAME);
     ssbo_update(SSBO_GAME, 0, ctx.world_pos_length * sizeof(i32), ctx.world_pos_buffer);
     sem_post(&ctx.mutex);
-    ctx.render_ready = TRUE;
-}
-
-void chunk_render(void)
-{
-    if (!ctx.render_ready)
-        return;
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);
-    glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, ctx.indirect_length / 4, 0);
-    ctx.render_ready = FALSE;
+    glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, indirect_length / 4, 0);
 }
 
 void chunk_destroy(void)
