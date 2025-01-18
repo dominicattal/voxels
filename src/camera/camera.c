@@ -154,6 +154,11 @@ vec3 camera_position(void)
     return camera.position;
 }
 
+vec3 camera_facing(void)
+{
+    return camera.facing;
+}
+
 f32 camera_pitch(void)
 {
     return camera.pitch;

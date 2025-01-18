@@ -144,6 +144,8 @@ static void framebuffer_size_callback(GLFWwindow* handle, i32 width, i32 height)
 static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
 {
     gui_mouse_button_callback(button, action);
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        chunk_break_block();
 }
 
 static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)

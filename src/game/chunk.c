@@ -1,14 +1,15 @@
 #include "chunk.h"
-#include "block.h"
 #include "../camera/camera.h"
 #include "../renderer/renderer.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <math.h>
+#include <assert.h>
 
-#define RENDER_DISTANCE 5
-#define CHUNKS_PER_UPDATE 50
+#define RENDER_DISTANCE 20
+#define CHUNKS_PER_UPDATE 5
 
 typedef struct {
     i32 x, y, z;
@@ -18,7 +19,7 @@ typedef struct {
     i32 mesh_idx;
     i32 num_faces;
     i32 face_counts[6];
-    bool update;
+    bool update_mesh;
 } Chunk;
 
 typedef struct {
@@ -34,7 +35,6 @@ typedef struct {
     i32 render_distance;
     i32 side;
     i32 num_chunks;
-    i32* sorted_chunk_idx;
     u64 seed;
     struct {
         i32 x, y, z;
@@ -158,7 +158,7 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->y = cy;
     chunk->z = cz;
     chunk->mesh = NULL;
-    chunk->update = TRUE;
+    chunk->update_mesh = TRUE;
     
     if (cy < -2)
         return chunk;
@@ -236,12 +236,27 @@ static void destroy_chunk_mesh(Chunk* chunk)
     chunk->mesh = NULL;
 }
 
+static i32 compare_chunk_idx(const void* ptr1, const void* ptr2)
+{
+    i32 idx1, idx2;
+    i32 dx1, dy1, dz1, dx2, dy2, dz2;
+    idx1 = *(i32*)ptr1;
+    idx2 = *(i32*)ptr2;
+    dx1 = abs(ctx.render_distance - idx1 % ctx.side);
+    dy1 = abs(ctx.render_distance - (idx1 / ctx.side) % ctx.side);
+    dz1 = abs(ctx.render_distance - idx1 / ctx.side / ctx.side);
+    dx2 = abs(ctx.render_distance - idx2 % ctx.side);
+    dy2 = abs(ctx.render_distance - (idx2 / ctx.side) % ctx.side);
+    dz2 = abs(ctx.render_distance - idx2 / ctx.side / ctx.side);
+    return dx1 - dx2 + dy1 - dy2 + dz1 - dz2;
+}
+
+
 static void* chunk_update(void* vargp)
 {
     vec3 position;
     i32 cx, cy, cz;
     i32 side;
-    i32 num_chunks_loaded;
     i32 new_mesh_length;
     i32 new_indirect_length;
     i32 group_size;
@@ -251,13 +266,16 @@ static void* chunk_update(void* vargp)
     Chunk** chunks_swap;
     u32* indirect_buffer_swap;
     i32* world_pos_buffer_swap;
+    i32* sorted_chunk_idx;
     void* tmp;
     #pragma omp parallel
     {
         i32 num_threads, thread_num;
+        i32 num_chunks_loaded;
         i32 mesh_idx, axis;
         i32 i, j, x, y, z;
         Chunk* chunk;
+        Stack* unload_stack;
         
         num_threads = omp_get_num_threads();
         thread_num = omp_get_thread_num();
@@ -271,6 +289,10 @@ static void* chunk_update(void* vargp)
             indirect_buffer_swap = malloc(6 * 4 * ctx.num_chunks * sizeof(u32));
             world_pos_buffer_swap = malloc(6 * 4 * ctx.num_chunks * sizeof(i32));
             mesh_buffer_swap = NULL;
+            sorted_chunk_idx = malloc(ctx.num_chunks * sizeof(i32));
+            for (i32 i = 0; i < ctx.num_chunks; i++)
+                sorted_chunk_idx[i] = i;
+            qsort(sorted_chunk_idx, ctx.num_chunks, sizeof(i32), compare_chunk_idx);
         }
 
         while (!ctx.kill_thread)
@@ -298,9 +320,10 @@ static void* chunk_update(void* vargp)
             }
             #pragma omp barrier
 
+            num_chunks_loaded = 0;
             lengths[thread_num] = 0;
             for (j = thread_num; j < ctx.num_chunks; j += num_threads) {
-                i = ctx.sorted_chunk_idx[j];
+                i = sorted_chunk_idx[j];
                 x = cx - ctx.render_distance + (i % side);
                 y = cy - ctx.render_distance + ((i / side) % side);
                 z = cz - ctx.render_distance + (i / side / side);
@@ -310,16 +333,15 @@ static void* chunk_update(void* vargp)
                     if (num_chunks_loaded > CHUNKS_PER_UPDATE) {
                         chunks_swap[i] = NULL;
                     } else {
-                        #pragma omp atomic update
-                        num_chunks_loaded++;
                         for (axis = 0; axis < 6; axis++) {
                             if (chunk_exists(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], ctx.center.x, ctx.center.y, ctx.center.z, ctx.chunks)) {
                                 chunk = ctx.chunks[chunk_idx(x + axis_dx[axis], y + axis_dy[axis], z + axis_dz[axis], ctx.center.x, ctx.center.y, ctx.center.z)];
-                                chunk->update = TRUE;
+                                chunk->update_mesh = TRUE;
                             }
                         }
                         chunks_swap[i] = load_chunk(x, y, z);
                         lengths[thread_num]++;
+                        num_chunks_loaded++;
                     }
                 }
             }
@@ -330,10 +352,10 @@ static void* chunk_update(void* vargp)
                 chunk = chunks_swap[i];
                 if (chunk == NULL)
                     continue;
-                if (chunk->update) {
+                if (chunk->update_mesh) {
                     destroy_chunk_mesh(chunk);
                     build_chunk_mesh(chunk, chunks_swap, cx, cy, cz);
-                    chunk->update = FALSE;
+                    chunk->update_mesh = FALSE;
                 }
                 lengths[thread_num] += chunk->mesh_length;
             }
@@ -364,11 +386,11 @@ static void* chunk_update(void* vargp)
             for (i = thread_num * group_size; i < (thread_num + 1) * group_size; i++) {
                 if (i >= ctx.num_chunks) 
                     break;
-                Chunk* chunk = chunks_swap[ctx.sorted_chunk_idx[i]];
+                Chunk* chunk = chunks_swap[sorted_chunk_idx[i]];
                 if (chunk == NULL) 
                     continue;
                 for (axis = 0; axis < 6; axis++)
-                    if (chunk->face_counts[axis] != 0 && chunk_axis_faces_center(chunk, axis, cx, cy, cz)) 
+                    if (chunk->face_counts[axis] != 0) 
                         lengths[thread_num] += 4;
             }
             #pragma omp barrier
@@ -385,12 +407,12 @@ static void* chunk_update(void* vargp)
             for (i = thread_num * group_size; i < (thread_num + 1) * group_size; i++) {
                 if (i >= ctx.num_chunks)
                     break;
-                Chunk* chunk = chunks_swap[ctx.sorted_chunk_idx[i]];
+                Chunk* chunk = chunks_swap[sorted_chunk_idx[i]];
                 if (chunk == NULL) 
                     continue;
                 mesh_idx = chunk->mesh_idx;
                 for (axis = 0; axis < 6; axis++) {
-                    if (chunk->face_counts[axis] != 0 && chunk_axis_faces_center(chunk, axis, cx, cy, cz)) 
+                    if (chunk->face_counts[axis] != 0) 
                     {
                         indirect_buffer_swap[prefix[thread_num]]    = 4;
                         indirect_buffer_swap[prefix[thread_num]+1]  = chunk->face_counts[axis];
@@ -446,24 +468,80 @@ static void* chunk_update(void* vargp)
             free(mesh_buffer_swap);
             free(indirect_buffer_swap);
             free(world_pos_buffer_swap);
+            free(sorted_chunk_idx);
         }
     }
 }
 
-static i32 compare_chunk_idx(const void* ptr1, const void* ptr2)
+#define BREAK_DISTANCE 10
+static i32 min_distance_idx(f32 distances[3])
 {
-    i32 idx1, idx2;
-    i32 dx1, dy1, dz1, dx2, dy2, dz2;
-    idx1 = *(int*)ptr1;
-    idx2 = *(int*)ptr2;
-    dx1 = abs(ctx.render_distance - idx1 % ctx.side);
-    dy1 = abs(ctx.render_distance - (idx1 / ctx.side) % ctx.side);
-    dz1 = abs(ctx.render_distance - idx1 / ctx.side / ctx.side);
-    dx2 = abs(ctx.render_distance - idx2 % ctx.side);
-    dy2 = abs(ctx.render_distance - (idx2 / ctx.side) % ctx.side);
-    dz2 = abs(ctx.render_distance - idx2 / ctx.side / ctx.side);
-    return dx1 - dx2 + dy1 - dy2 + dz1 - dz2;
+    i32 i = 0;
+    if (distances[1] < distances[i])
+        i = 1;
+    if (distances[2] < distances[i])
+        i = 2;
+    return i;
 }
+
+static Chunk* get_chunk(i32 chunk_x, i32 chunk_y, i32 chunk_z)
+{
+    Chunk* chunk;
+    if (!chunk_in_bounds(chunk_x, chunk_y, chunk_z, ctx.center.x, ctx.center.y, ctx.center.z))
+        return NULL;
+    sem_wait(&ctx.mutex);
+    chunk = ctx.chunks[chunk_idx(chunk_x, chunk_y, chunk_z,
+                                 ctx.center.x, ctx.center.y, ctx.center.z)];
+    sem_post(&ctx.mutex);
+    return chunk;
+}
+
+Block chunk_break_block(void)
+{
+    // race conditions
+    Chunk* chunk;
+    Block block;
+    vec3 pos, face;
+    f32 position[3];
+    f32 facing[3];
+    i32 block_pos[3];
+    f32 distances[3];
+    pos = camera_position();
+    face = camera_facing();
+    position[0] = pos.x;
+    position[1] = pos.y;
+    position[2] = pos.z;
+    facing[0] = face.x;
+    facing[1] = face.y;
+    facing[2] = face.z;
+    assert(facing[0] != 0 || facing[1] != 0 || facing[2] != 0);
+    for (i32 i = 0; i < 3; i++) {
+        block_pos[i] = position[i] + (facing[i] > 0);
+        distances[i] = (facing[i] == 0) ? INF : fabs((block_pos[i] - position[i]) / facing[i]);
+    }
+    i32 idx = min_distance_idx(distances);
+    i32 block_idx;
+    while (distances[idx] < BREAK_DISTANCE) {
+        chunk = get_chunk(block_pos[0] / 32, block_pos[1] / 32, block_pos[2] / 32);
+        block_idx = block_idx(block_pos[0] & 31, block_pos[1] & 31, block_pos[2] & 31);
+        block = chunk->blocks[block_idx];
+        if (block != AIR) {
+            chunk->blocks[block_idx] = AIR;
+            chunk->update_mesh = TRUE;
+            return block;
+        }
+        distances[idx] += 1 / facing[idx];
+        block_pos[idx] += (facing[idx] > 0) ? 1 : -1;
+        idx = min_distance_idx(distances);
+    }
+    return AIR;
+}
+
+void chunk_place_block(Block block)
+{
+
+}
+
 
 void chunk_init(void)
 {
@@ -483,10 +561,7 @@ void chunk_init(void)
     ctx.world_pos_buffer = malloc(6 * 4 * ctx.num_chunks * sizeof(i32));
     ctx.chunks = calloc(ctx.num_chunks, sizeof(Chunk*));
 
-    ctx.sorted_chunk_idx = malloc(ctx.num_chunks * sizeof(i32));
-    for (i32 i = 0; i < ctx.num_chunks; i++)
-        ctx.sorted_chunk_idx[i] = i;
-    qsort(ctx.sorted_chunk_idx, ctx.num_chunks, sizeof(i32), compare_chunk_idx);
+    
 
     dibo_bind(DIBO_GAME);
     dibo_malloc(DIBO_GAME, 6 * 4 * ctx.num_chunks * sizeof(u32), GL_STATIC_DRAW);
@@ -534,6 +609,5 @@ void chunk_destroy(void)
     free(ctx.mesh_buffer);
     free(ctx.indirect_buffer);
     free(ctx.world_pos_buffer);
-    free(ctx.sorted_chunk_idx);
     sem_destroy(&ctx.mutex);
 }
