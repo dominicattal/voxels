@@ -23,6 +23,7 @@ typedef struct {
 
 typedef struct {
     i32 mesh_length;
+    i32 draw_count;
     i32 indirect_length;
     i32 world_pos_length;
     i32 chunk_order_length;
@@ -41,9 +42,9 @@ typedef struct {
     sem_t mutex;
     pthread_t thread_id;
     bool kill_thread;
-} Chunkctx;
+} ChunkContext;
 
-static Chunkctx ctx;
+static ChunkContext ctx;
 
 static i32 axis_dx[6] = {-1, 1, 0, 0, 0, 0};
 static i32 axis_dy[6] = {0, 0, -1, 1, 0, 0};
@@ -121,10 +122,10 @@ static f32 fill_chunk_y(Chunk* chunk, i32 x, i32 y, i32 z)
     vec2 point, offset, weight;
     i32 grid_x, grid_z;
 
-    grid_x = x >> 5;
-    grid_z = z >> 5;
+    grid_x = x >> 6;
+    grid_z = z >> 6;
 
-    point = vec2_create(x / 32.0, z / 32.0);
+    point = vec2_create(x / 64.0, z / 64.0);
     weight = vec2_sub(point, vec2_create(grid_x, grid_z));
 
     offset = vec2_sub(point, vec2_create(grid_x, grid_z));
@@ -297,6 +298,7 @@ static void* chunk_update(void* vargp)
             }
             #pragma omp barrier
 
+            lengths[thread_num] = 0;
             for (j = thread_num; j < ctx.num_chunks; j += num_threads) {
                 i = ctx.sorted_chunk_idx[j];
                 x = cx - ctx.render_distance + (i % side);
@@ -317,6 +319,7 @@ static void* chunk_update(void* vargp)
                             }
                         }
                         chunks_swap[i] = load_chunk(x, y, z);
+                        lengths[thread_num]++;
                     }
                 }
             }
@@ -493,17 +496,12 @@ void chunk_init(void)
 
 void chunk_prepare_render(void)
 {
-    
-}
-
-void chunk_render(void)
-{
+    ctx.draw_count = -1;
     if (ctx.mesh_buffer == NULL)
         return;
-    
-    i32 indirect_length;
+
     sem_wait(&ctx.mutex);
-    indirect_length = ctx.indirect_length;
+    ctx.draw_count = ctx.indirect_length / 4;
     vbo_bind(VBO_GAME_INSTANCE);
     vbo_malloc(VBO_GAME_INSTANCE, ctx.mesh_length * sizeof(u32), GL_STATIC_DRAW);
     vbo_update(VBO_GAME_INSTANCE, 0, ctx.mesh_length * sizeof(u32), ctx.mesh_buffer);
@@ -512,11 +510,17 @@ void chunk_render(void)
     ssbo_bind(SSBO_GAME);
     ssbo_update(SSBO_GAME, 0, ctx.world_pos_length * sizeof(i32), ctx.world_pos_buffer);
     sem_post(&ctx.mutex);
+}
+
+void chunk_render(void)
+{
+    if (ctx.draw_count == -1)
+        return;
 
     shader_use(SHADER_GAME);
     vao_bind(VAO_GAME);
     ebo_bind(EBO_GAME);
-    glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, indirect_length / 4, 0);
+    glMultiDrawArraysIndirect(GL_TRIANGLE_STRIP, 0, ctx.draw_count, 0);
 }
 
 void chunk_destroy(void)
