@@ -11,7 +11,7 @@
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
 #define DEFAULT_ROTSPEED    1
-#define DEFAULT_MOVESPEED   150
+#define DEFAULT_MOVESPEED   20
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {
@@ -104,7 +104,7 @@ void camera_init(void)
     camera.fov = DEFAULT_FOV;
     camera.move_speed = DEFAULT_MOVESPEED;
     camera.rotate_speed = DEFAULT_ROTSPEED;
-    camera.position = vec3_create(5, 5, 5);
+    camera.position = vec3_create(-1, -1, -1);
     update_orientation_vectors();
     update_view_matrix();
     update_proj_matrix();

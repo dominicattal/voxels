@@ -35,19 +35,21 @@ vec3 normals[6] = {
 };
 
 void main() {
-    uint a = aInfo & 1;
-    uint b = (aInfo >> 1) & 1;
+    uint width = 1 + ((aInstanceInfo >> 15) & 31);
+    uint height = 1 + ((aInstanceInfo >> 20) & 31);
+    uint a = width * (aInfo & 1);
+    uint b = height * ((aInfo >> 1) & 1);
     int face = chunk_positions[4*gl_DrawID+3];
     normal = normals[face];
     vec3 position;
     switch (face) {
-        case NEGX:
+       case NEGX:
             position = vec3(0, a, b);
-            UV = vec2(b, 1-a);
+            UV = vec2(b, width-a);
             break;
         case POSX:
             position = vec3(1, b, a);
-            UV = vec2(a, 1-b);
+            UV = vec2(a, height-b);
             break;
         case NEGY:
             position = vec3(b, 0, a);
@@ -59,15 +61,15 @@ void main() {
             break;
         case NEGZ:
             position = vec3(a, b, 0);
-            UV = vec2(a, 1-b);
+            UV = vec2(a, height-b);
             break;
         case POSZ:
             position = vec3(b, a, 1);
-            UV = vec2(b, 1-a);
+            UV = vec2(b, width-a);
             break;
     }
     vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
     vec3 chunk_offset = vec3(chunk_positions[4*gl_DrawID], chunk_positions[4*gl_DrawID+1], chunk_positions[4*gl_DrawID+2]);
-    ID = (aInstanceInfo >> 15);
+    ID = (aInstanceInfo >> 25);
     gl_Position = proj * view * vec4(position + offset + chunk_offset, 1.0);
 }

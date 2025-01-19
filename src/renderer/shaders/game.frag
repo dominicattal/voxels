@@ -24,8 +24,8 @@ in flat vec3 normal;
 void main() {
     vec2 TexCoord;
     Tex tex = texs[ID];
-    TexCoord.x = tex.u + UV.x * tex.w;
-    TexCoord.y = tex.v + UV.y * tex.h;
+    TexCoord.x = tex.u + (UV.x - int(UV.x)) * tex.w;
+    TexCoord.y = tex.v + (UV.y - int(UV.y)) * tex.h;
 
     float ambient_strength = 0.6;
     vec3 light_dir = normalize(vec3(1,2,3));

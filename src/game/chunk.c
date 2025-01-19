@@ -8,7 +8,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define RENDER_DISTANCE 20
+#define RENDER_DISTANCE 5
 #define CHUNKS_PER_UPDATE 5
 
 typedef struct {
@@ -81,29 +81,6 @@ static i32 axis_dz[6] = {0, 0, 0, 0, -1, 1};
     ||  (axis == NEGZ && chunk->z >= _cz - 1)  \
     ||  (axis == POSZ && chunk->z <= _cz + 1))
 
-static bool opaque_block(Chunk* chunk, Chunk** chunks, i32 idx, i32 axis, i32 cx, i32 cy, i32 cz)
-{
-    i32 bx, by, bz, x, y, z;
-    bx = axis_dx[axis] + (idx & 31);
-    by = axis_dy[axis] + ((idx >> 5) & 31);
-    bz = axis_dz[axis] + ((idx >> 10) & 31);
-
-    if (block_in_bounds(bx, by, bz))
-        return chunk->blocks[block_idx(bx, by, bz)] != 0;
-
-    bx &= 31;
-    by &= 31;
-    bz &= 31;
-    x = axis_dx[axis] + chunk->x;
-    y = axis_dy[axis] + chunk->y;
-    z = axis_dz[axis] + chunk->z;
-    
-    if (chunk_exists(x, y, z, cx, cy, cz, chunks))
-        return chunks[chunk_idx(x, y, z, cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
-    
-    return TRUE;
-}
-
 static f32 interpolate(f32 a0, f32 a1, f32 w)
 {
     return (1.0 - w) * a0 + w * a1;
@@ -160,8 +137,18 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->mesh = NULL;
     chunk->update_mesh = TRUE;
     
-    if (cy < -2)
+    if (cx != 0 || cy != 0 || cz != 0)
         return chunk;
+
+    //chunk->blocks[block_idx(0, 0, 0)] = STONE;
+    chunk->blocks[block_idx(1, 0, 0)] = STONE;
+    chunk->blocks[block_idx(0, 1, 0)] = STONE;
+    chunk->blocks[block_idx(1, 1, 0)] = STONE;
+    chunk->blocks[block_idx(0, 0, 1)] = STONE;
+    chunk->blocks[block_idx(1, 0, 1)] = STONE;
+    chunk->blocks[block_idx(0, 1, 1)] = STONE;
+    chunk->blocks[block_idx(1, 1, 1)] = STONE;
+    return chunk;
 
     f32 map[32][32];
     i32 x, y, z;
@@ -172,7 +159,156 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     return chunk;
 }
 
-static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz)
+static bool opaque_block(Chunk* chunk, Chunk** chunks, i32 idx, i32 axis, i32 cx, i32 cy, i32 cz)
+{
+    i32 bx, by, bz, x, y, z;
+    bx = axis_dx[axis] + (idx & 31);
+    by = axis_dy[axis] + ((idx >> 5) & 31);
+    bz = axis_dz[axis] + ((idx >> 10) & 31);
+
+    if (block_in_bounds(bx, by, bz))
+        return chunk->blocks[block_idx(bx, by, bz)] != 0;
+
+    bx &= 31;
+    by &= 31;
+    bz &= 31;
+    x = axis_dx[axis] + chunk->x;
+    y = axis_dy[axis] + chunk->y;
+    z = axis_dz[axis] + chunk->z;
+    
+    if (chunk_exists(x, y, z, cx, cy, cz, chunks))
+        return chunks[chunk_idx(x, y, z, cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
+    
+    return TRUE;
+}
+
+static bool opaque_block_alt(Chunk* chunk, Chunk** chunks, i32 axis, i32 bx, i32 by, i32 bz, i32 cx, i32 cy, i32 cz)
+{
+    i32 x, y, z;
+    bx = axis_dx[axis] + bx;
+    by = axis_dy[axis] + by;
+    bz = axis_dz[axis] + bz;
+    if (block_in_bounds(bx, by, bz))
+        return chunk->blocks[block_idx(bx, by, bz)] != 0;
+
+    bx &= 31;
+    by &= 31;
+    bz &= 31;
+    x = axis_dx[axis] + chunk->x;
+    y = axis_dy[axis] + chunk->y;
+    z = axis_dz[axis] + chunk->z;
+    
+    if (chunk_exists(x, y, z, cx, cy, cz, chunks))
+        return chunks[chunk_idx(x, y, z, cx, cy, cz)]->blocks[block_idx(bx, by, bz)] != 0;
+    
+    return TRUE;
+}
+
+#define HELPER \
+    switch (axis) { \
+        case NEGX: \
+            x = k; y = i; z = j; break; \
+        case NEGY: case POSY: \
+            x = j; y = k; z = i; break; \
+        case NEGZ: case POSZ: \
+            x = i; y = j; z = k; break; \
+    }
+
+static Block get_block(Chunk* chunk, Chunk** chunks, i32 axis, i32 k, i32 j, i32 i, i32 cx, i32 cy, i32 cz)
+{
+    i32 x, y, z;
+    HELPER
+    //if (opaque_block_alt(chunk, chunks, axis, x, y, z, cx, cy, cz))
+    //    return AIR;
+    return chunk->blocks[block_idx(x, y, z)];
+}
+
+void preinsert_block_into_mesh(Chunk* chunk, Block block, i32 axis, i32 k, i32 j, i32 i, i32 dj, i32 di)
+{
+    chunk->face_counts[axis]++;
+    chunk->num_faces++;
+}
+
+void insert_block_into_mesh(Chunk* chunk, Block block, i32 axis, i32 k, i32 j, i32 i, i32 di, i32 dj)
+{
+    i32 x, y, z, w, h;
+    u32 info1, info2;
+    HELPER
+    w = di;
+    h = dj;
+    info1 = 0;
+    info1 |=  x & 31;
+    info1 |= (y & 31) << 5;
+    info1 |= (z & 31) << 10;
+    info1 |= ((w-1) & 31) << 15;
+    info1 |= ((h-1) & 31) << 20;
+    info1 |= (block_face(chunk->blocks[i], axis) << 25);
+    chunk->mesh[chunk->mesh_length++] = info1;
+}
+
+static void greedy_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz, void (*func)())
+{
+    i32 i, j, k, tmp_i1, tmp_i2, tmp_j, axis, mask;
+    u32 flags[32];
+    for (axis = 0; axis < 2; axis++) {
+        for (k = 0; k < 32; k++) {
+            for (j = 0; j < 32; j++)
+                flags[j] = 0;
+            i = 0;
+            j = 0;
+            while (j < 32) {
+                if (i == 32) {
+                    i = 0;
+                    j++;
+                    continue;
+                }
+                Block block = get_block(chunk, chunks, axis, k, j, i, cx, cy, cz);
+                tmp_i1 = i;
+                mask = 1 << (tmp_i1++);
+                if (block == AIR || (flags[j] & mask)) {
+                    i++;
+                    continue;
+                }
+                while (tmp_i1 < 32 && !((flags[j] >> tmp_i1) & 1) 
+                  && get_block(chunk, chunks, axis, k, j, tmp_i1, cx, cy, cz) == block)
+                    mask |= 1 << (tmp_i1++);
+                tmp_j = j+1;
+                flags[tmp_j++] |= mask;
+                while (tmp_j < 32) {
+                    for (tmp_i2 = i; tmp_i2 < tmp_i1; tmp_i2++)
+                        if (((flags[tmp_j] >> tmp_i2) & 1) || get_block(chunk, chunks, axis, k, tmp_j, tmp_i2, cx, cy, cz) != block)
+                            goto done;
+                    flags[tmp_j++] |= mask;
+                }
+                done:
+                func(chunk, block, axis, k, j, i, tmp_j - j, tmp_i1 - i);
+                i = tmp_i1;
+            }
+        }
+    }
+}
+
+static void build_chunk_mesh_greedy(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz)
+{
+    f64 t = get_time();
+    chunk->num_faces = 0;
+
+    for (i32 axis = 0; axis < 6; axis++)
+        chunk->face_counts[axis] = 0;
+
+    greedy_mesh(chunk, chunks, cx, cy, cz, preinsert_block_into_mesh);
+
+    if (chunk->num_faces == 0)
+        return;
+    
+    chunk->mesh = malloc(chunk->num_faces * sizeof(u32));
+    chunk->mesh_length = 0;
+
+    greedy_mesh(chunk, chunks, cx, cy, cz, insert_block_into_mesh);
+    printf("%p, %f\n", chunk, get_time() - t);
+}
+
+static void build_chunk_mesh_simple(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz)
 {
     chunk->num_faces = 0;
     chunk->mesh_length = 0;
@@ -213,14 +349,21 @@ static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 c
             info1 |=  i & 31;
             info1 |= ((i>>5) & 31) << 5;
             info1 |= ((i>>10) & 31) << 10;
+            info1 |= 0 << 15;
+            info1 |= 0 << 20;
             for (i32 axis = 0; axis < 6; axis++) {
                 if (!opaque_block(chunk, chunks, i, axis, cx, cy, cz)) {
-                    info2 = info1 | (block_face(chunk->blocks[i], axis) << 15);
+                    info2 = info1 | (block_face(chunk->blocks[i], axis) << 25);
                     chunk->mesh[(idxs[axis]++)+prefix[axis]] = info2;
                 }
             }
         }
     }
+}
+
+static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz)
+{
+    build_chunk_mesh_simple(chunk, chunks, cx, cy, cz);
 }
 
 static void unload_chunk(Chunk* chunk)
@@ -268,6 +411,8 @@ static void* chunk_update(void* vargp)
     i32* world_pos_buffer_swap;
     i32* sorted_chunk_idx;
     void* tmp;
+
+    omp_set_num_threads(1);
     #pragma omp parallel
     {
         i32 num_threads, thread_num;
@@ -498,6 +643,7 @@ static Chunk* get_chunk(i32 chunk_x, i32 chunk_y, i32 chunk_z)
 
 Block chunk_break_block(void)
 {
+    return AIR;
     // race conditions
     Chunk* chunk;
     Block block;
@@ -560,8 +706,6 @@ void chunk_init(void)
     ctx.indirect_buffer = malloc(6 * 4 * ctx.num_chunks * sizeof(u32));
     ctx.world_pos_buffer = malloc(6 * 4 * ctx.num_chunks * sizeof(i32));
     ctx.chunks = calloc(ctx.num_chunks, sizeof(Chunk*));
-
-    
 
     dibo_bind(DIBO_GAME);
     dibo_malloc(DIBO_GAME, 6 * 4 * ctx.num_chunks * sizeof(u32), GL_STATIC_DRAW);
