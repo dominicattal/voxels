@@ -104,7 +104,7 @@ void camera_init(void)
     camera.fov = DEFAULT_FOV;
     camera.move_speed = DEFAULT_MOVESPEED;
     camera.rotate_speed = DEFAULT_ROTSPEED;
-    camera.position = vec3_create(-1, -1, -1);
+    camera.position = vec3_create(5, 5, 5);
     update_orientation_vectors();
     update_view_matrix();
     update_proj_matrix();

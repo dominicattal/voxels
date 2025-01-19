@@ -8,7 +8,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define RENDER_DISTANCE 5
+#define RENDER_DISTANCE 2
 #define CHUNKS_PER_UPDATE 5
 
 typedef struct {
@@ -137,7 +137,7 @@ static Chunk* load_chunk(i32 cx, i32 cy, i32 cz)
     chunk->mesh = NULL;
     chunk->update_mesh = TRUE;
     
-    if (cx != 0 || cy != 0 || cz != 0)
+    if (!(cx == 0 && cy == 0 && cz == 0))
         return chunk;
 
     //chunk->blocks[block_idx(0, 0, 0)] = STONE;
@@ -206,7 +206,7 @@ static bool opaque_block_alt(Chunk* chunk, Chunk** chunks, i32 axis, i32 bx, i32
 
 #define HELPER \
     switch (axis) { \
-        case NEGX: \
+        case NEGX: case POSX: \
             x = k; y = i; z = j; break; \
         case NEGY: case POSY: \
             x = j; y = k; z = i; break; \
@@ -218,8 +218,8 @@ static Block get_block(Chunk* chunk, Chunk** chunks, i32 axis, i32 k, i32 j, i32
 {
     i32 x, y, z;
     HELPER
-    //if (opaque_block_alt(chunk, chunks, axis, x, y, z, cx, cy, cz))
-    //    return AIR;
+    if (opaque_block_alt(chunk, chunks, axis, x, y, z, cx, cy, cz))
+        return AIR;
     return chunk->blocks[block_idx(x, y, z)];
 }
 
@@ -234,15 +234,20 @@ void insert_block_into_mesh(Chunk* chunk, Block block, i32 axis, i32 k, i32 j, i
     i32 x, y, z, w, h;
     u32 info1, info2;
     HELPER
-    w = di;
-    h = dj;
+    if (axis % 2 == 0) {
+        w = di;
+        h = dj;
+    } else {
+        w = dj;
+        h = di;
+    }
     info1 = 0;
     info1 |=  x & 31;
     info1 |= (y & 31) << 5;
     info1 |= (z & 31) << 10;
     info1 |= ((w-1) & 31) << 15;
     info1 |= ((h-1) & 31) << 20;
-    info1 |= (block_face(chunk->blocks[i], axis) << 25);
+    info1 |= (block_face(block, axis) << 25);
     chunk->mesh[chunk->mesh_length++] = info1;
 }
 
@@ -250,7 +255,7 @@ static void greedy_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz, vo
 {
     i32 i, j, k, tmp_i1, tmp_i2, tmp_j, axis, mask;
     u32 flags[32];
-    for (axis = 0; axis < 2; axis++) {
+    for (axis = 0; axis < 6; axis++) {
         for (k = 0; k < 32; k++) {
             for (j = 0; j < 32; j++)
                 flags[j] = 0;
@@ -272,7 +277,7 @@ static void greedy_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz, vo
                 while (tmp_i1 < 32 && !((flags[j] >> tmp_i1) & 1) 
                   && get_block(chunk, chunks, axis, k, j, tmp_i1, cx, cy, cz) == block)
                     mask |= 1 << (tmp_i1++);
-                tmp_j = j+1;
+                tmp_j = j;
                 flags[tmp_j++] |= mask;
                 while (tmp_j < 32) {
                     for (tmp_i2 = i; tmp_i2 < tmp_i1; tmp_i2++)
@@ -281,7 +286,7 @@ static void greedy_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz, vo
                     flags[tmp_j++] |= mask;
                 }
                 done:
-                func(chunk, block, axis, k, j, i, tmp_j - j, tmp_i1 - i);
+                func(chunk, block, axis, k, j, i, tmp_i1 - i, tmp_j - j);
                 i = tmp_i1;
             }
         }
@@ -363,7 +368,7 @@ static void build_chunk_mesh_simple(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy
 
 static void build_chunk_mesh(Chunk* chunk, Chunk** chunks, i32 cx, i32 cy, i32 cz)
 {
-    build_chunk_mesh_simple(chunk, chunks, cx, cy, cz);
+    build_chunk_mesh_greedy(chunk, chunks, cx, cy, cz);
 }
 
 static void unload_chunk(Chunk* chunk)
@@ -412,7 +417,6 @@ static void* chunk_update(void* vargp)
     i32* sorted_chunk_idx;
     void* tmp;
 
-    omp_set_num_threads(1);
     #pragma omp parallel
     {
         i32 num_threads, thread_num;
