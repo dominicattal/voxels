@@ -348,9 +348,9 @@ void texture_init(void)
     for (i32 i = 0; i < NUM_IMAGES_TO_PACK; i++)
         stbi_image_free(image_data[i]);
 
-    free(image_data);
     free(rects_rgb);
     free(rects_rgba);
+    free(image_data);
 
     i32 texs[NUM_TEXTURE_UNITS];
     for (i32 i = 0; i < NUM_TEXTURE_UNITS; ++i)

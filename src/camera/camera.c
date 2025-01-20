@@ -11,7 +11,7 @@
 #define DEFAULT_FOV         PI / 4
 #define DEFAULT_ZOOM        15
 #define DEFAULT_ROTSPEED    1
-#define DEFAULT_MOVESPEED   20
+#define DEFAULT_MOVESPEED   150
 #define Y_AXIS              vec3_create(0, 1, 0)
 
 typedef struct {

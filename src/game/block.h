@@ -3,7 +3,7 @@
 
 #include "../util/util.h"
 
-typedef u8 Block;
+typedef u16 Block;
 
 #define NUM_BLOCKS 3
 

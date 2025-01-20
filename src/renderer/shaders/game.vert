@@ -9,6 +9,8 @@ layout (std140) uniform Matrices
     mat4 proj;
 };
 
+uniform int bits_per_axis;
+
 layout (std430, binding = 2) readonly buffer ChunkPositions
 {
     int chunk_positions[];
@@ -35,8 +37,9 @@ vec3 normals[6] = {
 };
 
 void main() {
-    uint width = 1 + ((aInstanceInfo >> 15) & 31);
-    uint height = 1 + ((aInstanceInfo >> 20) & 31);
+    uint mask = (1 << bits_per_axis) - 1;
+    uint width = 1 + ((aInstanceInfo >> (3 * bits_per_axis)) & mask);
+    uint height = 1 + ((aInstanceInfo >> (4 * bits_per_axis)) & mask);
     uint a = width * (aInfo & 1);
     uint b = height * ((aInfo >> 1) & 1);
     int face = chunk_positions[4*gl_DrawID+3];
@@ -68,8 +71,8 @@ void main() {
             UV = vec2(b, width-a);
             break;
     }
-    vec3 offset = vec3(aInstanceInfo & 31, (aInstanceInfo >> 5) & 31, (aInstanceInfo >> 10) & 31);
+    vec3 offset = vec3(aInstanceInfo & mask, (aInstanceInfo >> bits_per_axis) & mask, (aInstanceInfo >> (2 * bits_per_axis)) & mask);
     vec3 chunk_offset = vec3(chunk_positions[4*gl_DrawID], chunk_positions[4*gl_DrawID+1], chunk_positions[4*gl_DrawID+2]);
-    ID = (aInstanceInfo >> 25);
+    ID = (aInstanceInfo >> (5 * bits_per_axis));
     gl_Position = proj * view * vec4(position + offset + chunk_offset, 1.0);
 }
