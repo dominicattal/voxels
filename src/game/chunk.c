@@ -7,8 +7,9 @@
 #include <pthread.h>
 #include <math.h>
 #include <assert.h>
+#include <omp.h>
 
-#define RENDER_DISTANCE   20
+#define RENDER_DISTANCE    30
 
 #define BITS_PER_AXIS      5
 #define BITS_PER_AXIS_2    (2 * BITS_PER_AXIS)
@@ -134,10 +135,7 @@ static void fill_chunk_y(Chunk* chunk, i32 x, i32 y, i32 z)
     for (i32 i = 0; i < CHUNK_SIZE; i++) {
         if (y + i > res)
             break;
-        if (y+i < 16)
-            chunk->blocks[block_idx(x & AXIS_MASK, i, z & AXIS_MASK)] = GRASS;
-        else
-            chunk->blocks[block_idx(x & AXIS_MASK, i, z & AXIS_MASK)] = GRASS;
+        chunk->blocks[block_idx(x & AXIS_MASK, i, z & AXIS_MASK)] = STONE;
         chunk->empty = FALSE;
     }
 }
@@ -404,7 +402,6 @@ static void* chunk_update(void* vargp)
 {
     vec3 position;
     i32 cx, cy, cz;
-    i32 side;
     i32 new_mesh_length;
     i32 new_indirect_length;
     i32 group_size;
@@ -415,7 +412,11 @@ static void* chunk_update(void* vargp)
     u32* indirect_buffer_swap;
     i32* world_pos_buffer_swap;
     i32* sorted_chunk_idx;
+    Stack* unload_stack;
     void* tmp;
+    i32 kill_thread = FALSE;
+
+    unload_stack = stack_create();
 
     #pragma omp parallel
     {
@@ -424,11 +425,9 @@ static void* chunk_update(void* vargp)
         i32 mesh_idx, axis;
         i32 i, j, x, y, z;
         Chunk* chunk;
-        Stack* unload_stack;
         
         num_threads = omp_get_num_threads();
         thread_num = omp_get_thread_num();
-        unload_stack = stack_create();
 
         #pragma omp master
         {
@@ -445,7 +444,7 @@ static void* chunk_update(void* vargp)
             qsort(sorted_chunk_idx, ctx.num_chunks, sizeof(i32), compare_chunk_idx);
         }
 
-        while (!ctx.kill_thread)
+        while (!kill_thread)
         {
             #pragma omp master
             {
@@ -453,14 +452,13 @@ static void* chunk_update(void* vargp)
                 cx = position.x / CHUNK_SIZE - (position.x < 0);
                 cy = position.y / CHUNK_SIZE - (position.y < 0);
                 cz = position.z / CHUNK_SIZE - (position.z < 0);
-                side = ctx.side;
             }
             #pragma omp barrier
 
             for (i = thread_num; i < ctx.num_chunks; i += num_threads) {
-                x = ctx.center.x - ctx.render_distance + (i % side);
-                y = ctx.center.y - ctx.render_distance + ((i / side) % side);
-                z = ctx.center.z - ctx.render_distance + (i / side / side);
+                x = ctx.center.x - ctx.render_distance + (i % ctx.side);
+                y = ctx.center.y - ctx.render_distance + ((i / ctx.side) % ctx.side);
+                z = ctx.center.z - ctx.render_distance + (i / ctx.side / ctx.side);
                 chunk = ctx.chunks[i];
                 if (!chunk_in_bounds(x, y, z, cx, cy, cz) && chunk != NULL) {
                     #pragma omp critical
@@ -493,9 +491,9 @@ static void* chunk_update(void* vargp)
             lengths[thread_num] = 0;
             for (j = thread_num; j < ctx.num_chunks; j += num_threads) {
                 i = sorted_chunk_idx[j];
-                x = cx - ctx.render_distance + (i % side);
-                y = cy - ctx.render_distance + ((i / side) % side);
-                z = cz - ctx.render_distance + (i / side / side);
+                x = cx - ctx.render_distance + (i % ctx.side);
+                y = cy - ctx.render_distance + ((i / ctx.side) % ctx.side);
+                z = cz - ctx.render_distance + (i / ctx.side / ctx.side);
                 if (chunk_exists(x, y, z, ctx.center.x, ctx.center.y, ctx.center.z, ctx.chunks)) {
                     chunks_swap[i] = ctx.chunks[chunk_idx(x, y, z, ctx.center.x, ctx.center.y, ctx.center.z)];
                 } else {
@@ -627,6 +625,13 @@ static void* chunk_update(void* vargp)
                 sem_post(&ctx.mutex);
             }
             #pragma omp barrier
+
+            #pragma omp master
+            {
+                if (ctx.kill_thread)
+                    kill_thread = TRUE;
+            }
+            #pragma omp barrier
         }
 
         #pragma omp master
@@ -640,6 +645,8 @@ static void* chunk_update(void* vargp)
             free(sorted_chunk_idx);
         }
     }
+
+    stack_destroy(unload_stack);
 }
 
 static i32 min_distance_idx(f32 distances[3])

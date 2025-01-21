@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include <stb_image.h>
 
-#define DEFAULT_WINDOW_WIDTH  1000
-#define DEFAULT_WINDOW_HEIGHT 750
+#define DEFAULT_WINDOW_WIDTH  1920 / 2
+#define DEFAULT_WINDOW_HEIGHT 1080 / 2
 
 typedef struct {
     GLFWwindow* handle;
     i32 width, height;
+    i32 xpos, ypos;
     struct {
         i32 x, y;
     } resolution;
@@ -42,6 +43,7 @@ void window_init(void)
     window.resolution.x = DEFAULT_WINDOW_WIDTH;
     window.resolution.y = DEFAULT_WINDOW_HEIGHT;
     glfwGetWindowSize(window.handle, &window.width, &window.height);
+    glfwGetWindowPos(window.handle, &window.xpos, &window.ypos);
     glfwGetCursorPos(window.handle, &window.cursor.x, &window.cursor.y);
     glfwSetWindowAspectRatio(window.handle, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
     
@@ -148,20 +150,39 @@ static void mouse_button_callback(GLFWwindow* handle, i32 button, i32 action)
         chunk_break_block();
 }
 
+void toggle_fullscreen(void)
+{
+    GLFWmonitor* monitor = glfwGetWindowMonitor(window.handle);
+    const GLFWvidmode* mode;
+    if (monitor != NULL)
+        glfwSetWindowMonitor(window.handle, NULL, window.xpos, window.ypos, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, 0);
+    else {
+        glfwGetWindowPos(window.handle, &window.xpos, &window.ypos);
+        glfwGetWindowSize(window.handle, &window.width, &window.height);
+        GLFWmonitor* full_monitor = glfwGetPrimaryMonitor();
+        mode = glfwGetVideoMode(full_monitor);
+        glfwSetWindowMonitor(window.handle, full_monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+    window.cursor.x = window.width / 2;
+    window.cursor.y = window.height / 2;
+}
+
 static void key_callback(GLFWwindow* handle, i32 key, i32 scancode, i32 action, i32 mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        window_close();
-    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        exit(0);
+    else if (key == GLFW_KEY_G && action == GLFW_PRESS) {
         glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         window.cursor.hidden = TRUE;
     }
-    if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+    else if (key == GLFW_KEY_H && action == GLFW_PRESS) {
         glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         window.cursor.hidden = FALSE;
     }
-    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+    else if (key == GLFW_KEY_I && action == GLFW_PRESS)
         renderer_toggle_line_mode();
+    else if (key == GLFW_KEY_F && action == GLFW_PRESS)
+        toggle_fullscreen();
     gui_key_callback(key, scancode, action, mods);
 }
 
